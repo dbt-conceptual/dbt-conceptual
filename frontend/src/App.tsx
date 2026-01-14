@@ -19,6 +19,17 @@ function App() {
     loadState()
   }, [])
 
+  // Auto-save when state changes (debounced)
+  useEffect(() => {
+    if (!state || loading) return
+
+    const timeoutId = setTimeout(() => {
+      saveState()
+    }, 500)
+
+    return () => clearTimeout(timeoutId)
+  }, [state])
+
   const loadState = async () => {
     try {
       setLoading(true)
@@ -28,8 +39,10 @@ function App() {
         throw new Error('Failed to load state')
       }
       const data = await response.json()
+      console.log('Loaded state:', data)
       setState(data)
     } catch (err) {
+      console.error('Load state error:', err)
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
       setLoading(false)
@@ -63,9 +76,11 @@ function App() {
     }
   }
 
+  console.log('App render - loading:', loading, 'error:', error, 'hasState:', !!state, 'conceptCount:', state ? Object.keys(state.concepts || {}).length : 0)
+
   if (loading) {
     return (
-      <div className="loading-container">
+      <div className="loading-container" style={{ fontSize: '24px', color: 'blue', padding: '2rem' }}>
         <div className="loading-spinner" />
         <p>Loading conceptual model...</p>
       </div>

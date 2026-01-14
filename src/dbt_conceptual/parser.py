@@ -61,8 +61,12 @@ class ConceptualModelParser:
                     name=concept_data.get("name", concept_id),
                     domain=concept_data.get("domain"),
                     owner=concept_data.get("owner"),
-                    definition=concept_data.get("definition"),
+                    description=concept_data.get("description"),
                     status=concept_data.get("status", "stub"),
+                    color=concept_data.get("color"),
+                    bronze_models=concept_data.get("bronze_models", []),
+                    silver_models=concept_data.get("silver_models", []),
+                    gold_models=concept_data.get("gold_models", []),
                     replaced_by=concept_data.get("replaced_by"),
                     discovered_from=concept_data.get("discovered_from"),
                 )
@@ -82,7 +86,9 @@ class ConceptualModelParser:
                     from_concept=from_concept,
                     to_concept=to_concept,
                     cardinality=rel.get("cardinality"),
+                    description=rel.get("description"),
                     status=rel.get("status", "complete"),
+                    realized_by=rel.get("realized_by", []),
                 )
 
         # Parse relationship groups
@@ -157,9 +163,9 @@ class StateBuilder:
                 concept_id = meta["concept"]
                 if concept_id in state.concepts:
                     concept = state.concepts[concept_id]
-                    if layer == "silver":
+                    if layer == "silver" and model_name not in concept.silver_models:
                         concept.silver_models.append(model_name)
-                    elif layer == "gold":
+                    elif layer == "gold" and model_name not in concept.gold_models:
                         concept.gold_models.append(model_name)
                 # else: validation will catch this
 
@@ -175,7 +181,8 @@ class StateBuilder:
                 # Add to realized_by for each relationship
                 for rel_id in expanded:
                     if rel_id in state.relationships:
-                        state.relationships[rel_id].realized_by.append(model_name)
+                        if model_name not in state.relationships[rel_id].realized_by:
+                            state.relationships[rel_id].realized_by.append(model_name)
                     # else: validation will catch this
 
             # Track orphan models (models without concept or realizes)
@@ -183,4 +190,59 @@ class StateBuilder:
                 if layer in ("silver", "gold"):  # Only track layered models as orphans
                     state.orphan_models.append(model_name)
 
+        # Parse bronze dependencies from manifest.json if available
+        self._parse_bronze_dependencies(state)
+
         return state
+
+    def _parse_bronze_dependencies(self, state: ProjectState) -> None:
+        """Parse bronze layer dependencies from manifest.json.
+
+        Finds source tables that silver models depend on and adds them as bronze_models.
+        """
+        import json
+        from pathlib import Path
+
+        manifest_path = self.config.project_dir / "target" / "manifest.json"
+        if not manifest_path.exists():
+            return  # No manifest available, skip bronze parsing
+
+        try:
+            with open(manifest_path) as f:
+                manifest = json.load(f)
+
+            # Get all silver models that belong to concepts
+            silver_to_concept = {}
+            for concept_id, concept in state.concepts.items():
+                for silver_model in concept.silver_models:
+                    silver_to_concept[silver_model] = concept_id
+
+            # Parse dependencies for each silver model
+            nodes = manifest.get("nodes", {})
+            sources = manifest.get("sources", {})
+
+            for node_id, node_data in nodes.items():
+                if not node_id.startswith("model."):
+                    continue
+
+                model_name = node_data.get("name")
+                if not model_name or model_name not in silver_to_concept:
+                    continue
+
+                concept_id = silver_to_concept[model_name]
+                concept = state.concepts[concept_id]
+
+                # Get all source dependencies
+                depends_on = node_data.get("depends_on", {})
+                for source_id in depends_on.get("nodes", []):
+                    if source_id.startswith("source."):
+                        # Extract source name from ID (e.g., "source.project.schema.table")
+                        parts = source_id.split(".")
+                        if len(parts) >= 4:
+                            source_name = f"{parts[2]}.{parts[3]}"
+                            if source_name not in concept.bronze_models:
+                                concept.bronze_models.append(source_name)
+
+        except Exception as e:
+            # Don't fail if manifest parsing fails
+            print(f"Warning: Failed to parse manifest.json for bronze dependencies: {e}")

@@ -10,6 +10,8 @@ export interface Concept {
   domain?: string;
   owner?: string;
   status?: 'draft' | 'complete' | 'stub' | 'deprecated';
+  color?: string;  // Optional color override (defaults to domain color)
+  bronze_models: string[];  // Source dependencies from manifest.json
   silver_models: string[];
   gold_models: string[];
 }

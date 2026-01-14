@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-01-14
+
+### Added
+- Interactive graph editor with redesigned box-based layout
+- Orthogonal (Visio-style) routing for relationship lines with crow's foot notation
+- Right-click context menus for creating concepts, relationships, and domains
+- Model management panel with checkboxes to assign models to concepts
+- Drag-and-drop model assignment from panel to concept boxes
+- Domain and owner dropdowns with auto-completion
+- Markdown description fields for concepts and relationships
+- Status indicator circles in top-right corner of concept boxes
+- Authentic Databricks layered brick logo for medallion architecture badges
+- Bronze layer support with auto-discovery from dbt sources
+- All three medallion badges (bronze, silver, gold) always visible with counts
+- Persistent layout saving and loading via REST API
+
+### Changed
+- Replaced force-directed graph with fixed box layout for better control
+- Moved medallion badges inside concept boxes
+- Replaced medal emojis with official Databricks SVG logo
+- Status now shown as color-coded circles instead of text badges
+- Improved visual hierarchy and information density
+
+### Fixed
+- Model count duplicates in assignment panel
+- Layout persistence across browser sessions
+
 ## [0.2.2] - 2026-01-14
 
 ### Fixed
@@ -58,7 +85,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/feriksen-personal/dbt-conceptual/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/feriksen-personal/dbt-conceptual/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/feriksen-personal/dbt-conceptual/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/feriksen-personal/dbt-conceptual/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/feriksen-personal/dbt-conceptual/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/feriksen-personal/dbt-conceptual/compare/v0.1.0...v0.2.0

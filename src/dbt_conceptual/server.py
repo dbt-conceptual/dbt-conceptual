@@ -81,6 +81,8 @@ def create_app(project_dir: Path) -> Flask:
                         "domain": concept.domain,
                         "owner": concept.owner,
                         "status": concept.status,
+                        "color": concept.color,
+                        "bronze_models": concept.bronze_models or [],
                         "silver_models": concept.silver_models or [],
                         "gold_models": concept.gold_models or [],
                     }
@@ -131,26 +133,39 @@ def create_app(project_dir: Path) -> Flask:
 
             # Concepts
             if data.get("concepts"):
-                yaml_data["concepts"] = {
-                    concept_id: {
+                yaml_data["concepts"] = {}
+                for concept_id, concept in data["concepts"].items():
+                    concept_dict = {
                         k: v
                         for k, v in concept.items()
-                        if v is not None
-                        and k not in ["display_name", "silver_models", "gold_models"]
+                        if v is not None and k not in ("display_name", "bronze_models")  # Exclude bronze_models - read-only from manifest.json
                     }
-                    for concept_id, concept in data["concepts"].items()
-                }
+                    # Deduplicate model lists
+                    if "silver_models" in concept_dict:
+                        concept_dict["silver_models"] = list(dict.fromkeys(concept_dict["silver_models"]))
+                    if "gold_models" in concept_dict:
+                        concept_dict["gold_models"] = list(dict.fromkeys(concept_dict["gold_models"]))
+                    yaml_data["concepts"][concept_id] = concept_dict
 
             # Relationships
             if data.get("relationships"):
-                yaml_data["relationships"] = [
-                    {
-                        k: v
-                        for k, v in rel.items()
-                        if v is not None and k != "realized_by"
-                    }
-                    for rel in data["relationships"].values()
-                ]
+                yaml_data["relationships"] = []
+                for rel in data["relationships"].values():
+                    rel_dict = {}
+                    for k, v in rel.items():
+                        if v is None:
+                            continue
+                        # Map API field names to YAML field names
+                        if k == "from_concept":
+                            rel_dict["from"] = v
+                        elif k == "to_concept":
+                            rel_dict["to"] = v
+                        else:
+                            rel_dict[k] = v
+                    # Deduplicate realized_by list
+                    if "realized_by" in rel_dict:
+                        rel_dict["realized_by"] = list(dict.fromkeys(rel_dict["realized_by"]))
+                    yaml_data["relationships"].append(rel_dict)
 
             # Write to file
             import yaml

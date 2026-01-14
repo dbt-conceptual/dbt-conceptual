@@ -13,6 +13,8 @@ class ConceptState:
     owner: Optional[str] = None
     description: Optional[str] = None  # Markdown description
     status: str = "stub"  # complete, draft, stub, deprecated
+    color: Optional[str] = None  # Optional color override (defaults to domain color)
+    bronze_models: list[str] = field(default_factory=list)  # Source dependencies
     silver_models: list[str] = field(default_factory=list)
     gold_models: list[str] = field(default_factory=list)
     replaced_by: Optional[str] = None

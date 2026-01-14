@@ -465,34 +465,85 @@ export default function GraphEditor({ state, setState }: Props) {
         }
       })
 
-    // Add status indicator icon in top-right corner
-    node.append('circle')
-      .attr('cx', 55)
-      .attr('cy', -20)
-      .attr('r', 6)
-      .attr('fill', d => {
-        const status = d.concept.status || 'draft'
-        if (status === 'complete') return '#22c55e'
-        if (status === 'draft') return '#3b82f6'
-        if (status === 'stub') return '#94a3b8'
-        if (status === 'deprecated') return '#ef4444'
-        return '#94a3b8'
-      })
-      .attr('stroke', 'white')
-      .attr('stroke-width', 1.5)
+    // Add status indicator icon in top-right corner with Lucide icons
+    const statusGroup = node.append('g')
+      .attr('transform', 'translate(55, -20)')
       .attr('pointer-events', 'none')
 
-    // Add checkmark for complete status
-    node.filter(d => d.concept.status === 'complete')
-      .append('text')
-      .attr('x', 55)
-      .attr('y', -19)
-      .attr('text-anchor', 'middle')
-      .attr('font-size', '8px')
-      .attr('font-weight', 'bold')
-      .attr('fill', 'white')
-      .attr('pointer-events', 'none')
-      .text('✓')
+    // Complete: green circle-check
+    statusGroup.filter(d => (d.concept.status || 'draft') === 'complete')
+      .each(function() {
+        const g = d3.select(this)
+        g.append('circle')
+          .attr('cx', 0)
+          .attr('cy', 0)
+          .attr('r', 5)
+          .attr('fill', 'none')
+          .attr('stroke', '#22c55e')
+          .attr('stroke-width', 1.5)
+        g.append('path')
+          .attr('d', 'm-2 0 1 1 2-2')
+          .attr('fill', 'none')
+          .attr('stroke', '#22c55e')
+          .attr('stroke-width', 1.5)
+          .attr('stroke-linecap', 'round')
+          .attr('stroke-linejoin', 'round')
+      })
+
+    // Draft: blue pencil
+    statusGroup.filter(d => (d.concept.status || 'draft') === 'draft')
+      .each(function() {
+        const g = d3.select(this)
+        g.append('path')
+          .attr('d', 'M4.4-3.4a0.5 0.5 0 0 0-2-2L-4.1 1.1a1 1 0 0 0-0.25 0.42l-0.66 2.18a0.25 0.25 0 0 0 0.31 0.31l2.18-0.66a1 1 0 0 0 0.42-0.25z')
+          .attr('fill', 'none')
+          .attr('stroke', '#3b82f6')
+          .attr('stroke-width', 1.2)
+          .attr('stroke-linecap', 'round')
+          .attr('stroke-linejoin', 'round')
+        g.append('path')
+          .attr('d', 'm1.5-2.5 2 2')
+          .attr('fill', 'none')
+          .attr('stroke', '#3b82f6')
+          .attr('stroke-width', 1.2)
+          .attr('stroke-linecap', 'round')
+          .attr('stroke-linejoin', 'round')
+      })
+
+    // Stub: gray circle
+    statusGroup.filter(d => (d.concept.status || 'draft') === 'stub')
+      .append('circle')
+      .attr('cx', 0)
+      .attr('cy', 0)
+      .attr('r', 5)
+      .attr('fill', 'none')
+      .attr('stroke', '#94a3b8')
+      .attr('stroke-width', 1.5)
+
+    // Deprecated: red circle-x
+    statusGroup.filter(d => (d.concept.status || 'draft') === 'deprecated')
+      .each(function() {
+        const g = d3.select(this)
+        g.append('circle')
+          .attr('cx', 0)
+          .attr('cy', 0)
+          .attr('r', 5)
+          .attr('fill', 'none')
+          .attr('stroke', '#ef4444')
+          .attr('stroke-width', 1.5)
+        g.append('path')
+          .attr('d', 'm2-2-4 4')
+          .attr('fill', 'none')
+          .attr('stroke', '#ef4444')
+          .attr('stroke-width', 1.5)
+          .attr('stroke-linecap', 'round')
+        g.append('path')
+          .attr('d', 'm-2-2 4 4')
+          .attr('fill', 'none')
+          .attr('stroke', '#ef4444')
+          .attr('stroke-width', 1.5)
+          .attr('stroke-linecap', 'round')
+      })
 
     // Add model count badges with Databricks brick icons inside the box
     const badgeGroup = node.append('g')
@@ -989,7 +1040,10 @@ function ConceptPanel({ conceptId, concept, state, setState, onClose, availableM
               fontSize: '13px'
             }}
           >
-            🥉 Bronze ({concept.bronze_models?.length || 0})
+            <svg width="14" height="14" viewBox="0 0 24 24" style={{ display: 'inline-block', marginRight: '6px', verticalAlign: 'middle' }}>
+              <path d="M3 17l9 5l9 -5v-3l-9 5l-9 -5v-3l9 5l9 -5v-3l-9 5l-9 -5l9 -5l5.418 3.01" fill="none" stroke="#CD7F32" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Bronze ({concept.bronze_models?.length || 0})
           </button>
           <button
             onClick={() => setModelLayerTab('silver')}
@@ -1005,7 +1059,10 @@ function ConceptPanel({ conceptId, concept, state, setState, onClose, availableM
               fontSize: '13px'
             }}
           >
-            🥈 Silver ({concept.silver_models?.length || 0})
+            <svg width="14" height="14" viewBox="0 0 24 24" style={{ display: 'inline-block', marginRight: '6px', verticalAlign: 'middle' }}>
+              <path d="M3 17l9 5l9 -5v-3l-9 5l-9 -5v-3l9 5l9 -5v-3l-9 5l-9 -5l9 -5l5.418 3.01" fill="none" stroke="#C0C0C0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Silver ({concept.silver_models?.length || 0})
           </button>
           <button
             onClick={() => setModelLayerTab('gold')}
@@ -1021,7 +1078,10 @@ function ConceptPanel({ conceptId, concept, state, setState, onClose, availableM
               fontSize: '13px'
             }}
           >
-            🥇 Gold ({concept.gold_models?.length || 0})
+            <svg width="14" height="14" viewBox="0 0 24 24" style={{ display: 'inline-block', marginRight: '6px', verticalAlign: 'middle' }}>
+              <path d="M3 17l9 5l9 -5v-3l-9 5l-9 -5v-3l9 5l9 -5v-3l-9 5l-9 -5l9 -5l5.418 3.01" fill="none" stroke="#FFD700" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Gold ({concept.gold_models?.length || 0})
           </button>
         </div>
 
