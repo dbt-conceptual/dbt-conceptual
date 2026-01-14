@@ -49,6 +49,9 @@ dependencies = [
 serve = [
     "flask>=3.0",
 ]
+png = [
+    "pillow>=10.0",
+]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
@@ -62,7 +65,7 @@ docs = [
     "mkdocs-material>=9.0",
 ]
 all = [
-    "dbt-conceptual[serve,dev,docs]",
+    "dbt-conceptual[serve,png,dev,docs]",
 ]
 
 [project.scripts]

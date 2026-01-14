@@ -558,7 +558,8 @@ def sync(project_dir: Optional[Path], create_stubs: bool, model: Optional[str]) 
 @click.option(
     "--format",
     type=click.Choice(
-        ["mermaid", "excalidraw", "coverage", "bus-matrix"], case_sensitive=False
+        ["mermaid", "excalidraw", "png", "coverage", "bus-matrix"],
+        case_sensitive=False,
     ),
     default="mermaid",
     help="Export format",
@@ -576,6 +577,7 @@ def export(project_dir: Optional[Path], format: str, output: Optional[Path]) -> 
         dbt-conceptual export --format mermaid
         dbt-conceptual export --format mermaid -o diagram.mmd
         dbt-conceptual export --format excalidraw -o diagram.excalidraw
+        dbt-conceptual export --format png -o diagram.png
         dbt-conceptual export --format coverage -o coverage.html
         dbt-conceptual export --format bus-matrix -o bus-matrix.html
     """
@@ -584,6 +586,7 @@ def export(project_dir: Optional[Path], format: str, output: Optional[Path]) -> 
         export_coverage,
         export_excalidraw,
         export_mermaid,
+        export_png,
     )
 
     config = Config.load(project_dir=project_dir)
@@ -639,6 +642,15 @@ def export(project_dir: Optional[Path], format: str, output: Optional[Path]) -> 
             import sys
 
             export_bus_matrix(state, sys.stdout)
+    elif format == "png":
+        if not output:
+            console.print(
+                "[red]Error: PNG export requires an output file (-o option)[/red]"
+            )
+            raise click.Abort()
+        with open(output, "wb") as f:
+            export_png(state, f)
+        console.print(f"[green]✓ Exported to {output}[/green]")
 
 
 @main.command()
