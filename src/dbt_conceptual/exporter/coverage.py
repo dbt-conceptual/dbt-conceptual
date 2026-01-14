@@ -2,7 +2,7 @@
 
 from typing import TextIO
 
-from dbt_conceptual.state import ProjectState
+from dbt_conceptual.state import ConceptState, ProjectState
 
 
 def export_coverage(state: ProjectState, output: TextIO) -> None:
@@ -47,7 +47,7 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
     )
 
     # Group concepts by domain
-    domain_groups: dict[str, list[tuple[str, object]]] = {}
+    domain_groups: dict[str, list[tuple[str, ConceptState]]] = {}
     for concept_id, concept in state.concepts.items():
         domain = concept.domain or "uncategorized"
         if domain not in domain_groups:

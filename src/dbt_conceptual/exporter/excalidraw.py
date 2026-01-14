@@ -2,7 +2,7 @@
 
 import json
 import random
-from typing import Any, TextIO
+from typing import Any, Optional, TextIO
 
 from dbt_conceptual.state import ProjectState
 
@@ -13,7 +13,7 @@ def _generate_id() -> str:
     return "".join(random.choice(chars) for _ in range(16))
 
 
-def _get_domain_color(domain: str | None, state: ProjectState) -> str:
+def _get_domain_color(domain: Optional[str], state: ProjectState) -> str:
     """Get hex color for a domain, with fallback."""
     if domain and domain in state.domains:
         return state.domains[domain].color or "#E3F2FD"
@@ -163,10 +163,10 @@ def export_excalidraw(state: ProjectState, output: TextIO) -> None:
         to_x, to_y = concept_positions[to_concept]
 
         # Calculate arrow start/end points (center of boxes)
-        start_x = from_x + 100
-        start_y = from_y + 75
-        end_x = to_x + 100
-        end_y = to_y + 75
+        arrow_start_x: float = from_x + 100
+        arrow_start_y: float = from_y + 75
+        arrow_end_x: float = to_x + 100
+        arrow_end_y: float = to_y + 75
 
         # Create arrow
         arrow_id = _generate_id()
@@ -183,12 +183,12 @@ def export_excalidraw(state: ProjectState, output: TextIO) -> None:
                 "roughness": 1,
                 "opacity": 100,
                 "angle": 0,
-                "x": start_x,
-                "y": start_y,
+                "x": arrow_start_x,
+                "y": arrow_start_y,
                 "strokeColor": "#1e1e1e",
                 "backgroundColor": "transparent",
-                "width": end_x - start_x,
-                "height": end_y - start_y,
+                "width": arrow_end_x - arrow_start_x,
+                "height": arrow_end_y - arrow_start_y,
                 "seed": random.randint(1, 2147483647),
                 "groupIds": [],
                 "frameId": None,
@@ -202,13 +202,16 @@ def export_excalidraw(state: ProjectState, output: TextIO) -> None:
                 "lastCommittedPoint": None,
                 "startArrowhead": None,
                 "endArrowhead": "arrow",
-                "points": [[0, 0], [end_x - start_x, end_y - start_y]],
+                "points": [
+                    [0, 0],
+                    [arrow_end_x - arrow_start_x, arrow_end_y - arrow_start_y],
+                ],
             }
         )
 
         # Add label for relationship
-        label_x = (start_x + end_x) / 2
-        label_y = (start_y + end_y) / 2 - 20
+        label_x = (arrow_start_x + arrow_end_x) / 2
+        label_y = (arrow_start_y + arrow_end_y) / 2 - 20
 
         label_text = rel.name
         if rel.realized_by:
