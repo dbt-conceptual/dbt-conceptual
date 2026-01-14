@@ -18,10 +18,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bottom-up adoption via `--create-stubs`
 - Configurable silver/gold paths
 
-## [0.1.0] - YYYY-MM-DD
+## [0.1.0] - 2026-01-14
 
 ### Added
 - Initial public release
+- CLI commands: `init`, `status`, `validate`
+- Conceptual model definition in `conceptual.yml`
+- dbt model tagging via `meta.concept` and `meta.realizes`
+- Relationship groups for multi-table facts
+- Validation with error/warning/info levels
+- 93% test coverage
+- CI/CD with GitHub Actions
 
 ---
 
