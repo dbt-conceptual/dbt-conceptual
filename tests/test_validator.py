@@ -116,3 +116,49 @@ def test_validator_summary() -> None:
     assert "errors" in summary
     assert "warnings" in summary
     assert "info" in summary
+
+
+def test_validator_has_errors() -> None:
+    """Test has_errors method."""
+    config = Config(project_dir=Path("/tmp"))
+    state = ProjectState()
+
+    # Add an incomplete concept (will generate error)
+    state.concepts["incomplete"] = ConceptState(name="Incomplete", status="complete")
+
+    validator = Validator(config, state)
+    validator.validate()
+
+    assert validator.has_errors() is True
+
+
+def test_validator_no_errors() -> None:
+    """Test has_errors returns False when no errors."""
+    config = Config(project_dir=Path("/tmp"))
+    state = ProjectState()
+
+    # Add a valid stub concept (only info, no errors)
+    state.concepts["valid_stub"] = ConceptState(name="Valid Stub", status="stub")
+
+    validator = Validator(config, state)
+    validator.validate()
+
+    assert validator.has_errors() is False
+
+
+def test_validate_unknown_domain() -> None:
+    """Test validation warns about unknown domain references."""
+    config = Config(project_dir=Path("/tmp"))
+    state = ProjectState()
+
+    # Add concept with unknown domain
+    state.concepts["customer"] = ConceptState(
+        name="Customer", domain="unknown_domain", status="complete"
+    )
+
+    validator = Validator(config, state)
+    issues = validator.validate()
+
+    # Should have warning about unknown domain
+    warnings = [i for i in issues if i.severity == Severity.WARNING]
+    assert any("unknown domain" in i.message.lower() for i in warnings)
