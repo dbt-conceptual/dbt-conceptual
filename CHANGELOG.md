@@ -7,16 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-01-14
+
 ### Added
-- Initial release
-- CLI commands: `init`, `sync`, `status`, `validate`, `enrich`, `serve`, `export`
-- Conceptual model definition in `model.yml`
-- dbt model tagging via `meta.concept` and `meta.realizes`
-- Visual editor with Excalidraw-style aesthetic
-- Export formats: Excalidraw, Mermaid, Coverage Report, Bus Matrix
-- CI validation support
-- Bottom-up adoption via `--create-stubs`
-- Configurable silver/gold paths
+- Interactive web UI with `dbt-conceptual serve` command
+- Visual graph editor with drag-and-drop D3.js force-directed layout
+- Real-time editing and saving to `conceptual.yml`
+- Integrated coverage report view
+- Integrated bus matrix view
+- Flask backend with REST API endpoints
+- React + TypeScript + Vite frontend
+- Export command for Excalidraw diagrams
+- Export command for coverage HTML reports
+- Export command for bus matrix HTML reports
+- Comprehensive PR workflow with test visualization and coverage reporting
+- Feature branch CI workflow
+- Documentation for interactive UI features
+
+### Changed
+- Updated README with interactive UI documentation
+- Quick Start now uses jaffle-shop as demo example
 
 ## [0.1.0] - 2026-01-14
 
@@ -32,5 +42,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/feriksen-personal/dbt-conceptual/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/feriksen-personal/dbt-conceptual/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/feriksen-personal/dbt-conceptual/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/feriksen-personal/dbt-conceptual/releases/tag/v0.1.0
