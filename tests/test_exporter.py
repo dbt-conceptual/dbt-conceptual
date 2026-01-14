@@ -253,3 +253,145 @@ def test_cli_export_without_conceptual_file() -> None:
 
         assert result.exit_code != 0
         assert "conceptual.yml not found" in result.output
+
+
+def test_export_excalidraw_basic() -> None:
+    """Test basic Excalidraw export with concepts and relationships."""
+    from dbt_conceptual.exporter import export_excalidraw
+
+    with TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        # Create dbt_project.yml
+        with open(tmppath / "dbt_project.yml", "w") as f:
+            yaml.dump({"name": "test"}, f)
+
+        # Create conceptual.yml
+        conceptual_dir = tmppath / "models" / "conceptual"
+        conceptual_dir.mkdir(parents=True)
+
+        conceptual_data = {
+            "version": 1,
+            "concepts": {
+                "customer": {"name": "Customer", "status": "complete"},
+                "order": {"name": "Order", "status": "complete"},
+            },
+            "relationships": [{"name": "places", "from": "customer", "to": "order"}],
+        }
+
+        with open(conceptual_dir / "conceptual.yml", "w") as f:
+            yaml.dump(conceptual_data, f)
+
+        config = Config.load(project_dir=tmppath)
+        builder = StateBuilder(config)
+        state = builder.build()
+
+        # Export to string
+        output = StringIO()
+        export_excalidraw(state, output)
+        result = output.getvalue()
+
+        # Verify it's valid JSON
+        import json
+
+        diagram = json.loads(result)
+        assert diagram["type"] == "excalidraw"
+        assert diagram["source"] == "dbt-conceptual"
+        assert len(diagram["elements"]) > 0
+
+        # Check for concept boxes
+        rectangles = [e for e in diagram["elements"] if e["type"] == "rectangle"]
+        assert len(rectangles) == 2  # Two concepts
+
+        # Check for relationship arrows
+        arrows = [e for e in diagram["elements"] if e["type"] == "arrow"]
+        assert len(arrows) == 1  # One relationship
+
+
+def test_export_excalidraw_with_domains() -> None:
+    """Test Excalidraw export uses domain colors."""
+    from dbt_conceptual.exporter import export_excalidraw
+
+    with TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        # Create dbt_project.yml
+        with open(tmppath / "dbt_project.yml", "w") as f:
+            yaml.dump({"name": "test"}, f)
+
+        # Create conceptual.yml with domain colors
+        conceptual_dir = tmppath / "models" / "conceptual"
+        conceptual_dir.mkdir(parents=True)
+
+        conceptual_data = {
+            "version": 1,
+            "domains": {"party": {"name": "Party", "color": "#FF0000"}},
+            "concepts": {"customer": {"name": "Customer", "domain": "party"}},
+        }
+
+        with open(conceptual_dir / "conceptual.yml", "w") as f:
+            yaml.dump(conceptual_data, f)
+
+        config = Config.load(project_dir=tmppath)
+        builder = StateBuilder(config)
+        state = builder.build()
+
+        output = StringIO()
+        export_excalidraw(state, output)
+        result = output.getvalue()
+
+        # Check that domain color is used
+        import json
+
+        diagram = json.loads(result)
+        rectangles = [e for e in diagram["elements"] if e["type"] == "rectangle"]
+        assert any(e["backgroundColor"] == "#FF0000" for e in rectangles)
+
+
+def test_cli_export_excalidraw_to_file() -> None:
+    """Test export command writes Excalidraw to file."""
+    runner = CliRunner()
+
+    with TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        # Create dbt_project.yml
+        with open(tmppath / "dbt_project.yml", "w") as f:
+            yaml.dump({"name": "test"}, f)
+
+        # Create conceptual.yml
+        conceptual_dir = tmppath / "models" / "conceptual"
+        conceptual_dir.mkdir(parents=True)
+
+        conceptual_data = {
+            "version": 1,
+            "concepts": {"customer": {"name": "Customer"}},
+        }
+
+        with open(conceptual_dir / "conceptual.yml", "w") as f:
+            yaml.dump(conceptual_data, f)
+
+        # Run export command with output file
+        output_file = tmppath / "diagram.excalidraw"
+        result = runner.invoke(
+            export,
+            [
+                "--project-dir",
+                str(tmppath),
+                "--format",
+                "excalidraw",
+                "-o",
+                str(output_file),
+            ],
+        )
+
+        assert result.exit_code == 0
+        assert "Exported to" in result.output
+        assert output_file.exists()
+
+        # Check file content is valid JSON
+        import json
+
+        with open(output_file) as f:
+            diagram = json.load(f)
+            assert diagram["type"] == "excalidraw"

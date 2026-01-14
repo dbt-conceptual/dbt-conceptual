@@ -523,7 +523,7 @@ def sync(project_dir: Optional[Path], create_stubs: bool, model: Optional[str]) 
 )
 @click.option(
     "--format",
-    type=click.Choice(["mermaid"], case_sensitive=False),
+    type=click.Choice(["mermaid", "excalidraw"], case_sensitive=False),
     default="mermaid",
     help="Export format",
 )
@@ -533,16 +533,15 @@ def sync(project_dir: Optional[Path], create_stubs: bool, model: Optional[str]) 
     type=click.Path(path_type=Path),
     help="Output file (default: stdout)",
 )
-def export(
-    project_dir: Optional[Path], format: str, output: Optional[Path]
-) -> None:
+def export(project_dir: Optional[Path], format: str, output: Optional[Path]) -> None:
     """Export conceptual model to various formats.
 
     Examples:
         dbt-conceptual export --format mermaid
         dbt-conceptual export --format mermaid -o diagram.mmd
+        dbt-conceptual export --format excalidraw -o diagram.excalidraw
     """
-    from dbt_conceptual.exporter import export_mermaid
+    from dbt_conceptual.exporter import export_excalidraw, export_mermaid
 
     config = Config.load(project_dir=project_dir)
 
@@ -570,6 +569,15 @@ def export(
             import sys
 
             export_mermaid(state, sys.stdout)
+    elif format == "excalidraw":
+        if output:
+            with open(output, "w") as f:
+                export_excalidraw(state, f)
+            console.print(f"[green]✓ Exported to {output}[/green]")
+        else:
+            import sys
+
+            export_excalidraw(state, sys.stdout)
 
 
 if __name__ == "__main__":

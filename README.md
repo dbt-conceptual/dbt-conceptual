@@ -37,7 +37,7 @@ If that's not your stack, this tool is not for you. No judgment — just not the
 
 ## The Problem
 
-Every data team has a conceptual model — *"we have Customers, Orders, Products"* — but it lives in PowerPoint, Visio, or people's heads. Disconnected from code. Drifting. Stale.
+Every data team has a conceptual model — *"we have Customers, Orders, Products"* — but it lives in PowerPoint, Visio, ERD tools, or people's heads. Disconnected from code. Diverging from reality. Rotting.
 
 ```
 CONCEPTUAL MODEL                          LAKEHOUSE
@@ -410,9 +410,9 @@ MIT License. See [LICENSE](LICENSE) for details.
 
 ## Acknowledgments
 
-Built with frustration from years of conceptual models rotting in PowerPoint.
+Built with frustration from years of conceptual models rotting in PowerPoint, Visio, and expensive ERD software.
 
-No mass emails were sent to coordinate this project.
+No mass emails were sent to coordinate this project. No penguins were harmed in its making.
 
 ---
 
