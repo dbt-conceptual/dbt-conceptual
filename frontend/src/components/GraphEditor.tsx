@@ -28,6 +28,8 @@ export default function GraphEditor({ state, setState }: Props) {
   const [layout, setLayout] = useState<Record<string, { x: number; y: number }>>({})
   const [availableModels, setAvailableModels] = useState<{ silver: string[]; gold: string[] }>({ silver: [], gold: [] })
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; type: 'canvas' | 'node'; nodeId?: string } | null>(null)
+  const [dragConnection, setDragConnection] = useState<{ fromNodeId: string; x: number; y: number } | null>(null)
+  const [relationshipDialog, setRelationshipDialog] = useState<{ fromNodeId: string; toNodeId: string } | null>(null)
 
   // Load layout on mount
   useEffect(() => {
@@ -59,6 +61,40 @@ export default function GraphEditor({ state, setState }: Props) {
     document.addEventListener('click', handleClick)
     return () => document.removeEventListener('click', handleClick)
   }, [])
+
+  // Handle drag connection mouse move and end
+  useEffect(() => {
+    if (!dragConnection || !svgRef.current) return
+
+    const handleMouseMove = (event: MouseEvent) => {
+      const [x, y] = d3.pointer(event, svgRef.current)
+      setDragConnection(prev => prev ? { ...prev, x, y } : null)
+    }
+
+    const handleMouseUp = (event: MouseEvent) => {
+      // Cancel drag if not released on a node
+      if (event.button === 0) {
+        setDragConnection(null)
+      }
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Cancel drag on Escape
+      if (event.key === 'Escape') {
+        setDragConnection(null)
+      }
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [dragConnection])
 
   // Save layout when positions change (debounced)
   const saveLayout = (positions: Record<string, { x: number; y: number }>) => {
@@ -406,15 +442,39 @@ export default function GraphEditor({ state, setState }: Props) {
       .attr('stroke', '#334155')
       .attr('stroke-width', 2)
       .style('cursor', 'pointer')
-      .on('mouseenter', function() {
+      .on('mouseenter', function(event) {
+        if (event.shiftKey) {
+          d3.select(this).style('cursor', 'crosshair')
+        }
         d3.select(this).attr('stroke-width', 3).attr('stroke', '#1e293b')
       })
       .on('mouseleave', function() {
+        d3.select(this).style('cursor', 'pointer')
         d3.select(this).attr('stroke-width', 2).attr('stroke', '#334155')
       })
-      .on('click', (_event, d) => {
-        setSelectedNode(d.id)
-        setSelectedLink(null)
+      .on('mousedown', (event, d) => {
+        if (event.shiftKey) {
+          // Start dragging a connection
+          event.preventDefault()
+          event.stopPropagation()
+          const [x, y] = d3.pointer(event, svgRef.current)
+          setDragConnection({ fromNodeId: d.id, x, y })
+        }
+      })
+      .on('mouseup', (event, d) => {
+        if (dragConnection && dragConnection.fromNodeId !== d.id) {
+          // Complete the connection
+          event.preventDefault()
+          event.stopPropagation()
+          setRelationshipDialog({ fromNodeId: dragConnection.fromNodeId, toNodeId: d.id })
+          setDragConnection(null)
+        }
+      })
+      .on('click', (event, d) => {
+        if (!event.shiftKey && !dragConnection) {
+          setSelectedNode(d.id)
+          setSelectedLink(null)
+        }
       })
       .on('contextmenu', (event, d) => {
         event.preventDefault()
@@ -658,6 +718,24 @@ export default function GraphEditor({ state, setState }: Props) {
       }
     }
 
+    // Add visual feedback for drag connection
+    if (dragConnection) {
+      const sourceNode = nodes.find(n => n.id === dragConnection.fromNodeId)
+      if (sourceNode && sourceNode.x !== undefined && sourceNode.y !== undefined) {
+        g.append('line')
+          .attr('class', 'drag-connection-line')
+          .attr('x1', sourceNode.x)
+          .attr('y1', sourceNode.y)
+          .attr('x2', dragConnection.x)
+          .attr('y2', dragConnection.y)
+          .attr('stroke', '#3b82f6')
+          .attr('stroke-width', 2)
+          .attr('stroke-dasharray', '5,5')
+          .attr('opacity', 0.6)
+          .attr('pointer-events', 'none')
+      }
+    }
+
     // Update positions on tick
     simulation.on('tick', () => {
       // Update orthogonal link paths
@@ -683,7 +761,7 @@ export default function GraphEditor({ state, setState }: Props) {
     return () => {
       simulation.stop()
     }
-  }, [state, layout])
+  }, [state, layout, dragConnection])
 
   return (
     <div className="graph-editor">
@@ -741,6 +819,155 @@ export default function GraphEditor({ state, setState }: Props) {
             )}
           </div>
         )}
+        {relationshipDialog && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 2000,
+            }}
+            onClick={() => setRelationshipDialog(null)}
+          >
+            <div
+              style={{
+                backgroundColor: 'white',
+                borderRadius: '8px',
+                padding: '24px',
+                maxWidth: '500px',
+                width: '90%',
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600' }}>
+                Create Relationship
+              </h3>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  const formData = new FormData(e.currentTarget)
+                  const relationshipName = formData.get('name') as string
+                  const cardinality = formData.get('cardinality') as string
+
+                  if (!relationshipName) {
+                    alert('Please enter a relationship name')
+                    return
+                  }
+
+                  const relationshipId = `${relationshipDialog.fromNodeId}_${relationshipName}_${relationshipDialog.toNodeId}`.toLowerCase().replace(/\s+/g, '_')
+
+                  setState({
+                    ...state,
+                    relationships: {
+                      ...state.relationships,
+                      [relationshipId]: {
+                        name: relationshipName,
+                        from_concept: relationshipDialog.fromNodeId,
+                        to_concept: relationshipDialog.toNodeId,
+                        cardinality: cardinality || undefined,
+                        realized_by: [],
+                      },
+                    },
+                  })
+                  setSelectedLink(relationshipId)
+                  setRelationshipDialog(null)
+                }}
+              >
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500', fontSize: '14px' }}>
+                    From:
+                  </label>
+                  <div style={{ padding: '8px 12px', backgroundColor: '#f1f5f9', borderRadius: '4px', fontSize: '14px' }}>
+                    {state.concepts[relationshipDialog.fromNodeId]?.name || relationshipDialog.fromNodeId}
+                  </div>
+                </div>
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500', fontSize: '14px' }}>
+                    To:
+                  </label>
+                  <div style={{ padding: '8px 12px', backgroundColor: '#f1f5f9', borderRadius: '4px', fontSize: '14px' }}>
+                    {state.concepts[relationshipDialog.toNodeId]?.name || relationshipDialog.toNodeId}
+                  </div>
+                </div>
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500', fontSize: '14px' }}>
+                    Relationship Name: *
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    placeholder="e.g., places, contains, belongs to"
+                    required
+                    autoFocus
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '4px',
+                      fontSize: '14px',
+                    }}
+                  />
+                </div>
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500', fontSize: '14px' }}>
+                    Cardinality:
+                  </label>
+                  <select
+                    name="cardinality"
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '4px',
+                      fontSize: '14px',
+                    }}
+                  >
+                    <option value="">Not specified</option>
+                    <option value="1:1">1:1 (One to One)</option>
+                    <option value="1:N">1:N (One to Many)</option>
+                    <option value="N:1">N:1 (Many to One)</option>
+                    <option value="N:M">N:M (Many to Many)</option>
+                  </select>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    onClick={() => setRelationshipDialog(null)}
+                    style={{
+                      padding: '8px 16px',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '4px',
+                      backgroundColor: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    style={{
+                      padding: '8px 16px',
+                      border: 'none',
+                      borderRadius: '4px',
+                      backgroundColor: '#3b82f6',
+                      color: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                    }}
+                  >
+                    Create
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
       <div className="graph-sidebar">
         {selectedNode && (
@@ -766,8 +993,12 @@ export default function GraphEditor({ state, setState }: Props) {
         {!selectedNode && !selectedLink && (
           <div className="sidebar-placeholder">
             <p>Click on a concept or relationship to edit</p>
-            <button className="add-concept-btn">+ Add Concept</button>
-            <button className="add-relationship-btn">+ Add Relationship</button>
+            <div style={{ marginTop: '16px', padding: '12px', backgroundColor: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '6px', fontSize: '13px', color: '#0c4a6e' }}>
+              <div style={{ fontWeight: '600', marginBottom: '8px' }}>Quick Actions:</div>
+              <div style={{ marginBottom: '4px' }}>• Right-click canvas → Add Concept</div>
+              <div style={{ marginBottom: '4px' }}>• Hold <kbd style={{ padding: '2px 6px', backgroundColor: 'white', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px' }}>Shift</kbd> + drag from one concept to another → Create Relationship</div>
+              <div>• Right-click concept → Add Relationship</div>
+            </div>
           </div>
         )}
       </div>
