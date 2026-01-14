@@ -641,5 +641,60 @@ def export(project_dir: Optional[Path], format: str, output: Optional[Path]) -> 
             export_bus_matrix(state, sys.stdout)
 
 
+@main.command()
+@click.option(
+    "--project-dir",
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+    default=None,
+    help="Path to dbt project directory (default: current directory)",
+)
+@click.option(
+    "--host",
+    default="127.0.0.1",
+    help="Host to bind to (default: 127.0.0.1)",
+)
+@click.option(
+    "--port",
+    default=5000,
+    type=int,
+    help="Port to bind to (default: 5000)",
+)
+def serve(project_dir: Optional[Path], host: str, port: int) -> None:
+    """Launch the interactive web UI for editing conceptual models.
+
+    This starts a local web server with a visual editor for your conceptual
+    model. The editor supports:
+
+    - Interactive graph visualization of concepts and relationships
+    - Drag-and-drop editing
+    - Direct saving to conceptual.yml
+    - Integrated coverage and bus matrix views
+
+    Examples:
+        dbt-conceptual serve
+        dbt-conceptual serve --port 8080
+        dbt-conceptual serve --host 0.0.0.0 --port 3000
+    """
+    try:
+        from dbt_conceptual.server import run_server
+    except ImportError:
+        console.print(
+            "[red]Error: Flask is not installed. Install with:[/red]\n"
+            "  pip install dbt-conceptual[serve]\n"
+            "or:\n"
+            "  pip install flask"
+        )
+        return
+
+    console.print("[cyan]Starting dbt-conceptual UI server...[/cyan]")
+    console.print(f"[cyan]Open your browser to: http://{host}:{port}[/cyan]")
+    console.print("[dim]Press Ctrl+C to stop[/dim]\n")
+
+    try:
+        run_server(project_dir or Path.cwd(), host=host, port=port)
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Server stopped[/yellow]")
+
+
 if __name__ == "__main__":
     main()
