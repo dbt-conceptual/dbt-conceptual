@@ -160,19 +160,40 @@ catalog (1 concept)
   ✓ product [complete]      [S:●]  [G:●]
 ```
 
-### 🎨 Visual Editor
+### 🎨 Interactive Web UI
 
-Interactive viewer with hand-drawn Excalidraw aesthetic:
+Launch a visual editor for your conceptual model with real-time editing:
 
 ```bash
 $ dbt-conceptual serve
-Serving at http://localhost:8080
+Starting dbt-conceptual UI server...
+Open your browser to: http://127.0.0.1:5000
 ```
 
-- Drag concepts to arrange
-- Click to edit properties
-- Draw new relationships
-- Saves directly to YAML
+**Features:**
+- **Graph Editor** — Interactive force-directed graph visualization with D3.js
+  - Drag and position concepts
+  - Click concepts/relationships to edit
+  - Real-time visual updates
+  - Domain-based coloring
+  - Zoom and pan canvas
+- **Direct Editing** — Changes save directly to `conceptual.yml`
+  - Edit concept name, description, definition, domain, owner, status
+  - Edit relationship name, from/to concepts, cardinality, description
+  - No sync needed - what you see is what gets saved
+- **Integrated Reports** — View coverage and bus matrix in tabs
+  - Coverage Report tab shows concept completion and implementations
+  - Bus Matrix tab shows which fact tables realize which relationships
+  - Switch between Editor, Coverage, and Bus Matrix views
+
+**Installation:**
+```bash
+# UI requires Flask
+pip install dbt-conceptual[serve]
+
+# Or install Flask separately
+pip install flask
+```
 
 ### ✅ CI Validation
 
