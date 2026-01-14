@@ -20,7 +20,7 @@ def create_app(project_dir: Path) -> Flask:
     Returns:
         Configured Flask app
     """
-    app = Flask(__name__, static_folder="static", static_url_path="/static")
+    app = Flask(__name__, static_folder="static", static_url_path="")
     app.config["PROJECT_DIR"] = project_dir
 
     # Load config
