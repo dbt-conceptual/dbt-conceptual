@@ -9,6 +9,7 @@ from dbt_conceptual.config import Config
 from dbt_conceptual.exporter.bus_matrix import export_bus_matrix
 from dbt_conceptual.exporter.coverage import export_coverage
 from dbt_conceptual.parser import StateBuilder
+from dbt_conceptual.scanner import DbtProjectScanner
 
 
 def create_app(project_dir: Path) -> Flask:
@@ -76,7 +77,7 @@ def create_app(project_dir: Path) -> Flask:
                 "concepts": {
                     concept_id: {
                         "name": concept.name,
-                        "definition": concept.definition,
+                        "description": concept.description,
                         "domain": concept.domain,
                         "owner": concept.owner,
                         "status": concept.status,
@@ -231,6 +232,16 @@ def create_app(project_dir: Path) -> Flask:
                 yaml.dump(layout_data, f, sort_keys=False, default_flow_style=False)
 
             return jsonify({"success": True, "message": "Layout saved"})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/api/models", methods=["GET"])
+    def get_models() -> Any:
+        """Get available dbt models from silver and gold layers."""
+        try:
+            scanner = DbtProjectScanner(config)
+            models = scanner.find_model_files()
+            return jsonify(models)
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 

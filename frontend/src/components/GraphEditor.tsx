@@ -26,6 +26,7 @@ export default function GraphEditor({ state, setState }: Props) {
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
   const [selectedLink, setSelectedLink] = useState<string | null>(null)
   const [layout, setLayout] = useState<Record<string, { x: number; y: number }>>({})
+  const [availableModels, setAvailableModels] = useState<{ silver: string[]; gold: string[] }>({ silver: [], gold: [] })
 
   // Load layout on mount
   useEffect(() => {
@@ -37,6 +38,18 @@ export default function GraphEditor({ state, setState }: Props) {
         }
       })
       .catch(err => console.error('Failed to load layout:', err))
+  }, [])
+
+  // Load available models on mount
+  useEffect(() => {
+    fetch('/api/models')
+      .then(res => res.json())
+      .then(data => {
+        if (data && typeof data === 'object' && !data.error) {
+          setAvailableModels(data)
+        }
+      })
+      .catch(err => console.error('Failed to load models:', err))
   }, [])
 
   // Save layout when positions change (debounced)
@@ -402,6 +415,7 @@ export default function GraphEditor({ state, setState }: Props) {
             state={state}
             setState={setState}
             onClose={() => setSelectedNode(null)}
+            availableModels={availableModels}
           />
         )}
         {selectedLink && (
@@ -411,6 +425,7 @@ export default function GraphEditor({ state, setState }: Props) {
             state={state}
             setState={setState}
             onClose={() => setSelectedLink(null)}
+            availableModels={availableModels}
           />
         )}
         {!selectedNode && !selectedLink && (
@@ -431,12 +446,15 @@ interface ConceptPanelProps {
   state: State
   setState: (state: State) => void
   onClose: () => void
+  availableModels: { silver: string[]; gold: string[] }
 }
 
-function ConceptPanel({ conceptId, concept, state, setState, onClose }: ConceptPanelProps) {
+function ConceptPanel({ conceptId, concept, state, setState, onClose, availableModels }: ConceptPanelProps) {
   const [editedConcept, setEditedConcept] = useState(concept)
   const [customDomain, setCustomDomain] = useState('')
   const [customOwner, setCustomOwner] = useState('')
+  const [newSilverModel, setNewSilverModel] = useState('')
+  const [newGoldModel, setNewGoldModel] = useState('')
 
   // Get unique owners from all concepts
   const existingOwners = Array.from(new Set(
@@ -605,7 +623,132 @@ function ConceptPanel({ conceptId, concept, state, setState, onClose }: ConceptP
             <option value="deprecated">Deprecated</option>
           </select>
         </label>
-        <button onClick={handleSave} className="save-panel-btn">Save Changes</button>
+
+        <div style={{ marginTop: '24px', borderTop: '1px solid #e2e8f0', paddingTop: '16px' }}>
+          <label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span>Silver Models ({editedConcept.silver_models?.length || 0}):</span>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+              <input
+                type="text"
+                value={newSilverModel}
+                onChange={(e) => setNewSilverModel(e.target.value)}
+                placeholder="Enter model name..."
+                style={{ flex: 1 }}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && newSilverModel.trim()) {
+                    setEditedConcept({
+                      ...editedConcept,
+                      silver_models: [...(editedConcept.silver_models || []), newSilverModel.trim()]
+                    })
+                    setNewSilverModel('')
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (newSilverModel.trim()) {
+                    setEditedConcept({
+                      ...editedConcept,
+                      silver_models: [...(editedConcept.silver_models || []), newSilverModel.trim()]
+                    })
+                    setNewSilverModel('')
+                  }
+                }}
+                style={{ padding: '6px 12px', fontSize: '14px' }}
+              >
+                Add
+              </button>
+            </div>
+            {editedConcept.silver_models && editedConcept.silver_models.length > 0 && (
+              <div style={{ maxHeight: '120px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '8px' }}>
+                {editedConcept.silver_models.map((model, idx) => (
+                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
+                    <span style={{ fontSize: '13px', fontFamily: 'monospace' }}>{model}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditedConcept({
+                          ...editedConcept,
+                          silver_models: editedConcept.silver_models.filter((_, i) => i !== idx)
+                        })
+                      }}
+                      style={{ padding: '2px 8px', fontSize: '12px', color: '#ef4444' }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </label>
+        </div>
+
+        <div style={{ marginTop: '16px' }}>
+          <label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span>Gold Models ({editedConcept.gold_models?.length || 0}):</span>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+              <input
+                type="text"
+                value={newGoldModel}
+                onChange={(e) => setNewGoldModel(e.target.value)}
+                placeholder="Enter model name..."
+                style={{ flex: 1 }}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && newGoldModel.trim()) {
+                    setEditedConcept({
+                      ...editedConcept,
+                      gold_models: [...(editedConcept.gold_models || []), newGoldModel.trim()]
+                    })
+                    setNewGoldModel('')
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (newGoldModel.trim()) {
+                    setEditedConcept({
+                      ...editedConcept,
+                      gold_models: [...(editedConcept.gold_models || []), newGoldModel.trim()]
+                    })
+                    setNewGoldModel('')
+                  }
+                }}
+                style={{ padding: '6px 12px', fontSize: '14px' }}
+              >
+                Add
+              </button>
+            </div>
+            {editedConcept.gold_models && editedConcept.gold_models.length > 0 && (
+              <div style={{ maxHeight: '120px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '8px' }}>
+                {editedConcept.gold_models.map((model, idx) => (
+                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
+                    <span style={{ fontSize: '13px', fontFamily: 'monospace' }}>{model}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditedConcept({
+                          ...editedConcept,
+                          gold_models: editedConcept.gold_models.filter((_, i) => i !== idx)
+                        })
+                      }}
+                      style={{ padding: '2px 8px', fontSize: '12px', color: '#ef4444' }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </label>
+        </div>
+
+        <button onClick={handleSave} className="save-panel-btn" style={{ marginTop: '16px' }}>Save Changes</button>
       </div>
     </div>
   )
@@ -617,10 +760,12 @@ interface RelationshipPanelProps {
   state: State
   setState: (state: State) => void
   onClose: () => void
+  availableModels: { silver: string[]; gold: string[] }
 }
 
-function RelationshipPanel({ relationshipId, relationship, state, setState, onClose }: RelationshipPanelProps) {
+function RelationshipPanel({ relationshipId, relationship, state, setState, onClose, availableModels }: RelationshipPanelProps) {
   const [editedRel, setEditedRel] = useState(relationship)
+  const [newRealizedByModel, setNewRealizedByModel] = useState('')
 
   const handleSave = () => {
     setState({
@@ -696,7 +841,70 @@ function RelationshipPanel({ relationshipId, relationship, state, setState, onCl
             style={{ fontFamily: 'monospace', fontSize: '12px' }}
           />
         </label>
-        <button onClick={handleSave} className="save-panel-btn">Save Changes</button>
+
+        <div style={{ marginTop: '24px', borderTop: '1px solid #e2e8f0', paddingTop: '16px' }}>
+          <label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span>Realized By Models ({editedRel.realized_by?.length || 0}):</span>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+              <input
+                type="text"
+                value={newRealizedByModel}
+                onChange={(e) => setNewRealizedByModel(e.target.value)}
+                placeholder="Enter model name..."
+                style={{ flex: 1 }}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && newRealizedByModel.trim()) {
+                    setEditedRel({
+                      ...editedRel,
+                      realized_by: [...(editedRel.realized_by || []), newRealizedByModel.trim()]
+                    })
+                    setNewRealizedByModel('')
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (newRealizedByModel.trim()) {
+                    setEditedRel({
+                      ...editedRel,
+                      realized_by: [...(editedRel.realized_by || []), newRealizedByModel.trim()]
+                    })
+                    setNewRealizedByModel('')
+                  }
+                }}
+                style={{ padding: '6px 12px', fontSize: '14px' }}
+              >
+                Add
+              </button>
+            </div>
+            {editedRel.realized_by && editedRel.realized_by.length > 0 && (
+              <div style={{ maxHeight: '120px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '8px' }}>
+                {editedRel.realized_by.map((model, idx) => (
+                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
+                    <span style={{ fontSize: '13px', fontFamily: 'monospace' }}>{model}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditedRel({
+                          ...editedRel,
+                          realized_by: editedRel.realized_by.filter((_, i) => i !== idx)
+                        })
+                      }}
+                      style={{ padding: '2px 8px', fontSize: '12px', color: '#ef4444' }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </label>
+        </div>
+
+        <button onClick={handleSave} className="save-panel-btn" style={{ marginTop: '16px' }}>Save Changes</button>
       </div>
     </div>
   )

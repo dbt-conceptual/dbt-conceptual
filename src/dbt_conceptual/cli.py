@@ -47,8 +47,8 @@ def status(
     # Load configuration
     config = Config.load(
         project_dir=project_dir,
-        silver_paths=list(silver_paths) if silver_paths else None,
-        gold_paths=list(gold_paths) if gold_paths else None,
+        path_silver=list(silver_paths) if silver_paths else None,
+        path_gold=list(gold_paths) if gold_paths else None,
     )
 
     # Check if conceptual.yml exists
@@ -220,8 +220,8 @@ def validate(
     # Load configuration
     config = Config.load(
         project_dir=project_dir,
-        silver_paths=list(silver_paths) if silver_paths else None,
-        gold_paths=list(gold_paths) if gold_paths else None,
+        path_silver=list(silver_paths) if silver_paths else None,
+        path_gold=list(gold_paths) if gold_paths else None,
     )
 
     # Check if conceptual.yml exists
