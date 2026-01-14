@@ -417,6 +417,15 @@ interface ConceptPanelProps {
 
 function ConceptPanel({ conceptId, concept, state, setState, onClose }: ConceptPanelProps) {
   const [editedConcept, setEditedConcept] = useState(concept)
+  const [customDomain, setCustomDomain] = useState('')
+  const [customOwner, setCustomOwner] = useState('')
+
+  // Get unique owners from all concepts
+  const existingOwners = Array.from(new Set(
+    Object.values(state.concepts)
+      .map(c => c.owner)
+      .filter(o => o && o.trim() !== '')
+  )).sort()
 
   const handleSave = () => {
     setState({
@@ -464,25 +473,77 @@ function ConceptPanel({ conceptId, concept, state, setState, onClose }: ConceptP
         </label>
         <label>
           Domain:
-          <select
-            value={editedConcept.domain || ''}
-            onChange={(e) => setEditedConcept({ ...editedConcept, domain: e.target.value })}
-          >
-            <option value="">None</option>
-            {Object.keys(state.domains).map((domainId) => (
-              <option key={domainId} value={domainId}>
-                {state.domains[domainId].name}
-              </option>
-            ))}
-          </select>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+            <select
+              value={editedConcept.domain || ''}
+              onChange={(e) => {
+                if (e.target.value === '__custom__') {
+                  setCustomDomain('')
+                } else {
+                  setEditedConcept({ ...editedConcept, domain: e.target.value })
+                  setCustomDomain('')
+                }
+              }}
+              style={{ flex: 1 }}
+            >
+              <option value="">None</option>
+              {Object.keys(state.domains).map((domainId) => (
+                <option key={domainId} value={domainId}>
+                  {state.domains[domainId].name}
+                </option>
+              ))}
+              <option value="__custom__">+ Add new domain...</option>
+            </select>
+          </div>
+          {(editedConcept.domain === '' || customDomain !== '') && (
+            <input
+              type="text"
+              value={customDomain}
+              onChange={(e) => {
+                setCustomDomain(e.target.value)
+                setEditedConcept({ ...editedConcept, domain: e.target.value })
+              }}
+              placeholder="Enter new domain ID (e.g., 'sales', 'finance')"
+              style={{ marginTop: '8px' }}
+            />
+          )}
         </label>
         <label>
           Owner:
-          <input
-            type="text"
-            value={editedConcept.owner || ''}
-            onChange={(e) => setEditedConcept({ ...editedConcept, owner: e.target.value })}
-          />
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+            <select
+              value={editedConcept.owner || ''}
+              onChange={(e) => {
+                if (e.target.value === '__custom__') {
+                  setCustomOwner('')
+                } else {
+                  setEditedConcept({ ...editedConcept, owner: e.target.value })
+                  setCustomOwner('')
+                }
+              }}
+              style={{ flex: 1 }}
+            >
+              <option value="">None</option>
+              {existingOwners.map((owner) => (
+                <option key={owner} value={owner}>
+                  {owner}
+                </option>
+              ))}
+              <option value="__custom__">+ Add new owner...</option>
+            </select>
+          </div>
+          {(editedConcept.owner === '' || customOwner !== '') && (
+            <input
+              type="text"
+              value={customOwner}
+              onChange={(e) => {
+                setCustomOwner(e.target.value)
+                setEditedConcept({ ...editedConcept, owner: e.target.value })
+              }}
+              placeholder="Enter owner name (e.g., 'data_team', 'analytics')"
+              style={{ marginTop: '8px' }}
+            />
+          )}
         </label>
         <label>
           Status:
