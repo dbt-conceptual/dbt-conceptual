@@ -557,7 +557,9 @@ def sync(project_dir: Optional[Path], create_stubs: bool, model: Optional[str]) 
 )
 @click.option(
     "--format",
-    type=click.Choice(["mermaid", "excalidraw", "coverage"], case_sensitive=False),
+    type=click.Choice(
+        ["mermaid", "excalidraw", "coverage", "bus-matrix"], case_sensitive=False
+    ),
     default="mermaid",
     help="Export format",
 )
@@ -575,8 +577,10 @@ def export(project_dir: Optional[Path], format: str, output: Optional[Path]) -> 
         dbt-conceptual export --format mermaid -o diagram.mmd
         dbt-conceptual export --format excalidraw -o diagram.excalidraw
         dbt-conceptual export --format coverage -o coverage.html
+        dbt-conceptual export --format bus-matrix -o bus-matrix.html
     """
     from dbt_conceptual.exporter import (
+        export_bus_matrix,
         export_coverage,
         export_excalidraw,
         export_mermaid,
@@ -626,6 +630,15 @@ def export(project_dir: Optional[Path], format: str, output: Optional[Path]) -> 
             import sys
 
             export_coverage(state, sys.stdout)
+    elif format == "bus-matrix":
+        if output:
+            with open(output, "w") as f:
+                export_bus_matrix(state, f)
+            console.print(f"[green]✓ Exported to {output}[/green]")
+        else:
+            import sys
+
+            export_bus_matrix(state, sys.stdout)
 
 
 if __name__ == "__main__":
