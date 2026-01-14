@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dbt-conceptual"
-version = "0.2.1"
+version = "0.2.2"
 description = "Bridge the gap between conceptual models and your lakehouse"
 readme = "README.md"
 license = "MIT"
