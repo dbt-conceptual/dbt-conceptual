@@ -152,7 +152,7 @@ def export_excalidraw(state: ProjectState, output: TextIO) -> None:
         )
 
     # Create relationship arrows
-    for rel_id, rel in state.relationships.items():
+    for _rel_id, rel in state.relationships.items():
         from_concept = rel.from_concept
         to_concept = rel.to_concept
 

@@ -28,8 +28,8 @@ def export_mermaid(state: ProjectState, output: TextIO) -> None:
         output.write(f"    {concept_id.upper()} {{\n")
 
         # Add basic attributes
-        output.write(f'        string id "Primary Key"\n')
-        output.write(f'        string name "Display Name"\n')
+        output.write('        string id "Primary Key"\n')
+        output.write('        string name "Display Name"\n')
 
         # Add metadata as comment
         if concept.owner:
@@ -50,7 +50,7 @@ def export_mermaid(state: ProjectState, output: TextIO) -> None:
         output.write("    }\n")
 
     # Write relationships
-    for rel_id, rel in state.relationships.items():
+    for _rel_id, rel in state.relationships.items():
         # Parse cardinality
         cardinality = rel.cardinality or "1:N"
         from_card, to_card = cardinality.split(":")

@@ -557,7 +557,7 @@ def sync(project_dir: Optional[Path], create_stubs: bool, model: Optional[str]) 
 )
 @click.option(
     "--format",
-    type=click.Choice(["mermaid", "excalidraw"], case_sensitive=False),
+    type=click.Choice(["mermaid", "excalidraw", "coverage"], case_sensitive=False),
     default="mermaid",
     help="Export format",
 )
@@ -574,8 +574,13 @@ def export(project_dir: Optional[Path], format: str, output: Optional[Path]) -> 
         dbt-conceptual export --format mermaid
         dbt-conceptual export --format mermaid -o diagram.mmd
         dbt-conceptual export --format excalidraw -o diagram.excalidraw
+        dbt-conceptual export --format coverage -o coverage.html
     """
-    from dbt_conceptual.exporter import export_excalidraw, export_mermaid
+    from dbt_conceptual.exporter import (
+        export_coverage,
+        export_excalidraw,
+        export_mermaid,
+    )
 
     config = Config.load(project_dir=project_dir)
 
@@ -612,6 +617,15 @@ def export(project_dir: Optional[Path], format: str, output: Optional[Path]) -> 
             import sys
 
             export_excalidraw(state, sys.stdout)
+    elif format == "coverage":
+        if output:
+            with open(output, "w") as f:
+                export_coverage(state, f)
+            console.print(f"[green]✓ Exported to {output}[/green]")
+        else:
+            import sys
+
+            export_coverage(state, sys.stdout)
 
 
 if __name__ == "__main__":
