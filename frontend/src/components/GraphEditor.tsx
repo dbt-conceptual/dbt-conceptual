@@ -259,13 +259,6 @@ function ConceptPanel({ conceptId, concept, state, setState, onClose }: ConceptP
           />
         </label>
         <label>
-          Description:
-          <textarea
-            value={editedConcept.description || ''}
-            onChange={(e) => setEditedConcept({ ...editedConcept, description: e.target.value })}
-          />
-        </label>
-        <label>
           Definition:
           <textarea
             value={editedConcept.definition || ''}
@@ -378,13 +371,6 @@ function RelationshipPanel({ relationshipId, relationship, state, setState, onCl
             value={editedRel.cardinality || ''}
             placeholder="e.g., 1:N, 1:1, N:M"
             onChange={(e) => setEditedRel({ ...editedRel, cardinality: e.target.value })}
-          />
-        </label>
-        <label>
-          Description:
-          <textarea
-            value={editedRel.description || ''}
-            onChange={(e) => setEditedRel({ ...editedRel, description: e.target.value })}
           />
         </label>
         <button onClick={handleSave} className="save-panel-btn">Save Changes</button>

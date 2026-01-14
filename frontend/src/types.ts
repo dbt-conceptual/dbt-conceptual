@@ -1,15 +1,11 @@
 export interface Domain {
   name: string;
-  display_name?: string;
-  description?: string;
+  display_name: string;
   color?: string;
-  owner?: string;
 }
 
 export interface Concept {
   name: string;
-  display_name?: string;
-  description?: string;
   definition?: string;
   domain?: string;
   owner?: string;
@@ -23,7 +19,6 @@ export interface Relationship {
   from_concept: string;
   to_concept: string;
   cardinality?: string;
-  description?: string;
   realized_by: string[];
 }
 

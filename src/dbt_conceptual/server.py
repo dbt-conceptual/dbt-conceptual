@@ -1,16 +1,14 @@
 """Flask web server for conceptual model UI."""
 
-import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Union
 
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, Response, jsonify, request, send_from_directory  # type: ignore
 
 from dbt_conceptual.config import Config
 from dbt_conceptual.exporter.bus_matrix import export_bus_matrix
 from dbt_conceptual.exporter.coverage import export_coverage
-from dbt_conceptual.parser import ConceptualParser
-from dbt_conceptual.state import StateBuilder
+from dbt_conceptual.parser import StateBuilder
 
 
 def create_app(project_dir: Path) -> Flask:
@@ -29,7 +27,7 @@ def create_app(project_dir: Path) -> Flask:
     config = Config.load(project_dir=project_dir)
 
     @app.route("/")
-    def index() -> str:
+    def index() -> Union[str, Response]:
         """Serve the main UI page."""
         static_dir = Path(__file__).parent / "static"
         if (static_dir / "index.html").exists():
@@ -71,17 +69,13 @@ def create_app(project_dir: Path) -> Flask:
                     domain_id: {
                         "name": domain.name,
                         "display_name": domain.display_name,
-                        "description": domain.description,
                         "color": domain.color,
-                        "owner": domain.owner,
                     }
                     for domain_id, domain in state.domains.items()
                 },
                 "concepts": {
                     concept_id: {
                         "name": concept.name,
-                        "display_name": concept.display_name,
-                        "description": concept.description,
                         "definition": concept.definition,
                         "domain": concept.domain,
                         "owner": concept.owner,
@@ -97,7 +91,6 @@ def create_app(project_dir: Path) -> Flask:
                         "from_concept": rel.from_concept,
                         "to_concept": rel.to_concept,
                         "cardinality": rel.cardinality,
-                        "description": rel.description,
                         "realized_by": rel.realized_by or [],
                     }
                     for rel_id, rel in state.relationships.items()
@@ -117,7 +110,7 @@ def create_app(project_dir: Path) -> Flask:
                 return jsonify({"error": "No data provided"}), 400
 
             # Find conceptual.yml file
-            conceptual_file = config.conceptual_dir / "conceptual.yml"
+            conceptual_file = config.conceptual_file
             if not conceptual_file.exists():
                 return jsonify({"error": "conceptual.yml not found"}), 404
 
@@ -142,8 +135,7 @@ def create_app(project_dir: Path) -> Flask:
                         k: v
                         for k, v in concept.items()
                         if v is not None
-                        and k
-                        not in ["display_name", "silver_models", "gold_models"]
+                        and k not in ["display_name", "silver_models", "gold_models"]
                     }
                     for concept_id, concept in data["concepts"].items()
                 }
