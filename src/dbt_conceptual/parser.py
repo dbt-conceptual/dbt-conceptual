@@ -1,6 +1,5 @@
 """Parser for conceptual.yml and dbt schema files."""
 
-
 import yaml
 
 from dbt_conceptual.config import Config
