@@ -1,0 +1,12 @@
+This is a temporary file to test the PR workflow.
+
+Testing:
+- Path-based change detection
+- Lint checks
+- Test matrix (Python 3.9-3.12)
+- Coverage reporting
+- Security scanning
+- PR summary comments
+- Required checks gate
+
+This file will be deleted after testing.
