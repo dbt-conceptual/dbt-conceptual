@@ -449,6 +449,17 @@ function ConceptPanel({ conceptId, concept, state, setState, onClose }: ConceptP
           <textarea
             value={editedConcept.definition || ''}
             onChange={(e) => setEditedConcept({ ...editedConcept, definition: e.target.value })}
+            rows={3}
+          />
+        </label>
+        <label>
+          Description (Markdown):
+          <textarea
+            value={editedConcept.description || ''}
+            onChange={(e) => setEditedConcept({ ...editedConcept, description: e.target.value })}
+            placeholder="Supports markdown formatting..."
+            rows={6}
+            style={{ fontFamily: 'monospace', fontSize: '12px' }}
           />
         </label>
         <label>
@@ -551,12 +562,29 @@ function RelationshipPanel({ relationshipId, relationship, state, setState, onCl
           </select>
         </label>
         <label>
-          Cardinality:
-          <input
-            type="text"
+          Cardinality (informational):
+          <select
             value={editedRel.cardinality || ''}
-            placeholder="e.g., 1:N, 1:1, N:M"
             onChange={(e) => setEditedRel({ ...editedRel, cardinality: e.target.value })}
+          >
+            <option value="">Not specified</option>
+            <option value="1:1">1:1 (One to One)</option>
+            <option value="1:N">1:N (One to Many)</option>
+            <option value="N:1">N:1 (Many to One)</option>
+            <option value="N:M">N:M (Many to Many)</option>
+          </select>
+          <small style={{ display: 'block', marginTop: '4px', color: '#64748b', fontSize: '11px' }}>
+            Note: Cardinality is for documentation only and is not enforced.
+          </small>
+        </label>
+        <label>
+          Description (Markdown):
+          <textarea
+            value={editedRel.description || ''}
+            onChange={(e) => setEditedRel({ ...editedRel, description: e.target.value })}
+            placeholder="Supports markdown formatting..."
+            rows={6}
+            style={{ fontFamily: 'monospace', fontSize: '12px' }}
           />
         </label>
         <button onClick={handleSave} className="save-panel-btn">Save Changes</button>

@@ -12,6 +12,7 @@ class ConceptState:
     domain: Optional[str] = None
     owner: Optional[str] = None
     definition: Optional[str] = None
+    description: Optional[str] = None  # Markdown description
     status: str = "stub"  # complete, draft, stub, deprecated
     silver_models: list[str] = field(default_factory=list)
     gold_models: list[str] = field(default_factory=list)
@@ -27,6 +28,7 @@ class RelationshipState:
     from_concept: str
     to_concept: str
     cardinality: Optional[str] = None
+    description: Optional[str] = None  # Markdown description
     status: str = "complete"
     realized_by: list[str] = field(default_factory=list)
 
