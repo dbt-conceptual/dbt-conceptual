@@ -62,7 +62,7 @@ class DbtProjectScanner:
         Returns:
             List of model dictionaries with name, meta, and path information
         """
-        models = []
+        models: list[dict] = []
         if "models" not in schema_data:
             return models
 

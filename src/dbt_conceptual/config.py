@@ -69,7 +69,13 @@ class Config:
         if gold_paths is not None:
             config_data["gold_paths"] = gold_paths
 
-        return cls(project_dir=project_dir, **config_data)
+        return cls(
+            project_dir=project_dir,
+            conceptual_path=config_data["conceptual_path"],  # type: ignore[arg-type]
+            silver_paths=config_data["silver_paths"],  # type: ignore[arg-type]
+            gold_paths=config_data["gold_paths"],  # type: ignore[arg-type]
+            strict=config_data["strict"],  # type: ignore[arg-type]
+        )
 
     def get_layer(self, model_path: str) -> Optional[str]:
         """Detect layer from path. Returns 'silver', 'gold', or None."""
