@@ -461,8 +461,9 @@ def sync(project_dir: Optional[Path], create_stubs: bool, model: Optional[str]) 
     orphans = state.orphan_models
     if model:
         # Filter to specific model
-        if model in orphans:
-            orphans = [model]
+        orphan_names = [o.name for o in orphans]
+        if model in orphan_names:
+            orphans = [o for o in orphans if o.name == model]
         else:
             console.print(f"[yellow]Model '{model}' is not an orphan[/yellow]")
             if model in [m for c in state.concepts.values() for m in c.gold_models]:
@@ -485,7 +486,7 @@ def sync(project_dir: Optional[Path], create_stubs: bool, model: Optional[str]) 
     # Display orphans
     console.print(f"\n[bold]Found {len(orphans)} orphan model(s):[/bold]")
     for orphan in orphans:
-        console.print(f"  - {orphan}")
+        console.print(f"  - {orphan.name}")
 
     if not create_stubs:
         console.print(
@@ -508,7 +509,7 @@ def sync(project_dir: Optional[Path], create_stubs: bool, model: Optional[str]) 
     for orphan in orphans:
         # Generate concept ID from model name
         # Strip prefixes like dim_, fact_, stg_
-        concept_id = orphan
+        concept_id = orphan.name
         for prefix in ["dim_", "fact_", "stg_", "fct_", "bridge_"]:
             if concept_id.startswith(prefix):
                 concept_id = concept_id[len(prefix) :]
@@ -517,16 +518,28 @@ def sync(project_dir: Optional[Path], create_stubs: bool, model: Optional[str]) 
         # Check if concept already exists
         if concept_id in conceptual_data["concepts"]:
             console.print(
-                f"[yellow]Skipping {orphan}: concept '{concept_id}' already exists[/yellow]"
+                f"[yellow]Skipping {orphan.name}: concept '{concept_id}' already exists[/yellow]"
             )
             continue
 
-        # Create stub
-        conceptual_data["concepts"][concept_id] = {
+        # Create stub with data from model if available
+        stub_data: dict[str, str | None] = {
             "name": concept_id.replace("_", " ").title(),
             "status": "stub",
         }
-        stubs_created.append((orphan, concept_id))
+
+        # Use model description as definition if available
+        if orphan.description:
+            stub_data["definition"] = orphan.description
+
+        # Use meta.domain if available
+        if orphan.domain:
+            stub_data["domain"] = orphan.domain
+
+        conceptual_data["concepts"][concept_id] = {
+            k: v for k, v in stub_data.items() if v is not None
+        }
+        stubs_created.append((orphan.name, concept_id))
 
     if not stubs_created:
         console.print("[yellow]No stubs created (concepts already exist)[/yellow]")

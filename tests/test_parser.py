@@ -319,4 +319,9 @@ def test_state_builder_tracks_orphans() -> None:
         state = builder.build()
 
         # Check that orphan was tracked
-        assert "dim_orphan" in state.orphan_models
+        orphan_names = [o.name for o in state.orphan_models]
+        assert "dim_orphan" in orphan_names
+        # Verify orphan has expected attributes
+        orphan = state.orphan_models[0]
+        assert orphan.layer == "gold"
+        assert orphan.path == "models/gold"

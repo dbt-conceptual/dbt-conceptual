@@ -7,6 +7,7 @@ from dbt_conceptual.scanner import DbtProjectScanner
 from dbt_conceptual.state import (
     ConceptState,
     DomainState,
+    OrphanModel,
     ProjectState,
     RelationshipState,
 )
@@ -188,7 +189,14 @@ class StateBuilder:
             # Track orphan models (models without concept or realizes)
             if "concept" not in meta and "realizes" not in meta:
                 if layer in ("silver", "gold"):  # Only track layered models as orphans
-                    state.orphan_models.append(model_name)
+                    orphan = OrphanModel(
+                        name=model_name,
+                        description=model.get("description"),
+                        domain=meta.get("domain"),
+                        layer=layer,
+                        path=model.get("path"),
+                    )
+                    state.orphan_models.append(orphan)
 
         # Parse bronze dependencies from manifest.json if available
         self._parse_bronze_dependencies(state)

@@ -78,6 +78,7 @@ class DbtProjectScanner:
                 continue
 
             meta = model.get("meta", {})
+            description = model.get("description")
 
             # Determine layer
             layer = self.config.get_layer(str(rel_path))
@@ -88,6 +89,7 @@ class DbtProjectScanner:
             models.append(
                 {
                     "name": model_name,
+                    "description": description,
                     "meta": meta,
                     "path": str(rel_path),
                     "layer": layer,
