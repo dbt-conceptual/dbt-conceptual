@@ -77,7 +77,7 @@ def create_app(project_dir: Path) -> Flask:
                 "concepts": {
                     concept_id: {
                         "name": concept.name,
-                        "description": concept.description,
+                        "definition": concept.definition,
                         "domain": concept.domain,
                         "owner": concept.owner,
                         "status": concept.status,
