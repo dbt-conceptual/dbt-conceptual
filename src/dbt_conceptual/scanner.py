@@ -28,7 +28,7 @@ class DbtProjectScanner:
         project_dir = self.config.project_dir
 
         # Search in configured silver and gold paths
-        search_paths = self.config.path_silver + self.config.path_gold
+        search_paths = self.config.silver_paths + self.config.gold_paths
 
         for search_path in search_paths:
             full_path = project_dir / search_path
@@ -130,7 +130,7 @@ class DbtProjectScanner:
         models: dict[str, list[str]] = {"silver": [], "gold": []}
 
         # Scan silver paths
-        for search_path in self.config.path_silver:
+        for search_path in self.config.silver_paths:
             full_path = project_dir / search_path
             if full_path.exists():
                 for sql_file in full_path.rglob("*.sql"):
@@ -140,7 +140,7 @@ class DbtProjectScanner:
                         models["silver"].append(model_name)
 
         # Scan gold paths
-        for search_path in self.config.path_gold:
+        for search_path in self.config.gold_paths:
             full_path = project_dir / search_path
             if full_path.exists():
                 for sql_file in full_path.rglob("*.sql"):

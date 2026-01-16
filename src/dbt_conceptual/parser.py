@@ -61,7 +61,7 @@ class ConceptualModelParser:
                     name=concept_data.get("name", concept_id),
                     domain=concept_data.get("domain"),
                     owner=concept_data.get("owner"),
-                    description=concept_data.get("description"),
+                    definition=concept_data.get("definition"),
                     status=concept_data.get("status", "stub"),
                     color=concept_data.get("color"),
                     bronze_models=concept_data.get("bronze_models", []),
@@ -86,7 +86,7 @@ class ConceptualModelParser:
                     from_concept=from_concept,
                     to_concept=to_concept,
                     cardinality=rel.get("cardinality"),
-                    description=rel.get("description"),
+                    definition=rel.get("definition"),
                     status=rel.get("status", "complete"),
                     realized_by=rel.get("realized_by", []),
                 )
@@ -201,7 +201,6 @@ class StateBuilder:
         Finds source tables that silver models depend on and adds them as bronze_models.
         """
         import json
-        from pathlib import Path
 
         manifest_path = self.config.project_dir / "target" / "manifest.json"
         if not manifest_path.exists():
@@ -219,7 +218,6 @@ class StateBuilder:
 
             # Parse dependencies for each silver model
             nodes = manifest.get("nodes", {})
-            sources = manifest.get("sources", {})
 
             for node_id, node_data in nodes.items():
                 if not node_id.startswith("model."):

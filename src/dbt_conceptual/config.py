@@ -13,8 +13,8 @@ class Config:
 
     project_dir: Path
     conceptual_path: str = "models/conceptual"
-    path_silver: list[str] = field(default_factory=lambda: ["models/silver"])
-    path_gold: list[str] = field(default_factory=lambda: ["models/gold"])
+    silver_paths: list[str] = field(default_factory=lambda: ["models/silver"])
+    gold_paths: list[str] = field(default_factory=lambda: ["models/gold"])
     strict: bool = True
 
     @property
@@ -32,8 +32,8 @@ class Config:
         cls,
         project_dir: Optional[Path] = None,
         conceptual_path: Optional[str] = None,
-        path_silver: Optional[list[str]] = None,
-        path_gold: Optional[list[str]] = None,
+        silver_paths: Optional[list[str]] = None,
+        gold_paths: Optional[list[str]] = None,
     ) -> "Config":
         """Load configuration from dbt_project.yml and CLI overrides.
 
@@ -47,8 +47,8 @@ class Config:
         # Start with defaults
         config_data = {
             "conceptual_path": "models/conceptual",
-            "path_silver": ["models/silver"],
-            "path_gold": ["models/gold"],
+            "silver_paths": ["models/silver"],
+            "gold_paths": ["models/gold"],
             "strict": True,
         }
 
@@ -64,27 +64,27 @@ class Config:
         # Apply CLI overrides
         if conceptual_path is not None:
             config_data["conceptual_path"] = conceptual_path
-        if path_silver is not None:
-            config_data["path_silver"] = path_silver
-        if path_gold is not None:
-            config_data["path_gold"] = path_gold
+        if silver_paths is not None:
+            config_data["silver_paths"] = silver_paths
+        if gold_paths is not None:
+            config_data["gold_paths"] = gold_paths
 
         return cls(
             project_dir=project_dir,
             conceptual_path=config_data["conceptual_path"],  # type: ignore[arg-type]
-            path_silver=config_data["path_silver"],  # type: ignore[arg-type]
-            path_gold=config_data["path_gold"],  # type: ignore[arg-type]
+            silver_paths=config_data["silver_paths"],  # type: ignore[arg-type]
+            gold_paths=config_data["gold_paths"],  # type: ignore[arg-type]
             strict=config_data["strict"],  # type: ignore[arg-type]
         )
 
     def get_layer(self, model_path: str) -> Optional[str]:
         """Detect layer from path. Returns 'silver', 'gold', or None."""
         # First check silver paths
-        for path in self.path_silver:
+        for path in self.silver_paths:
             if model_path.startswith(path):
                 return "silver"
         # Then check gold paths
-        for path in self.path_gold:
+        for path in self.gold_paths:
             if model_path.startswith(path):
                 return "gold"
         return None

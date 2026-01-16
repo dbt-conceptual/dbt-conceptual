@@ -220,7 +220,7 @@ def create_app(project_dir: Path) -> Flask:
 
             import yaml
 
-            with open(layout_file, "r") as f:
+            with open(layout_file) as f:
                 layout_data = yaml.safe_load(f) or {}
 
             return jsonify(layout_data.get("positions", {}))

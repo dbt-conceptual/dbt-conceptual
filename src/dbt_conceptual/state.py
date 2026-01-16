@@ -11,7 +11,7 @@ class ConceptState:
     name: str
     domain: Optional[str] = None
     owner: Optional[str] = None
-    description: Optional[str] = None  # Markdown description
+    definition: Optional[str] = None  # Markdown definition
     status: str = "stub"  # complete, draft, stub, deprecated
     color: Optional[str] = None  # Optional color override (defaults to domain color)
     bronze_models: list[str] = field(default_factory=list)  # Source dependencies
@@ -29,7 +29,7 @@ class RelationshipState:
     from_concept: str
     to_concept: str
     cardinality: Optional[str] = None
-    description: Optional[str] = None  # Markdown description
+    definition: Optional[str] = None  # Markdown definition
     status: str = "complete"
     realized_by: list[str] = field(default_factory=list)
 
