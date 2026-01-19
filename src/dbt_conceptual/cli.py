@@ -285,9 +285,9 @@ def orphans(
 @click.option(
     "--format",
     "output_format",
-    type=click.Choice(["human", "github"], case_sensitive=False),
+    type=click.Choice(["human", "github", "markdown"], case_sensitive=False),
     default="human",
-    help="Output format: human (default) or github (GitHub Actions annotations)",
+    help="Output format: human (default), github (GitHub Actions annotations), or markdown (job summary)",
 )
 @click.option(
     "--no-drafts",
@@ -331,16 +331,18 @@ def validate(
 
     if output_format == "github":
         _output_github_format(config, validator, issues)
+    elif output_format == "markdown":
+        _output_markdown_format(config, validator, issues)
     else:
         _output_human_format(config, state, validator, issues)
 
     # Exit with appropriate code
     if validator.has_errors():
-        if output_format != "github":
+        if output_format == "human":
             console.print("\n[red]FAILED[/red]")
         raise SystemExit(1)
     else:
-        if output_format != "github":
+        if output_format == "human":
             console.print("\n[green]PASSED[/green]")
         raise SystemExit(0)
 
@@ -370,6 +372,60 @@ def _output_github_format(
         f"Validation complete: {summary['errors']} errors, "
         f"{summary['warnings']} warnings, {summary['info']} info"
     )
+
+
+def _output_markdown_format(
+    config: Config,
+    validator: Validator,
+    issues: list,
+) -> None:
+    """Output validation results in GitHub-flavored markdown format."""
+    summary = validator.get_summary()
+
+    if validator.has_errors():
+        print("## ❌ Validation Failed\n")
+    else:
+        print("## ✅ Validation Passed\n")
+
+    # Summary table
+    print("| | Count |")
+    print("|---|-----|")
+    if summary["errors"]:
+        print(f"| 🔴 Errors | {summary['errors']} |")
+    if summary["warnings"]:
+        print(f"| 🟡 Warnings | {summary['warnings']} |")
+    if summary["info"]:
+        print(f"| ℹ️  Info | {summary['info']} |")
+    print()
+
+    # Group issues by severity
+    errors = [i for i in issues if i.severity == Severity.ERROR]
+    warnings = [i for i in issues if i.severity == Severity.WARNING]
+    infos = [i for i in issues if i.severity == Severity.INFO]
+
+    # Errors
+    if errors:
+        print("### Errors\n")
+        for issue in errors:
+            print(f"> **{issue.code}** — {issue.message}")
+            print(">")
+        print()
+
+    # Warnings
+    if warnings:
+        print("### Warnings\n")
+        for issue in warnings:
+            print(f"> **{issue.code}** — {issue.message}")
+            print(">")
+        print()
+
+    # Info
+    if infos:
+        print("### Info\n")
+        for issue in infos:
+            print(f"> **{issue.code}** — {issue.message}")
+            print(">")
+        print()
 
 
 def _output_human_format(
@@ -864,7 +920,7 @@ def serve(project_dir: Optional[Path], host: str, port: int) -> None:
 )
 @click.option(
     "--format",
-    type=click.Choice(["human", "github", "json"], case_sensitive=False),
+    type=click.Choice(["human", "github", "json", "markdown"], case_sensitive=False),
     default="human",
     help="Output format",
 )
@@ -895,7 +951,12 @@ def diff(base: str, format: str, project_dir: Optional[Path]) -> None:
     import tempfile
     from pathlib import Path
 
-    from dbt_conceptual.diff_formatter import format_github, format_human, format_json
+    from dbt_conceptual.diff_formatter import (
+        format_github,
+        format_human,
+        format_json,
+        format_markdown,
+    )
     from dbt_conceptual.differ import compute_diff
 
     project_dir = project_dir or Path.cwd()
@@ -1008,6 +1069,9 @@ def diff(base: str, format: str, project_dir: Optional[Path]) -> None:
                 print(output)  # Use print for GitHub Actions format
             elif format == "json":
                 output = format_json(conceptual_diff)
+                print(output)
+            elif format == "markdown":
+                output = format_markdown(conceptual_diff)
                 print(output)
 
             # Exit with error if there are changes and format is github
