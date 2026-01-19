@@ -1,150 +1,62 @@
 # dbt-conceptual
 
 [![PyPI version](https://img.shields.io/pypi/v/dbt-conceptual.svg)](https://pypi.org/project/dbt-conceptual/)
-[![Python versions](https://img.shields.io/pypi/pyversions/dbt-conceptual.svg)](https://pypi.org/project/dbt-conceptual/)
+[![Python ≥3.11](https://img.shields.io/badge/python-≥3.11-blue.svg)](https://pypi.org/project/dbt-conceptual/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/feriksen-personal/dbt-conceptual/actions/workflows/ci.yml/badge.svg)](https://github.com/feriksen-personal/dbt-conceptual/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/feriksen-personal/dbt-conceptual/branch/main/graph/badge.svg)](https://codecov.io/gh/feriksen-personal/dbt-conceptual)
-[![Downloads](https://img.shields.io/pypi/dm/dbt-conceptual.svg)](https://pypi.org/project/dbt-conceptual/)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-**Bridge the gap between conceptual models and your lakehouse.**
+**Continuous conceptual alignment for dbt projects.**
 
 ---
 
-## ⚠️ Opinionated by Design
+## What Died
 
-This tool is built for a specific architecture. It expects:
+The traditional data architecture paradigm: architects design conceptual models in isolation, hand them to engineers, validate against implementation. This assumed waterfall delivery, quarterly releases, co-located teams.
 
-- **dbt** — Your transformation layer
-- **Medallion architecture** — Silver (cleaned/conformed) → Gold (business/integrated)
-- **Dimensional modeling** — dims, facts, bridges in gold
+It produced beautiful diagrams that rotted the moment they were created.
 
-**What we're opinionated about:**
-- Naming conventions (`dim_`, `fact_`, `bridge_` prefixes)
-- Layer structure (silver/gold concepts)
-- Conceptual model in a single `conceptual.yml` file
+## What Replaced It
 
-**What we're flexible about:**
-- Whether you use one `schema.yml` per model or shared schema files
-- Your specific silver/gold path names (configurable)
-- Whether you use dbt groups, tags, or other organizational features
+Engineer autonomy. dbt democratized transformation. Teams ship daily. No gatekeepers, no handoffs.
 
-If that's not your stack, this tool is not for you. No judgment — just not the target audience.
+## What That Created
 
----
+Chaos.
 
-## The Problem
+The whiteboard session on day one is the last moment of shared understanding. After that, models proliferate without coherence, naming conventions drift, concepts duplicate across teams, tribal knowledge calcifies.
 
-Every data team has a conceptual model — *"we have Customers, Orders, Products"* — but it lives in PowerPoint, Visio, ERD tools, or people's heads. Disconnected from code. Diverging from reality. Rotting.
+Nobody knows what "customer" means anymore.
 
-```
-CONCEPTUAL MODEL                          LAKEHOUSE
-(slides, whiteboards, heads)              (dbt, Databricks, Snowflake)
+## The Bridge
 
-  Customer ── Order ── Product    →→→     dim_customer_shopify, dim_customer_crm,
-                                          dim_product, fact_order_lines,
-        🤷 GAP 🤷                          bridge_customer_segment...
-```
+Conceptual models still have value. They communicate meaning across teams, onboard new engineers, explain to the business what we've actually built.
 
-When someone asks *"Do we have Customer data?"* — you grep through 200 models hoping to find the answer.
+**dbt-conceptual** embeds conceptual thinking into modern data workflows:
 
-## The Solution
+- YAML alongside code, not diagrams in Confluence
+- Evolves with the project via git
+- Visibility through coverage reports, not enforcement through gates
+- Feeds downstream catalogs, doesn't compete with them
 
-**dbt-conceptual** tracks which business concepts your dbt models implement:
-
-```yaml
-# models/conceptual/conceptual.yml
-concepts:
-  customer:
-    domain: party
-    owner: customer_team
-    definition: "A person or company that purchases products"
-
-  order:
-    domain: transaction
-    owner: orders_team
-    definition: "A confirmed purchase by a customer"
-
-relationships:
-  - name: places
-    from: customer
-    to: order
-
-  - name: contains
-    from: order
-    to: product
-```
-
-```yaml
-# models/gold/dim_customer/dim_customer.yml
-models:
-  - name: dim_customer
-    meta:
-      concept: customer
-
-# models/gold/fact_order_lines/fact_order_lines.yml
-models:
-  - name: fact_order_lines
-    meta:
-      realizes:
-        - customer:places:order
-        - order:contains:product
-```
-
-Then visualize, validate, and export:
-
-```
-┌──────────────────────┐         ┌──────────────────────┐         ┌──────────────────────┐
-│      Customer        │         │        Order         │         │       Product        │
-│                      │         │                      │         │                      │
-│   [S:●●] [G:●]       │━places━▶│   [S:●]  [G:●]       │━contains▶│   [S:●]  [G:●]      │
-└──────────────────────┘         └──────────────────────┘         └──────────────────────┘
-```
+Not a return to the old paradigm. A bridge between what worked then and what works now.
 
 ---
 
 ## Installation
 
 ```bash
-# No signup required. No telemetry. No "please star this repo" popups.
 pip install dbt-conceptual
 ```
 
+No signup required. No telemetry. No "please star this repo" popups.
+
+---
+
 ## Quick Start
 
-Try it with the [jaffle-shop](https://github.com/dbt-labs/jaffle-shop) demo project:
+Define your business concepts in `models/conceptual/conceptual.yml`:
 
-```bash
-# Clone jaffle-shop
-git clone https://github.com/dbt-labs/jaffle-shop.git
-cd jaffle-shop
-
-# Install dbt-conceptual
-pip install dbt-conceptual[serve]
-
-# Initialize conceptual model
-dbt-conceptual init
-# This creates models/conceptual/conceptual.yml
-
-# Define your business concepts (see example below)
-# Edit models/conceptual/conceptual.yml
-
-# View coverage
-dbt-conceptual status
-
-# Launch interactive UI
-dbt-conceptual serve
-
-# Validate in CI
-dbt-conceptual validate
-
-# Export diagrams
-dbt-conceptual export --format excalidraw -o diagram.excalidraw
-```
-
-**Example conceptual.yml for jaffle-shop:**
 ```yaml
 version: 1
 
@@ -161,22 +73,21 @@ concepts:
     name: Customer
     domain: party
     definition: "A person or entity that places orders"
-    status: complete
 
   order:
     name: Order
     domain: transaction
     definition: "A purchase transaction made by a customer"
-    status: complete
 
 relationships:
-  - name: places
+  - verb: places
     from: customer
     to: order
     cardinality: "1:N"
 ```
 
-Then tag your dbt models:
+Tag your dbt models:
+
 ```yaml
 # models/customers.yml
 models:
@@ -192,15 +103,94 @@ models:
         - customer:places:order
 ```
 
+Track alignment:
+
+```bash
+# See what's implemented
+dbt-conceptual status
+
+# Validate in CI
+dbt-conceptual validate
+
+# Launch visual editor
+dbt-conceptual serve
+```
+
 ---
 
-## Features
+## How It Works
 
-### 📊 Coverage Tracking
+### YAML as Source of Truth
+
+Everything lives in `conceptual.yml`. Human-readable, git-friendly, diff-able. No proprietary formats, no database to manage, no sync to maintain.
+
+### Bi-Directional Sync
+
+The conceptual model and dbt project stay aligned:
+
+- **Top-down**: Define concepts, associate them with dbt models
+- **Bottom-up**: Scan dbt project for `meta.concept` tags, create stubs for undefined references
+
+Already have a dbt project? Run sync to create stubs from existing tags. Enrich incrementally. No big-bang migration required.
+
+```bash
+# Tag your existing models, then:
+dbt-conceptual sync --create-stubs
+
+# Output:
+# Created 12 concept stubs
+# Created 8 relationship stubs
+```
+
+### Domain-Aware
+
+Concepts and relationships are tagged to domains. Supports data mesh patterns where each domain owns its semantic model. Cross-domain relationships are explicit — you see the boundaries.
+
+### Medallion Layer Tracking
+
+Track which concepts are implemented at each layer:
+
+- **Gold**: Business-facing dimensions and facts (explicitly tagged via `meta.concept`)
+- **Silver**: Cleaned/conformed staging models (explicitly tagged via `meta.concept`)
+- **Bronze**: Raw sources feeding silver (inferred from manifest.json lineage)
+
+Bronze inference means you see upstream coverage without additional tagging burden.
+
+---
+
+## Visual Interface
+
+Launch a browser-based canvas for those who think spatially:
+
+```bash
+pip install dbt-conceptual[serve]
+dbt-conceptual serve
+```
+
+Open your browser to <http://127.0.0.1:8050>
+
+**Whiteboard-style canvas**:
+
+- Drag concepts to position them
+- Click concepts/relationships to edit properties
+- Verb labels on relationship lines
+- Domain-based coloring
+- Auto-save to YAML
+
+The canvas is just a view. Same YAML underneath. Edit in the UI, changes write to YAML. Edit YAML directly, UI reflects it. No lock-in, no separate artifact.
+
+**Integrated reports**:
+
+- Coverage tab: Which concepts are implemented, which layers have them
+- Bus Matrix tab: Dimensional conformance across fact tables
+
+---
+
+## Coverage Tracking
 
 See which concepts are implemented at each layer:
 
-```
+```text
 $ dbt-conceptual status
 
 Concepts by Domain
@@ -217,42 +207,15 @@ catalog (1 concept)
   ✓ product [complete]      [S:●]  [G:●]
 ```
 
-### 🎨 Interactive Web UI
+**Status meanings**:
 
-Launch a visual editor for your conceptual model with real-time editing:
+- `complete`: Has domain AND has ≥1 associated model
+- `draft`: Missing domain OR zero associated models
+- `stub`: Created from sync, needs enrichment
 
-```bash
-$ dbt-conceptual serve
-Starting dbt-conceptual UI server...
-Open your browser to: http://127.0.0.1:5000
-```
+---
 
-**Features:**
-- **Graph Editor** — Interactive force-directed graph visualization with D3.js
-  - Drag and position concepts
-  - Click concepts/relationships to edit
-  - Real-time visual updates
-  - Domain-based coloring
-  - Zoom and pan canvas
-- **Direct Editing** — Changes save directly to `conceptual.yml`
-  - Edit concept name, description, definition, domain, owner, status
-  - Edit relationship name, from/to concepts, cardinality, description
-  - No sync needed - what you see is what gets saved
-- **Integrated Reports** — View coverage and bus matrix in tabs
-  - Coverage Report tab shows concept completion and implementations
-  - Bus Matrix tab shows which fact tables realize which relationships
-  - Switch between Editor, Coverage, and Bus Matrix views
-
-**Installation:**
-```bash
-# UI requires Flask
-pip install dbt-conceptual[serve]
-
-# Or install Flask separately
-pip install flask
-```
-
-### ✅ CI Validation
+## CI Validation
 
 Catch drift before it ships:
 
@@ -262,175 +225,27 @@ $ dbt-conceptual validate
 ERROR: dim_customer_legacy references concept 'client' which does not exist
        Did you mean: 'customer'?
 
-ERROR: fact_returns realizes 'customer:returns:order' 
+ERROR: fact_returns realizes 'customer:returns:order'
        but relationship 'returns' does not exist
 ```
 
-### 📤 Export Formats
-
-```bash
-# Excalidraw — editable diagrams
-dbt-conceptual export --format excalidraw
-
-# PNG — static diagram image
-dbt-conceptual export --format png -o diagram.png
-
-# Mermaid — for docs and GitHub
-dbt-conceptual export --format mermaid
-
-# Coverage report — HTML dashboard
-dbt-conceptual export --format coverage
-
-# Bus matrix — dimensions vs facts
-dbt-conceptual export --format bus-matrix
-```
-
-**PNG Export Note:** Requires Pillow. Install with `pip install dbt-conceptual[png]`
-
----
-
-## How It Works
-
-### 1. Define Concepts
-
-Create `models/conceptual/conceptual.yml`:
-
-```yaml
-version: 1
-
-domains:
-  party:
-    name: "Party"
-    color: "#E3F2FD"
-  transaction:
-    name: "Transaction"
-    color: "#FFF3E0"
-  catalog:
-    name: "Catalog"
-    color: "#F1F8E9"
-
-concepts:
-  customer:
-    name: "Customer"
-    domain: party
-    owner: customer_team
-    definition: "A person or company that purchases products"
-    status: complete
-
-  order:
-    name: "Order"
-    domain: transaction
-    owner: orders_team
-    definition: "A confirmed purchase by a customer"
-    status: complete
-
-  product:
-    name: "Product"
-    domain: catalog
-    owner: catalog_team
-    definition: "An item available for purchase"
-    status: complete
-
-relationships:
-  - name: places
-    from: customer
-    to: order
-    cardinality: "1:N"
-
-  - name: contains
-    from: order
-    to: product
-    cardinality: "N:M"
-```
-
-### 2. Tag dbt Models
-
-Add `meta.concept` to dimensions:
-
-```yaml
-# models/gold/dim_customer/dim_customer.yml
-version: 2
-models:
-  - name: dim_customer
-    description: "Customer dimension"
-    meta:
-      concept: customer
-```
-
-Add `meta.realizes` to facts and bridges:
-
-```yaml
-# models/gold/fact_order_lines/fact_order_lines.yml
-version: 2
-models:
-  - name: fact_order_lines
-    description: "Order line items fact"
-    meta:
-      realizes:
-        - customer:places:order
-        - order:contains:product
-```
-
-### 3. Validate & Visualize
-
-```bash
-# Check everything links up
-dbt-conceptual validate
-
-# See coverage
-dbt-conceptual status
-
-# Open visual editor
-dbt-conceptual serve
-```
-
----
-
-## Bottom-Up Adoption
-
-Already have a dbt project? Start tagging models, then generate the conceptual model:
-
-```bash
-# Add tags to your existing schema.yml files
-# Then run:
-dbt-conceptual sync --create-stubs
-
-# Output:
-# Created 12 concept stubs
-# Created 8 relationship stubs
-# 
-# Run 'dbt-conceptual status' to see what needs enrichment
-```
-
-The tags ARE the adoption. The tool just makes them visible.
-
----
-
-## Configuration
-
-Works out of the box. Override in `dbt_project.yml` if needed:
+Configure which validations are errors, warnings, or ignored in `dbt_project.yml`:
 
 ```yaml
 vars:
   dbt_conceptual:
-    conceptual_path: models/conceptual    # default
-    silver_paths:
-      - models/silver                     # default
-      - models/staging                    # add custom paths
-    gold_paths:
-      - models/gold                       # default
-      - models/marts                      # add custom paths
+    validation:
+      orphan_models: warn          # Models not linked to any concept
+      unimplemented_concepts: warn # Concepts with no implementing models
+      unrealized_relationships: warn # Relationships with no realizing models
+      missing_definitions: ignore  # Concepts without definitions
 ```
 
-Or via CLI:
+Severity options: `error`, `warn`, `ignore`
 
-```bash
-dbt-conceptual validate --gold-paths models/marts
-```
+Unknown references (e.g., `meta.concept: nonexistent`) are always errors and cannot be configured.
 
----
-
-## CI/CD Integration
+### GitHub Actions Integration
 
 ```yaml
 # .github/workflows/ci.yml
@@ -452,41 +267,156 @@ jobs:
         run: dbt-conceptual validate --format github
 ```
 
-Use `--format github` for native GitHub Actions annotations. Errors and warnings will appear inline in PR diffs.
+Use `--format github` for native GitHub Actions annotations. Errors and warnings appear inline in PR diffs.
 
-### Validation Rules Configuration
+---
 
-Configure which validation rules are errors, warnings, or ignored in `dbt_project.yml`:
+## Export Formats
+
+```bash
+# Excalidraw — editable diagrams
+dbt-conceptual export --format excalidraw
+
+# PNG — static diagram image (requires: pip install dbt-conceptual[png])
+dbt-conceptual export --format png -o diagram.png
+
+# Mermaid — for docs and GitHub
+dbt-conceptual export --format mermaid
+
+# Coverage report — HTML dashboard
+dbt-conceptual export --format coverage
+
+# Bus matrix — dimensions vs facts
+dbt-conceptual export --format bus-matrix
+```
+
+---
+
+## Configuration
+
+Works out of the box. Override in `dbt_project.yml` if needed:
 
 ```yaml
 vars:
   dbt_conceptual:
-    validation:
-      orphan_models: warn          # Models not linked to any concept
-      unimplemented_concepts: warn # Concepts with no implementing models
-      unrealized_relationships: warn # Relationships with no realizing models
-      missing_definitions: ignore  # Concepts without definitions
-      domain_mismatch: warn        # Models with meta.domain != concept domain
+    conceptual_path: models/conceptual    # default
+    silver_paths:
+      - models/silver                     # default
+      - models/staging                    # add custom paths
+    gold_paths:
+      - models/gold                       # default
+      - models/marts                      # add custom paths
+    bronze_paths:
+      - models/bronze                     # default
 ```
 
-Severity options: `error`, `warn`, `ignore`
+Or via CLI:
 
-**Note:** Unknown references (e.g., `meta.concept: nonexistent`) are always errors and cannot be configured.
+```bash
+dbt-conceptual validate --gold-paths models/marts
+```
 
 ---
 
-## Documentation
+## Scope
 
-- [Full Documentation](https://dbt-conceptual.readthedocs.io/)
-- [Configuration Reference](docs/configuration.md)
-- [CLI Reference](docs/cli.md)
-- [Export Formats](docs/exports.md)
+### What It Is
+
+- Project-level conceptual modeling
+- Coherence within a single deliverable
+- Compatible with data mesh (each domain owns its model)
+- Visual helper for the underlying YAML
+
+### What It Isn't
+
+- Enterprise-wide conceptual hegemony
+- Replacement for data catalogs (Collibra, Alation, etc.)
+- Enforcement engine or deployment gate
+- A diagramming tool that happens to export YAML
+
+---
+
+## Opinionated by Design
+
+This tool works if you want lightweight conceptual modeling within a dbt project.
+
+**What we're opinionated about**:
+
+- YAML in repo (not diagrams in external tools)
+- Medallion architecture (bronze/silver/gold layers)
+- Dimensional modeling vocabulary (dims, facts, bridges)
+
+**What we're flexible about**:
+
+- Your specific folder names (configurable via paths)
+- Whether you use dbt groups, tags, or other organizational features
+- Whether you adopt top-down (design first) or bottom-up (sync from existing tags)
+
+If this doesn't match your stack, this tool is not for you. No judgment — just not the target audience.
+
+---
+
+## Target User
+
+The player-coach architect:
+
+- Writes code but thinks in systems
+- Advises teams without blocking them
+- Maintains context across a project
+- Cares about longevity, not just delivery
+
+This role exists in organizations that actually deliver. It's often informal — the senior engineer everyone consults, the one who notices drift. dbt-conceptual gives them legitimacy: coverage reports as evidence, conceptual models as artifacts they can point to.
+
+---
+
+## CLI Reference
+
+| Command | Description |
+| ------- | ----------- |
+| `dbt-conceptual init` | Create initial conceptual.yml |
+| `dbt-conceptual serve` | Start web UI server |
+| `dbt-conceptual status` | Show coverage status |
+| `dbt-conceptual validate` | Validate conceptual model |
+| `dbt-conceptual validate --no-drafts` | Fail if any draft/stub entities |
+| `dbt-conceptual sync` | Sync from dbt project |
+| `dbt-conceptual sync --create-stubs` | Create stubs for undefined references |
+| `dbt-conceptual export --format <fmt>` | Export diagram |
+| `dbt-conceptual list concepts` | List all concepts |
+| `dbt-conceptual list concepts --status draft` | List concepts by status |
+| `dbt-conceptual list relationships` | List all relationships |
+
+---
+
+## Example: jaffle-shop
+
+Try it with the [jaffle-shop](https://github.com/dbt-labs/jaffle-shop) demo project:
+
+```bash
+# Clone jaffle-shop
+git clone https://github.com/dbt-labs/jaffle-shop.git
+cd jaffle-shop
+
+# Install dbt-conceptual
+pip install dbt-conceptual[serve]
+
+# Initialize conceptual model
+dbt-conceptual init
+
+# Define your business concepts (edit models/conceptual/conceptual.yml)
+# Then tag your models (add meta.concept to schema.yml files)
+
+# View coverage
+dbt-conceptual status
+
+# Launch interactive UI
+dbt-conceptual serve
+```
 
 ---
 
 ## Contributing
 
-Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 PRs that work > PRs with extensive documentation about why they might work.
 
@@ -502,6 +432,7 @@ pytest
 # Run linting
 ruff check .
 black --check .
+mypy src/dbt_conceptual
 ```
 
 ---
@@ -512,11 +443,11 @@ MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
-## Acknowledgments
+## Origin Story
 
-Built with frustration from years of conceptual models rotting in PowerPoint, Visio, and expensive ERD software.
+Built from lived experience. Decades watching the old paradigm fail — beautiful models nobody used. Then watching the new paradigm fail differently — fast delivery, mounting chaos.
 
-No mass emails were sent to coordinate this project. No penguins were harmed in its making.
+This tool encodes what actually works: embedded architectural thinking, lightweight enough to survive contact with reality, opinionated enough to provide value.
 
 ---
 
