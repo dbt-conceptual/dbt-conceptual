@@ -1,153 +1,34 @@
-import { useState, useEffect } from 'react'
-import { State } from './types'
-import GraphEditor from './components/GraphEditor'
-import CoverageView from './components/CoverageView'
-import BusMatrixView from './components/BusMatrixView'
+import { useState } from 'react'
+import reactLogo from './assets/react.svg'
+import viteLogo from '/vite.svg'
 import './App.css'
 
-type Tab = 'editor' | 'coverage' | 'bus-matrix'
-
 function App() {
-  const [state, setState] = useState<State | null>(null)
-  const [activeTab, setActiveTab] = useState<Tab>('editor')
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [saving, setSaving] = useState(false)
-
-  // Load initial state
-  useEffect(() => {
-    loadState()
-  }, [])
-
-  // Auto-save when state changes (debounced)
-  useEffect(() => {
-    if (!state || loading) return
-
-    const timeoutId = setTimeout(() => {
-      saveState()
-    }, 500)
-
-    return () => clearTimeout(timeoutId)
-  }, [state])
-
-  const loadState = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const response = await fetch('/api/state')
-      if (!response.ok) {
-        throw new Error('Failed to load state')
-      }
-      const data = await response.json()
-      console.log('Loaded state:', data)
-      setState(data)
-    } catch (err) {
-      console.error('Load state error:', err)
-      setError(err instanceof Error ? err.message : 'Unknown error')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const saveState = async () => {
-    if (!state) return
-
-    try {
-      setSaving(true)
-      setError(null)
-      const response = await fetch('/api/state', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(state),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to save state')
-      }
-
-      const result = await response.json()
-      console.log('Saved:', result)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  console.log('App render - loading:', loading, 'error:', error, 'hasState:', !!state, 'conceptCount:', state ? Object.keys(state.concepts || {}).length : 0)
-
-  if (loading) {
-    return (
-      <div className="loading-container" style={{ fontSize: '24px', color: 'blue', padding: '2rem' }}>
-        <div className="loading-spinner" />
-        <p>Loading conceptual model...</p>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="error-container">
-        <h2>Error</h2>
-        <p>{error}</p>
-        <button onClick={loadState}>Retry</button>
-      </div>
-    )
-  }
-
-  if (!state) {
-    return <div className="error-container">No state loaded</div>
-  }
+  const [count, setCount] = useState(0)
 
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1>dbt-conceptual UI</h1>
-        <div className="header-actions">
-          <button
-            onClick={saveState}
-            disabled={saving}
-            className="save-button"
-          >
-            {saving ? 'Saving...' : 'Save to conceptual.yml'}
-          </button>
-          <button onClick={loadState} className="reload-button">
-            Reload
-          </button>
-        </div>
-      </header>
-
-      <nav className="tabs">
-        <button
-          className={activeTab === 'editor' ? 'tab active' : 'tab'}
-          onClick={() => setActiveTab('editor')}
-        >
-          Editor
+    <>
+      <div>
+        <a href="https://vite.dev" target="_blank">
+          <img src={viteLogo} className="logo" alt="Vite logo" />
+        </a>
+        <a href="https://react.dev" target="_blank">
+          <img src={reactLogo} className="logo react" alt="React logo" />
+        </a>
+      </div>
+      <h1>Vite + React</h1>
+      <div className="card">
+        <button onClick={() => setCount((count) => count + 1)}>
+          count is {count}
         </button>
-        <button
-          className={activeTab === 'coverage' ? 'tab active' : 'tab'}
-          onClick={() => setActiveTab('coverage')}
-        >
-          Coverage Report
-        </button>
-        <button
-          className={activeTab === 'bus-matrix' ? 'tab active' : 'tab'}
-          onClick={() => setActiveTab('bus-matrix')}
-        >
-          Bus Matrix
-        </button>
-      </nav>
-
-      <main className="tab-content">
-        {activeTab === 'editor' && (
-          <GraphEditor state={state} setState={setState} />
-        )}
-        {activeTab === 'coverage' && <CoverageView />}
-        {activeTab === 'bus-matrix' && <BusMatrixView />}
-      </main>
-    </div>
+        <p>
+          Edit <code>src/App.tsx</code> and save to test HMR
+        </p>
+      </div>
+      <p className="read-the-docs">
+        Click on the Vite and React logos to learn more
+      </p>
+    </>
   )
 }
 

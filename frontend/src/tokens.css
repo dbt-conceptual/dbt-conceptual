@@ -1,0 +1,125 @@
+/* dbt-conceptual Design Tokens */
+/* Based on spec-application.md Section 15 */
+
+:root {
+  /* === Brand Colors === */
+  --color-primary: #4a9eff;
+  --color-primary-light: #e8f4ff;
+  --color-primary-dark: #3a8eef;
+
+  /* === Logo === */
+  --logo-bg-start: #1e3a5f;
+  --logo-bg-end: #112235;
+  --logo-border: #4a7fb3;
+  --logo-header-start: #5ba3f5;
+  --logo-header-end: #3d8ae0;
+
+  /* === Status Colors === */
+  --status-complete: #4caf50;
+  --status-draft: #9e9e9e;
+  --status-draft-border: #cccccc;
+  --status-stub: #f5a623;
+  --status-stub-light: #fef3e0;
+
+  /* === Layer Colors === */
+  --layer-gold-bg: #fef3c7;
+  --layer-gold-text: #b45309;
+  --layer-silver-bg: #f1f5f9;
+  --layer-silver-text: #475569;
+  --layer-bronze-bg: #f5f0ed;
+  --layer-bronze-text: #8d6e63;
+
+  /* === UI Colors === */
+  --text-primary: #1a1a2e;
+  --text-secondary: #666666;
+  --text-muted: #888888;
+  --text-placeholder: #aaaaaa;
+  
+  --bg-page: #f5f6f8;
+  --bg-surface: #ffffff;
+  --bg-surface-alt: #fafbfc;
+  
+  --border: #e5e7eb;
+  --border-light: #f0f0f0;
+  --border-input: #dddddd;
+
+  /* === Typography === */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+  
+  --font-size-xs: 9px;
+  --font-size-sm: 11px;
+  --font-size-base: 13px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+  
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  /* === Spacing === */
+  --space-1: 4px;
+  --space-2: 6px;
+  --space-3: 8px;
+  --space-4: 10px;
+  --space-5: 12px;
+  --space-6: 14px;
+  --space-7: 16px;
+  --space-8: 20px;
+  --space-9: 24px;
+
+  /* === Border Radius === */
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+
+  /* === Shadows === */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.15);
+  --shadow-selection: 0 0 0 3px rgba(74, 158, 255, 0.15);
+}
+
+/* === Base Styles === */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-normal);
+  color: var(--text-primary);
+  background-color: var(--bg-page);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+input, textarea, select {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+}
+
+code, pre {
+  font-family: var(--font-mono);
+}
+
+/* === Layout === */
+#root {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
