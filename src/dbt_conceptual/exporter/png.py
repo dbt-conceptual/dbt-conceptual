@@ -2,6 +2,8 @@
 
 from typing import BinaryIO
 
+from PIL import Image, ImageDraw, ImageFont
+
 from dbt_conceptual.state import ProjectState
 
 
@@ -17,12 +19,6 @@ def export_png(state: ProjectState, output: BinaryIO) -> None:
         state: The conceptual model state
         output: Binary output stream for PNG file
     """
-    try:
-        from PIL import Image, ImageDraw, ImageFont
-    except ImportError as err:
-        raise ImportError(
-            "PNG export requires Pillow. Install with: pip install dbt-conceptual[png]"
-        ) from err
 
     # Configuration
     WIDTH = 1200

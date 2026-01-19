@@ -43,14 +43,12 @@ dependencies = [
     "click>=8.0",
     "pyyaml>=6.0",
     "rich>=13.0",
+    "pillow>=10.0",
 ]
 
 [project.optional-dependencies]
 serve = [
     "flask>=3.0",
-]
-png = [
-    "pillow>=10.0",
 ]
 dev = [
     "pytest>=7.0",
@@ -65,7 +63,7 @@ docs = [
     "mkdocs-material>=9.0",
 ]
 all = [
-    "dbt-conceptual[serve,png,dev,docs]",
+    "dbt-conceptual[serve,dev,docs]",
 ]
 
 [project.scripts]
