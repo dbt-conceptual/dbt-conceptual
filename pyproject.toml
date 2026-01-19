@@ -73,7 +73,6 @@ dbt-conceptual = "dbt_conceptual.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/feriksen-personal/dbt-conceptual"
-Documentation = "https://dbt-conceptual.readthedocs.io/"
 Repository = "https://github.com/feriksen-personal/dbt-conceptual"
 Issues = "https://github.com/feriksen-personal/dbt-conceptual/issues"
 Changelog = "https://github.com/feriksen-personal/dbt-conceptual/blob/main/CHANGELOG.md"
