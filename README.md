@@ -270,15 +270,8 @@ dbt-conceptual serve
 
 Catch drift before it ships:
 
-```bash
-$ dbt-conceptual validate
-
-ERROR: dim_customer_legacy references concept 'client' which does not exist
-       Did you mean: 'customer'?
-
-ERROR: fact_returns realizes 'customer:returns:order'
-       but relationship 'returns' does not exist
-```
+<!-- ASSET: assets/validation-errors.png — Validation report showing errors and warnings -->
+![Validation errors](assets/validation-errors.png)
 
 **CI/CD integration:**
 
@@ -294,18 +287,8 @@ The `--no-drafts` flag fails if any concepts or relationships are incomplete —
 
 See what changed in your conceptual model:
 
-```bash
-# Compare current branch to main
-dbt-conceptual diff --base main
-
-# Output:
-# Concepts:
-#   + refund (added)
-#   ~ customer (modified: definition changed)
-#
-# Relationships:
-#   + customer:requests:refund (added)
-```
+<!-- ASSET: assets/diff-cli.png — Terminal output showing conceptual model diff -->
+![Diff CLI output](assets/diff-cli.png)
 
 Surface conceptual changes in PR reviews. Know when someone adds a new business concept or modifies an existing definition.
 
@@ -342,6 +325,9 @@ dbt-conceptual export --format coverage
 # Bus matrix — dimensions vs facts
 dbt-conceptual export --format bus-matrix
 ```
+
+<!-- ASSET: assets/bus-matrix.png — Kimball-style bus matrix showing dimensional coverage -->
+![Bus matrix](assets/bus-matrix.png)
 
 ---
 

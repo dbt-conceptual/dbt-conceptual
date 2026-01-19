@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dbt-conceptual — All Reports</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f6f8;
+            color: #1a1a2e;
+            padding: 40px;
+        }
+
+        .report-section {
+            margin-bottom: 80px;
+            max-width: 950px;
+        }
+
+        .report-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #4a9eff;
+            margin-bottom: 6px;
+        }
+
+        .report-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 4px;
+        }
+
+        .report-access {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 6px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .report-desc {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        /* Shared Report Frame */
+        .report-frame {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .report-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: #fafbfc;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .report-tabs {
+            display: flex;
+            gap: 4px;
+        }
+
+        .report-tab {
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #666;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .report-tab.active {
+            background: #e8f4ff;
+            color: #4a9eff;
+        }
+
+        .report-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .report-btn {
+            padding: 5px 12px;
+            font-size: 11px;
+            font-weight: 500;
+            color: #666;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        /* ============================================
+           REPORT 1: COVERAGE (Donut Dashboard)
+           UI Tab + dbt-conceptual status
+           ============================================ */
+        .coverage-dashboard {
+            width: 850px;
+        }
+
+        .dashboard-top {
+            display: flex;
+            padding: 24px;
+            gap: 32px;
+            border-bottom: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #fafbfc 0%, #f5f7f9 100%);
+        }
+
+        .dashboard-chart {
+            position: relative;
+            width: 130px;
+            height: 130px;
+            flex-shrink: 0;
+        }
+
+        .donut-chart {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            background: conic-gradient(
+                #22c55e 0deg 270deg,
+                #f59e0b 270deg 360deg
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .donut-hole {
+            width: 90px;
+            height: 90px;
+            background: #fff;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.03);
+        }
+
+        .donut-percent {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a2e;
+            line-height: 1;
+        }
+
+        .donut-label {
+            font-size: 10px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .dashboard-metrics {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 14px;
+        }
+
+        .metric-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .metric-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        .metric-dot.complete { background: #22c55e; }
+        .metric-dot.stub { background: #f59e0b; }
+        .metric-dot.draft { background: #9ca3af; }
+
+        .metric-label {
+            font-size: 13px;
+            color: #666;
+            width: 80px;
+        }
+
+        .metric-bar {
+            flex: 1;
+            height: 8px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .metric-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+        }
+
+        .metric-bar-fill.complete { background: #22c55e; }
+        .metric-bar-fill.stub { background: #f59e0b; }
+        .metric-bar-fill.draft { background: #9ca3af; }
+
+        .metric-count {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a2e;
+            width: 30px;
+            text-align: right;
+        }
+
+        .dashboard-domains {
+            padding: 20px 24px;
+        }
+
+        .dashboard-domain {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 14px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .dashboard-domain:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .dashboard-domain-info {
+            width: 130px;
+            flex-shrink: 0;
+        }
+
+        .dashboard-domain-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1a1a2e;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dashboard-domain-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 4px;
+        }
+
+        .dashboard-domain-count {
+            font-size: 11px;
+            color: #888;
+            margin-top: 2px;
+            margin-left: 20px;
+        }
+
+        .dashboard-concepts {
+            flex: 1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .dashboard-concept {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border: 1px solid #eee;
+            border-radius: 6px;
+        }
+
+        .dashboard-concept:hover {
+            background: #f0f2f4;
+        }
+
+        .dashboard-concept-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .dashboard-concept-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .dashboard-concept-tag {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 3px;
+            background: #e8f4ff;
+            color: #4a9eff;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .dashboard-concept-tag.warning {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        /* ============================================
+           REPORT 2: BUS MATRIX
+           UI Tab + dbt-conceptual export --format bus-matrix
+           ============================================ */
+        .bus-matrix {
+            width: 900px;
+        }
+
+        .matrix-container {
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        .matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .matrix-table th {
+            padding: 10px 8px;
+            text-align: center;
+            font-weight: 600;
+            background: #fafbfc;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .matrix-table th.row-header {
+            text-align: left;
+            padding-left: 16px;
+            min-width: 160px;
+        }
+
+        .matrix-table th.dim-header {
+            font-size: 11px;
+            color: #666;
+            min-width: 80px;
+            writing-mode: vertical-lr;
+            text-orientation: mixed;
+            transform: rotate(180deg);
+            height: 100px;
+            vertical-align: bottom;
+            padding-bottom: 12px;
+        }
+
+        .matrix-table td {
+            padding: 10px 8px;
+            text-align: center;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .matrix-table td.fact-name {
+            text-align: left;
+            padding-left: 16px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .matrix-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .matrix-check {
+            width: 20px;
+            height: 20px;
+            background: #22c55e;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .matrix-empty {
+            width: 20px;
+            height: 20px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .matrix-legend {
+            display: flex;
+            gap: 20px;
+            padding: 16px 20px;
+            border-top: 1px solid #e5e7eb;
+            background: #fafbfc;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-check {
+            width: 14px;
+            height: 14px;
+            background: #22c55e;
+            border-radius: 3px;
+        }
+
+        .legend-empty {
+            width: 14px;
+            height: 14px;
+            background: #f0f0f0;
+            border-radius: 3px;
+        }
+
+        /* ============================================
+           REPORT 3: DIFF
+           CI/CD + dbt-conceptual diff --base main
+           ============================================ */
+        .diff-report {
+            width: 750px;
+        }
+
+        .diff-summary {
+            display: flex;
+            gap: 16px;
+            padding: 20px 24px;
+            background: linear-gradient(135deg, #fafbfc 0%, #f5f7f9 100%);
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .diff-stat {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+
+        .diff-stat-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .diff-stat-icon.added {
+            background: #dcfce7;
+            color: #22c55e;
+        }
+
+        .diff-stat-icon.modified {
+            background: #fef3c7;
+            color: #f59e0b;
+        }
+
+        .diff-stat-icon.removed {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .diff-stat-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .diff-stat-number {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a1a2e;
+            line-height: 1;
+        }
+
+        .diff-stat-label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .diff-content {
+            padding: 20px 24px;
+        }
+
+        .diff-section {
+            margin-bottom: 20px;
+        }
+
+        .diff-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .diff-section-header {
+            font-size: 11px;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .diff-items {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .diff-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            background: #fafbfc;
+            border-radius: 8px;
+            border-left: 3px solid transparent;
+        }
+
+        .diff-item.added {
+            border-left-color: #22c55e;
+            background: #f0fdf4;
+        }
+
+        .diff-item.modified {
+            border-left-color: #f59e0b;
+            background: #fffbeb;
+        }
+
+        .diff-item.removed {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .diff-item-symbol {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 600;
+            width: 20px;
+            text-align: center;
+        }
+
+        .diff-item.added .diff-item-symbol { color: #22c55e; }
+        .diff-item.modified .diff-item-symbol { color: #f59e0b; }
+        .diff-item.removed .diff-item-symbol { color: #ef4444; }
+
+        .diff-item-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: #333;
+            flex: 1;
+        }
+
+        .diff-item-detail {
+            font-size: 11px;
+            color: #888;
+        }
+
+        .diff-item-type {
+            font-size: 10px;
+            font-weight: 500;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        /* ============================================
+           REPORT 4: VALIDATION
+           CI/CD + dbt-conceptual validate
+           ============================================ */
+        .validation-report {
+            width: 800px;
+        }
+
+        .validation-summary {
+            display: flex;
+            gap: 16px;
+            padding: 20px 24px;
+            background: linear-gradient(135deg, #fafbfc 0%, #f5f7f9 100%);
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .validation-stat {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+
+        .validation-stat-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .validation-stat-icon.error {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .validation-stat-icon.warning {
+            background: #fef3c7;
+            color: #f59e0b;
+        }
+
+        .validation-stat-icon.success {
+            background: #dcfce7;
+            color: #22c55e;
+        }
+
+        .validation-stat-number {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a1a2e;
+            line-height: 1;
+        }
+
+        .validation-stat-label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .validation-content {
+            padding: 20px 24px;
+        }
+
+        .validation-section {
+            margin-bottom: 20px;
+        }
+
+        .validation-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .validation-section-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .validation-section-header.errors {
+            color: #ef4444;
+        }
+
+        .validation-section-header.warnings {
+            color: #f59e0b;
+        }
+
+        .validation-section-icon {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .validation-section-icon.errors {
+            background: #ef4444;
+        }
+
+        .validation-section-icon.warnings {
+            background: #f59e0b;
+        }
+
+        .validation-items {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .validation-item {
+            padding: 14px 16px;
+            background: #fafbfc;
+            border-radius: 8px;
+            border-left: 3px solid;
+        }
+
+        .validation-item.error {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .validation-item.warning {
+            border-left-color: #f59e0b;
+            background: #fffbeb;
+        }
+
+        .validation-item-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .validation-item-type {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 3px;
+            text-transform: uppercase;
+        }
+
+        .validation-item.error .validation-item-type {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .validation-item.warning .validation-item-type {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .validation-item-location {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .validation-item-message {
+            font-size: 13px;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        .validation-item-suggestion {
+            font-size: 12px;
+            color: #666;
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px dashed #e0e0e0;
+        }
+
+        .validation-item-suggestion code {
+            font-family: 'JetBrains Mono', monospace;
+            background: #f0f0f0;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        /* Success State */
+        .validation-success {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 48px 24px;
+            text-align: center;
+        }
+
+        .validation-success-icon {
+            width: 64px;
+            height: 64px;
+            background: #dcfce7;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin-bottom: 16px;
+        }
+
+        .validation-success-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 4px;
+        }
+
+        .validation-success-subtitle {
+            font-size: 13px;
+            color: #888;
+        }
+
+        /* ============================================
+           CLI OUTPUT VARIANT (for DIFF)
+           Terminal style for GitHub Actions
+           ============================================ */
+        .cli-output {
+            background: #1e1e1e;
+            border-radius: 12px;
+            overflow: hidden;
+            width: 650px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+
+        .cli-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: #2d2d2d;
+        }
+
+        .cli-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .cli-dot.red { background: #ff5f57; }
+        .cli-dot.yellow { background: #febc2e; }
+        .cli-dot.green { background: #28c840; }
+
+        .cli-title {
+            flex: 1;
+            text-align: center;
+            color: #888;
+            font-size: 12px;
+        }
+
+        .cli-body {
+            padding: 16px 20px;
+            color: #d4d4d4;
+            line-height: 1.6;
+        }
+
+        .cli-command {
+            color: #888;
+            margin-bottom: 12px;
+        }
+
+        .cli-section-title {
+            color: #fff;
+            font-weight: 600;
+            margin-top: 16px;
+            margin-bottom: 8px;
+        }
+
+        .cli-line {
+            display: flex;
+            gap: 8px;
+        }
+
+        .cli-line.added .cli-symbol { color: #22c55e; }
+        .cli-line.modified .cli-symbol { color: #f59e0b; }
+        .cli-line.removed .cli-symbol { color: #ef4444; }
+
+        .cli-line .cli-name {
+            color: #d4d4d4;
+        }
+
+        .cli-line .cli-detail {
+            color: #888;
+        }
+
+        .cli-summary {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid #333;
+            color: #888;
+        }
+
+        .cli-summary .added { color: #22c55e; }
+        .cli-summary .modified { color: #f59e0b; }
+        .cli-summary .removed { color: #ef4444; }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================
+         REPORT 1: COVERAGE
+         ============================================ -->
+    <div class="report-section">
+        <div class="report-label">Report 1 — UI Tab</div>
+        <div class="report-title">Coverage Report</div>
+        <div class="report-access">UI: Coverage tab · CLI: dbt-conceptual status</div>
+        <div class="report-desc">Shows concept completion status grouped by domain, with overall progress metrics.</div>
+        
+        <div class="report-frame coverage-dashboard">
+            <div class="report-header">
+                <div class="report-tabs">
+                    <div class="report-tab">Editor</div>
+                    <div class="report-tab active">Coverage</div>
+                    <div class="report-tab">Bus Matrix</div>
+                </div>
+                <div class="report-actions">
+                    <div class="report-btn">Export</div>
+                </div>
+            </div>
+            
+            <div class="dashboard-top">
+                <div class="dashboard-chart">
+                    <div class="donut-chart">
+                        <div class="donut-hole">
+                            <div class="donut-percent">75%</div>
+                            <div class="donut-label">Coverage</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-metrics">
+                    <div class="metric-row">
+                        <div class="metric-dot complete"></div>
+                        <span class="metric-label">Complete</span>
+                        <div class="metric-bar">
+                            <div class="metric-bar-fill complete" style="width: 75%;"></div>
+                        </div>
+                        <span class="metric-count">3</span>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-dot stub"></div>
+                        <span class="metric-label">Stub</span>
+                        <div class="metric-bar">
+                            <div class="metric-bar-fill stub" style="width: 25%;"></div>
+                        </div>
+                        <span class="metric-count">1</span>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-dot draft"></div>
+                        <span class="metric-label">Draft</span>
+                        <div class="metric-bar">
+                            <div class="metric-bar-fill draft" style="width: 0%;"></div>
+                        </div>
+                        <span class="metric-count">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="dashboard-domains">
+                <div class="dashboard-domain">
+                    <div class="dashboard-domain-info">
+                        <div class="dashboard-domain-name">
+                            <div class="dashboard-domain-color" style="background: #E3F2FD;"></div>
+                            Party
+                        </div>
+                        <div class="dashboard-domain-count">1 concept</div>
+                    </div>
+                    <div class="dashboard-concepts">
+                        <div class="dashboard-concept">
+                            <div class="dashboard-concept-status" style="background: #22c55e;"></div>
+                            <span class="dashboard-concept-name">Customer</span>
+                            <span class="dashboard-concept-tag">S:2 G:1</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-domain">
+                    <div class="dashboard-domain-info">
+                        <div class="dashboard-domain-name">
+                            <div class="dashboard-domain-color" style="background: #FFF3E0;"></div>
+                            Transaction
+                        </div>
+                        <div class="dashboard-domain-count">2 concepts</div>
+                    </div>
+                    <div class="dashboard-concepts">
+                        <div class="dashboard-concept">
+                            <div class="dashboard-concept-status" style="background: #22c55e;"></div>
+                            <span class="dashboard-concept-name">Order</span>
+                            <span class="dashboard-concept-tag">S:1 G:1</span>
+                        </div>
+                        <div class="dashboard-concept">
+                            <div class="dashboard-concept-status" style="background: #f59e0b;"></div>
+                            <span class="dashboard-concept-name">Shipment</span>
+                            <span class="dashboard-concept-tag warning">stub</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-domain">
+                    <div class="dashboard-domain-info">
+                        <div class="dashboard-domain-name">
+                            <div class="dashboard-domain-color" style="background: #F1F8E9;"></div>
+                            Catalog
+                        </div>
+                        <div class="dashboard-domain-count">1 concept</div>
+                    </div>
+                    <div class="dashboard-concepts">
+                        <div class="dashboard-concept">
+                            <div class="dashboard-concept-status" style="background: #22c55e;"></div>
+                            <span class="dashboard-concept-name">Product</span>
+                            <span class="dashboard-concept-tag">S:1 G:1</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         REPORT 2: BUS MATRIX
+         ============================================ -->
+    <div class="report-section">
+        <div class="report-label">Report 2 — UI Tab</div>
+        <div class="report-title">Bus Matrix</div>
+        <div class="report-access">UI: Bus Matrix tab · CLI: dbt-conceptual export --format bus-matrix</div>
+        <div class="report-desc">Classic Kimball bus matrix showing which fact tables realize which dimensional relationships.</div>
+        
+        <div class="report-frame bus-matrix">
+            <div class="report-header">
+                <div class="report-tabs">
+                    <div class="report-tab">Editor</div>
+                    <div class="report-tab">Coverage</div>
+                    <div class="report-tab active">Bus Matrix</div>
+                </div>
+                <div class="report-actions">
+                    <div class="report-btn">Export</div>
+                </div>
+            </div>
+            
+            <div class="matrix-container">
+                <table class="matrix-table">
+                    <thead>
+                        <tr>
+                            <th class="row-header">Fact / Bridge</th>
+                            <th class="dim-header">Customer</th>
+                            <th class="dim-header">Order</th>
+                            <th class="dim-header">Product</th>
+                            <th class="dim-header">Date</th>
+                            <th class="dim-header">Store</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fact-name">fact_order_lines</td>
+                            <td><span class="matrix-check">✓</span></td>
+                            <td><span class="matrix-check">✓</span></td>
+                            <td><span class="matrix-check">✓</span></td>
+                            <td><span class="matrix-check">✓</span></td>
+                            <td><span class="matrix-empty"></span></td>
+                        </tr>
+                        <tr>
+                            <td class="fact-name">fact_inventory</td>
+                            <td><span class="matrix-empty"></span></td>
+                            <td><span class="matrix-empty"></span></td>
+                            <td><span class="matrix-check">✓</span></td>
+                            <td><span class="matrix-check">✓</span></td>
+                            <td><span class="matrix-check">✓</span></td>
+                        </tr>
+                        <tr>
+                            <td class="fact-name">fact_returns</td>
+                            <td><span class="matrix-check">✓</span></td>
+                            <td><span class="matrix-check">✓</span></td>
+                            <td><span class="matrix-check">✓</span></td>
+                            <td><span class="matrix-check">✓</span></td>
+                            <td><span class="matrix-empty"></span></td>
+                        </tr>
+                        <tr>
+                            <td class="fact-name">bridge_customer_segment</td>
+                            <td><span class="matrix-check">✓</span></td>
+                            <td><span class="matrix-empty"></span></td>
+                            <td><span class="matrix-empty"></span></td>
+                            <td><span class="matrix-empty"></span></td>
+                            <td><span class="matrix-empty"></span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="matrix-legend">
+                <div class="legend-item">
+                    <div class="legend-check"></div>
+                    <span>Realizes relationship</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-empty"></div>
+                    <span>No relationship</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         REPORT 3: DIFF (UI Version)
+         ============================================ -->
+    <div class="report-section">
+        <div class="report-label">Report 3 — CI/CD</div>
+        <div class="report-title">Diff Report</div>
+        <div class="report-access">CLI: dbt-conceptual diff --base main</div>
+        <div class="report-desc">Shows changes to the conceptual model between branches. Use in PR reviews.</div>
+        
+        <div class="report-frame diff-report">
+            <div class="report-header">
+                <div style="font-size: 13px; font-weight: 600; color: #1a1a2e;">
+                    Changes vs <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 12px;">main</code>
+                </div>
+                <div class="report-actions">
+                    <div class="report-btn">Copy</div>
+                </div>
+            </div>
+            
+            <div class="diff-summary">
+                <div class="diff-stat">
+                    <div class="diff-stat-icon added">+</div>
+                    <div class="diff-stat-info">
+                        <div class="diff-stat-number">2</div>
+                        <div class="diff-stat-label">Added</div>
+                    </div>
+                </div>
+                <div class="diff-stat">
+                    <div class="diff-stat-icon modified">~</div>
+                    <div class="diff-stat-info">
+                        <div class="diff-stat-number">1</div>
+                        <div class="diff-stat-label">Modified</div>
+                    </div>
+                </div>
+                <div class="diff-stat">
+                    <div class="diff-stat-icon removed">−</div>
+                    <div class="diff-stat-info">
+                        <div class="diff-stat-number">0</div>
+                        <div class="diff-stat-label">Removed</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="diff-content">
+                <div class="diff-section">
+                    <div class="diff-section-header">Concepts</div>
+                    <div class="diff-items">
+                        <div class="diff-item added">
+                            <span class="diff-item-symbol">+</span>
+                            <span class="diff-item-name">Refund</span>
+                            <span class="diff-item-detail">domain: transaction</span>
+                            <span class="diff-item-type">concept</span>
+                        </div>
+                        <div class="diff-item modified">
+                            <span class="diff-item-symbol">~</span>
+                            <span class="diff-item-name">Customer</span>
+                            <span class="diff-item-detail">definition changed</span>
+                            <span class="diff-item-type">concept</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="diff-section">
+                    <div class="diff-section-header">Relationships</div>
+                    <div class="diff-items">
+                        <div class="diff-item added">
+                            <span class="diff-item-symbol">+</span>
+                            <span class="diff-item-name">customer:requests:refund</span>
+                            <span class="diff-item-detail">cardinality: 1:N</span>
+                            <span class="diff-item-type">relationship</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         REPORT 3b: DIFF (CLI Version)
+         ============================================ -->
+    <div class="report-section">
+        <div class="report-label">Report 3b — CLI Output</div>
+        <div class="report-title">Diff Report (Terminal)</div>
+        <div class="report-access">CLI: dbt-conceptual diff --base main</div>
+        <div class="report-desc">Terminal output version for GitHub Actions logs and local development.</div>
+        
+        <div class="cli-output">
+            <div class="cli-header">
+                <div class="cli-dot red"></div>
+                <div class="cli-dot yellow"></div>
+                <div class="cli-dot green"></div>
+                <div class="cli-title">Terminal — dbt-conceptual diff</div>
+            </div>
+            <div class="cli-body">
+                <div class="cli-command">$ dbt-conceptual diff --base main</div>
+                
+                <div class="cli-section-title">Concepts</div>
+                <div class="cli-line added">
+                    <span class="cli-symbol">+</span>
+                    <span class="cli-name">refund</span>
+                    <span class="cli-detail">(added)</span>
+                </div>
+                <div class="cli-line modified">
+                    <span class="cli-symbol">~</span>
+                    <span class="cli-name">customer</span>
+                    <span class="cli-detail">(modified: definition changed)</span>
+                </div>
+                
+                <div class="cli-section-title">Relationships</div>
+                <div class="cli-line added">
+                    <span class="cli-symbol">+</span>
+                    <span class="cli-name">customer:requests:refund</span>
+                    <span class="cli-detail">(added)</span>
+                </div>
+                
+                <div class="cli-summary">
+                    Summary: <span class="added">2 added</span>, <span class="modified">1 modified</span>, <span class="removed">0 removed</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         REPORT 4: VALIDATION (with errors)
+         ============================================ -->
+    <div class="report-section">
+        <div class="report-label">Report 4 — CI/CD</div>
+        <div class="report-title">Validation Report (Errors Found)</div>
+        <div class="report-access">CLI: dbt-conceptual validate</div>
+        <div class="report-desc">Shows validation errors and warnings. Fails CI if critical issues found.</div>
+        
+        <div class="report-frame validation-report">
+            <div class="report-header">
+                <div style="font-size: 13px; font-weight: 600; color: #ef4444; display: flex; align-items: center; gap: 8px;">
+                    <span>✕</span> Validation Failed
+                </div>
+                <div class="report-actions">
+                    <div class="report-btn">Copy</div>
+                </div>
+            </div>
+            
+            <div class="validation-summary">
+                <div class="validation-stat">
+                    <div class="validation-stat-icon error">✕</div>
+                    <div class="diff-stat-info">
+                        <div class="validation-stat-number">2</div>
+                        <div class="validation-stat-label">Errors</div>
+                    </div>
+                </div>
+                <div class="validation-stat">
+                    <div class="validation-stat-icon warning">!</div>
+                    <div class="diff-stat-info">
+                        <div class="validation-stat-number">1</div>
+                        <div class="validation-stat-label">Warnings</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="validation-content">
+                <div class="validation-section">
+                    <div class="validation-section-header errors">
+                        <div class="validation-section-icon errors">✕</div>
+                        Errors
+                    </div>
+                    <div class="validation-items">
+                        <div class="validation-item error">
+                            <div class="validation-item-header">
+                                <span class="validation-item-type">undefined concept</span>
+                                <span class="validation-item-location">models/gold/dim_customer_legacy.yml</span>
+                            </div>
+                            <div class="validation-item-message">
+                                References concept <code>client</code> which does not exist
+                            </div>
+                            <div class="validation-item-suggestion">
+                                Did you mean: <code>customer</code>?
+                            </div>
+                        </div>
+                        <div class="validation-item error">
+                            <div class="validation-item-header">
+                                <span class="validation-item-type">undefined relationship</span>
+                                <span class="validation-item-location">models/gold/fact_returns.yml</span>
+                            </div>
+                            <div class="validation-item-message">
+                                Realizes <code>customer:returns:order</code> but relationship <code>returns</code> does not exist
+                            </div>
+                            <div class="validation-item-suggestion">
+                                Add relationship to conceptual.yml or fix the reference
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="validation-section">
+                    <div class="validation-section-header warnings">
+                        <div class="validation-section-icon warnings">!</div>
+                        Warnings
+                    </div>
+                    <div class="validation-items">
+                        <div class="validation-item warning">
+                            <div class="validation-item-header">
+                                <span class="validation-item-type">stub concept</span>
+                                <span class="validation-item-location">conceptual.yml</span>
+                            </div>
+                            <div class="validation-item-message">
+                                Concept <code>shipment</code> is a stub — missing domain and definition
+                            </div>
+                            <div class="validation-item-suggestion">
+                                Run with <code>--no-drafts</code> to fail on incomplete concepts
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         REPORT 4b: VALIDATION (success)
+         ============================================ -->
+    <div class="report-section">
+        <div class="report-label">Report 4b — CI/CD</div>
+        <div class="report-title">Validation Report (Success)</div>
+        <div class="report-access">CLI: dbt-conceptual validate</div>
+        <div class="report-desc">Clean validation — no errors or warnings.</div>
+        
+        <div class="report-frame validation-report">
+            <div class="report-header">
+                <div style="font-size: 13px; font-weight: 600; color: #22c55e; display: flex; align-items: center; gap: 8px;">
+                    <span>✓</span> Validation Passed
+                </div>
+            </div>
+            
+            <div class="validation-success">
+                <div class="validation-success-icon">✓</div>
+                <div class="validation-success-title">All checks passed</div>
+                <div class="validation-success-subtitle">4 concepts · 3 relationships · 0 issues</div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
