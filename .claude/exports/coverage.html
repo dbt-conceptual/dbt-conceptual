@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dbt-conceptual Coverage Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 2rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: #1a1a1a;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: #fafafa;
+            padding: 1.5rem;
+            border-radius: 6px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .stat-card.warning {
+            border-left-color: #FF9800;
+        }
+
+        .stat-card.error {
+            border-left-color: #f44336;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1a1a1a;
+        }
+
+        .stat-secondary {
+            font-size: 0.875rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #4CAF50;
+            transition: width 0.3s ease;
+        }
+
+        .progress-fill.warning {
+            background: #FF9800;
+        }
+
+        .progress-fill.error {
+            background: #f44336;
+        }
+
+        section {
+            margin-bottom: 3rem;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #1a1a1a;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 0.5rem;
+        }
+
+        .domain-section {
+            margin-bottom: 2rem;
+        }
+
+        .domain-header {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: #333;
+        }
+
+        .concept-list {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .concept-item {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .concept-name {
+            font-weight: 500;
+            color: #1a1a1a;
+        }
+
+        .concept-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .concept-status.complete {
+            background: #C8E6C9;
+            color: #2E7D32;
+        }
+
+        .concept-status.draft {
+            background: #FFE0B2;
+            color: #E65100;
+        }
+
+        .concept-status.stub {
+            background: #FFCDD2;
+            color: #C62828;
+        }
+
+        .concept-meta {
+            font-size: 0.875rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+
+        .attention-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .attention-item {
+            background: #FFF9E6;
+            border-left: 4px solid #FF9800;
+            padding: 1rem;
+            border-radius: 4px;
+        }
+
+        .attention-item.error {
+            background: #FFEBEE;
+            border-left-color: #f44336;
+        }
+
+        .attention-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #1a1a1a;
+        }
+
+        .attention-detail {
+            font-size: 0.875rem;
+            color: #666;
+        }
+
+        .orphan-list {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .orphan-item {
+            padding: 0.5rem;
+            border-bottom: 1px solid #e0e0e0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+
+        .orphan-item:last-child {
+            border-bottom: none;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Coverage Report</h1>
+        <p class="subtitle">Generated by dbt-conceptual</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Concept Completion</div>
+                <div class="stat-value">0%</div>
+                <div class="stat-secondary">0 of 4 concepts complete</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Silver Coverage</div>
+                <div class="stat-value">0%</div>
+                <div class="stat-secondary">0 concepts implemented</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Gold Coverage</div>
+                <div class="stat-value">0%</div>
+                <div class="stat-secondary">0 concepts implemented</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Relationships Realized</div>
+                <div class="stat-value">0%</div>
+                <div class="stat-secondary">0 of 2 have facts</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <section>
+            <h2>Needs Attention</h2>
+            <div class="attention-list">
+
+                <div class="attention-item warning">
+                    <div class="attention-title">◐ 4 Draft Concepts</div>
+                    <div class="attention-detail">These concepts are in progress but not yet complete.</div>
+                </div>
+
+                <div class="attention-item warning">
+                    <div class="attention-title">📝 1 Concept Missing Attributes</div>
+                    <div class="attention-detail"><strong>Shipment</strong>: owner, definition<br></div>
+                </div>
+
+                <div class="attention-item warning">
+                    <div class="attention-title">🔗 2 Unrealized Relationships</div>
+                    <div class="attention-detail">These relationships have no fact tables implementing them yet.</div>
+                </div>
+
+            </div>
+        </section>
+
+        <section>
+            <h2>Concepts by Domain</h2>
+
+            <div class="domain-section">
+                <div class="domain-header">Catalog (1)</div>
+                <div class="concept-list">
+
+                    <div class="concept-item">
+                        <div>
+                            <div class="concept-name">Product</div>
+                            <div class="concept-meta">Owner: catalog_team</div>
+                        </div>
+                        <span class="concept-status draft">draft</span>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="domain-section">
+                <div class="domain-header">Party (1)</div>
+                <div class="concept-list">
+
+                    <div class="concept-item">
+                        <div>
+                            <div class="concept-name">Customer</div>
+                            <div class="concept-meta">Owner: customer_team</div>
+                        </div>
+                        <span class="concept-status draft">draft</span>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="domain-section">
+                <div class="domain-header">Transaction (2)</div>
+                <div class="concept-list">
+
+                    <div class="concept-item">
+                        <div>
+                            <div class="concept-name">Order</div>
+                            <div class="concept-meta">Owner: orders_team</div>
+                        </div>
+                        <span class="concept-status draft">draft</span>
+                    </div>
+
+                    <div class="concept-item">
+                        <div>
+                            <div class="concept-name">Shipment</div>
+                            <div class="concept-meta">No implementations</div>
+                        </div>
+                        <span class="concept-status draft">draft</span>
+                    </div>
+
+                </div>
+            </div>
+
+        </section>
+
+    </div>
+</body>
+</html>

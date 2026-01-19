@@ -1,0 +1,30 @@
+erDiagram
+    CUSTOMER {
+        string id "Primary Key"
+        string name "Display Name"
+        %% Owner: customer_team
+        %% Definition: A person or company that purchases products
+        %% Status: draft
+    }
+    ORDER {
+        string id "Primary Key"
+        string name "Display Name"
+        %% Owner: orders_team
+        %% Definition: A confirmed purchase by a customer
+        %% Status: draft
+    }
+    PRODUCT {
+        string id "Primary Key"
+        string name "Display Name"
+        %% Owner: catalog_team
+        %% Definition: An item available for purchase
+        %% Status: draft
+    }
+    SHIPMENT {
+        string id "Primary Key"
+        string name "Display Name"
+        %% Status: draft
+    }
+    CUSTOMER ||--o{ ORDER : "customer:places:order"
+    ORDER }o--o{ PRODUCT : "order:contains:product"
+
