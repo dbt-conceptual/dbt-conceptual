@@ -79,7 +79,11 @@
       "Bash(~/.local/bin/gh run view 21070862964 --log-failed)",
       "Bash(~/.local/bin/gh pr checks 3)",
       "Bash(~/.local/bin/gh run view 21071522933 --log-failed)",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Bash(npm create:*)",
+      "Bash(node:*)",
+      "Bash(npm --version:*)",
+      "Bash(apt-get install:*)"
     ]
   }
 }
