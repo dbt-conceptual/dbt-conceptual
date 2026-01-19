@@ -6,6 +6,10 @@ interface AppState extends ProjectState {
   isLoading: boolean;
   error: string | null;
 
+  // Selection state
+  selectedConceptId: string | null;
+  selectedRelationshipId: string | null;
+
   // Actions
   fetchState: () => Promise<void>;
   updateConcept: (id: string, updates: Partial<Concept>) => void;
@@ -13,6 +17,9 @@ interface AppState extends ProjectState {
   updatePositions: (positions: Record<string, { x: number; y: number }>) => void;
   saveState: () => Promise<void>;
   saveLayout: () => Promise<void>;
+  selectConcept: (id: string | null) => void;
+  selectRelationship: (id: string | null) => void;
+  clearSelection: () => void;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -23,6 +30,8 @@ export const useStore = create<AppState>((set, get) => ({
   positions: {},
   isLoading: false,
   error: null,
+  selectedConceptId: null,
+  selectedRelationshipId: null,
 
   // Fetch state from API
   fetchState: async () => {
@@ -113,5 +122,18 @@ export const useStore = create<AppState>((set, get) => ({
       });
       throw error;
     }
+  },
+
+  // Selection actions
+  selectConcept: (id: string | null) => {
+    set({ selectedConceptId: id, selectedRelationshipId: null });
+  },
+
+  selectRelationship: (id: string | null) => {
+    set({ selectedRelationshipId: id, selectedConceptId: null });
+  },
+
+  clearSelection: () => {
+    set({ selectedConceptId: null, selectedRelationshipId: null });
   },
 }));

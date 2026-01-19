@@ -21,7 +21,14 @@ def create_app(project_dir: Path) -> Flask:
     Returns:
         Configured Flask app
     """
-    app = Flask(__name__, static_folder="static", static_url_path="")
+    # Look for frontend build in multiple locations
+    # 1. Development: frontend/dist relative to package
+    # 2. Installed: package data
+    static_dir = Path(__file__).parent.parent.parent / "frontend" / "dist"
+    if not static_dir.exists():
+        static_dir = Path(__file__).parent / "static"
+
+    app = Flask(__name__, static_folder=str(static_dir), static_url_path="")
     app.config["PROJECT_DIR"] = project_dir
 
     # Enable CORS in debug mode (for Vite dev server)
@@ -39,9 +46,8 @@ def create_app(project_dir: Path) -> Flask:
     @app.route("/")
     def index() -> Union[str, Response]:
         """Serve the main UI page."""
-        static_dir = Path(__file__).parent / "static"
-        if (static_dir / "index.html").exists():
-            return send_from_directory(static_dir, "index.html")
+        if app.static_folder and (Path(app.static_folder) / "index.html").exists():
+            return send_from_directory(app.static_folder, "index.html")
         return """
         <!DOCTYPE html>
         <html>
@@ -54,7 +60,7 @@ def create_app(project_dir: Path) -> Flask:
         </head>
         <body>
             <h1>dbt-conceptual UI</h1>
-            <p>Frontend is building... Check back soon!</p>
+            <p>Frontend build not found. Run: <code>cd frontend && npm run build</code></p>
             <p>API endpoints available:</p>
             <ul>
                 <li><a href="/api/state">GET /api/state</a> - Get current state</li>

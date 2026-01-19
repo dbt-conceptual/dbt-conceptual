@@ -22,7 +22,17 @@ const edgeTypes = {
 };
 
 export function Canvas() {
-  const { concepts, relationships, positions, fetchState, updatePositions, saveLayout } = useStore();
+  const {
+    concepts,
+    relationships,
+    positions,
+    fetchState,
+    updatePositions,
+    saveLayout,
+    selectConcept,
+    selectRelationship,
+    clearSelection,
+  } = useStore();
 
   // Load state on mount
   useEffect(() => {
@@ -92,13 +102,37 @@ export function Canvas() {
     [onNodesChange, updatePositions, saveLayout]
   );
 
+  // Handle node selection
+  const handleNodeClick = useCallback(
+    (_event: any, node: any) => {
+      selectConcept(node.id);
+    },
+    [selectConcept]
+  );
+
+  // Handle edge selection
+  const handleEdgeClick = useCallback(
+    (_event: any, edge: any) => {
+      selectRelationship(edge.id);
+    },
+    [selectRelationship]
+  );
+
+  // Handle canvas click (clear selection)
+  const handlePaneClick = useCallback(() => {
+    clearSelection();
+  }, [clearSelection]);
+
   return (
-    <div style={{ width: '100%', height: '100vh' }}>
+    <div style={{ flex: 1, height: '100vh' }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
         onNodesChange={handleNodesChange}
         onEdgesChange={onEdgesChange}
+        onNodeClick={handleNodeClick}
+        onEdgeClick={handleEdgeClick}
+        onPaneClick={handlePaneClick}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         fitView
