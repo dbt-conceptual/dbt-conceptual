@@ -12,21 +12,32 @@
 
 ## What Died
 
-The traditional data architecture paradigm: architects design conceptual models in isolation, hand them to engineers, validate against implementation. This assumed waterfall delivery, quarterly releases, co-located teams.
+The data architect would sit down with business stakeholders and SMEs, sketch boxes and lines on a whiteboard until everyone nodded. That whiteboard became a conceptual model in Erwin or PowerDesigner. From there, a logical model — normalized, pristine. From the logical, a physical model. Then down to the engineers: "We're building this."
 
-It produced beautiful diagrams that rotted the moment they were created.
+Business would come back: "We need more." Back to the whiteboard. Back to the ivory tower. Update the conceptual, refresh the logical, derive an updated physical. Back to the engineers: "We're changing this, adding that."
+
+Repeat ad infinitum. Or at least, repeat quarterly — because that's how fast this process could move.
+
+It worked when releases shipped quarterly. It worked when teams were co-located. It worked when the data architect owned the timeline.
+
+Then it stopped working.
 
 ## What Replaced It
 
-Engineer autonomy. dbt democratized transformation. Teams ship daily. No gatekeepers, no handoffs.
+Engineer autonomy. dbt democratized transformation. Teams ship daily. The architect who says "wait for the model" gets routed around. No gatekeepers, no handoffs, no time for the ivory tower round-trip.
 
 ## What That Created
 
-Chaos.
+The whiteboard session on day one is now the last moment of shared understanding. After that:
 
-The whiteboard session on day one is the last moment of shared understanding. After that, models proliferate without coherence, naming conventions drift, concepts duplicate across teams, tribal knowledge calcifies.
+- Models proliferate without coherence
+- Naming conventions drift
+- Concepts duplicate across teams
+- Tribal knowledge calcifies
 
 Nobody knows what "customer" means anymore.
+
+The conceptual→logical→physical cascade is gone. But nothing replaced the thinking it forced. We kept the speed, lost the shared vocabulary.
 
 ## The Bridge
 
