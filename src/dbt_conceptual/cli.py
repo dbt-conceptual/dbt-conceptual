@@ -778,5 +778,176 @@ def serve(project_dir: Optional[Path], host: str, port: int) -> None:
         console.print("\n[yellow]Server stopped[/yellow]")
 
 
+@main.command()
+@click.option(
+    "--base",
+    required=True,
+    help="Base git ref to compare against (e.g., main, origin/main, HEAD~1)",
+)
+@click.option(
+    "--format",
+    type=click.Choice(["human", "github", "json"], case_sensitive=False),
+    default="human",
+    help="Output format",
+)
+@click.option(
+    "--project-dir",
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+    default=None,
+    help="Path to dbt project directory (default: current directory)",
+)
+def diff(base: str, format: str, project_dir: Optional[Path]) -> None:
+    """Compare conceptual model against a base git ref.
+
+    Shows what concepts, relationships, and domains have been added, removed,
+    or modified compared to the base branch/commit.
+
+    Examples:
+
+        # Compare against main branch
+        dbt-conceptual diff --base main
+
+        # Compare against origin/main
+        dbt-conceptual diff --base origin/main
+
+        # GitHub Actions format
+        dbt-conceptual diff --base ${{ github.base_ref }} --format github
+    """
+    import subprocess
+    import tempfile
+    from pathlib import Path
+
+    from dbt_conceptual.diff_formatter import format_github, format_human, format_json
+    from dbt_conceptual.differ import compute_diff
+
+    project_dir = project_dir or Path.cwd()
+
+    # Load current state
+    config = Config.load(project_dir=project_dir)
+    if not config.conceptual_file.exists():
+        console.print(
+            f"[red]Error: conceptual.yml not found at {config.conceptual_file}[/red]"
+        )
+        console.print("\nRun 'dbt-conceptual init' to create it.")
+        raise click.Abort()
+
+    builder = StateBuilder(config)
+    current_state = builder.build()
+
+    # Get base version from git
+    try:
+        # Check if we're in a git repo
+        subprocess.run(
+            ["git", "rev-parse", "--git-dir"],
+            cwd=project_dir,
+            check=True,
+            capture_output=True,
+        )
+
+        # Get the conceptual.yml content from base ref
+        conceptual_rel_path = config.conceptual_file.relative_to(project_dir)
+        result = subprocess.run(
+            ["git", "show", f"{base}:{conceptual_rel_path}"],
+            cwd=project_dir,
+            capture_output=True,
+            text=True,
+        )
+
+        if result.returncode != 0:
+            console.print(
+                f"[red]Error: Could not find conceptual.yml at ref '{base}'[/red]"
+            )
+            console.print(f"[dim]{result.stderr.strip()}[/dim]")
+            raise click.Abort()
+
+        # Write base version to temp file
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".yml", delete=False
+        ) as temp_file:
+            temp_file.write(result.stdout)
+            temp_path = Path(temp_file.name)
+
+        try:
+            # Load base state
+            import yaml
+
+            with open(temp_path) as f:
+                base_data = yaml.safe_load(f)
+
+            if not base_data:
+                base_data = {}
+
+            base_state = ProjectState()
+
+            # Populate base state (simplified - no dbt manifest needed for diff)
+            for domain_id, domain_data in base_data.get("domains", {}).items():
+                from dbt_conceptual.state import DomainState
+
+                base_state.domains[domain_id] = DomainState(
+                    name=domain_id,
+                    display_name=domain_data.get("name", domain_id),
+                    color=domain_data.get("color"),
+                )
+
+            for concept_id, concept_data in base_data.get("concepts", {}).items():
+                base_state.concepts[concept_id] = ConceptState(
+                    name=concept_data.get("name", concept_id),
+                    domain=concept_data.get("domain"),
+                    owner=concept_data.get("owner"),
+                    definition=concept_data.get("definition"),
+                    color=concept_data.get("color"),
+                    replaced_by=concept_data.get("replaced_by"),
+                )
+
+            for rel in base_data.get("relationships", []):
+                from dbt_conceptual.state import RelationshipState
+
+                verb = rel.get("verb", "")
+                from_concept = rel.get("from", "")
+                to_concept = rel.get("to", "")
+                rel_key = f"{from_concept}:{verb}:{to_concept}"
+
+                base_state.relationships[rel_key] = RelationshipState(
+                    verb=verb,
+                    from_concept=from_concept,
+                    to_concept=to_concept,
+                    cardinality=rel.get("cardinality"),
+                    definition=rel.get("definition"),
+                    domains=rel.get("domains", []),
+                    owner=rel.get("owner"),
+                    custom_name=rel.get("name"),
+                )
+
+            # Compute diff
+            conceptual_diff = compute_diff(base_state, current_state)
+
+            # Format and output
+            if format == "human":
+                output = format_human(conceptual_diff)
+                console.print(output)
+            elif format == "github":
+                output = format_github(conceptual_diff)
+                print(output)  # Use print for GitHub Actions format
+            elif format == "json":
+                output = format_json(conceptual_diff)
+                print(output)
+
+            # Exit with error if there are changes and format is github
+            # (so CI can optionally fail on changes)
+            if format == "github" and conceptual_diff.has_changes:
+                raise click.exceptions.Exit(1)
+
+        finally:
+            # Clean up temp file
+            temp_path.unlink()
+
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error: git command failed: {e}[/red]")
+        raise click.Abort() from e
+    except FileNotFoundError as e:
+        console.print("[red]Error: git not found. This command requires git.[/red]")
+        raise click.Abort() from e
+
+
 if __name__ == "__main__":
     main()

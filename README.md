@@ -282,6 +282,77 @@ Use `--format github` for native GitHub Actions annotations. Errors and warnings
 
 ---
 
+## Pull Request Integration
+
+See what conceptual changes are introduced in each PR:
+
+```bash
+# Compare against target branch
+$ dbt-conceptual diff --base main
+
+Conceptual Changes
+==================================================
+
+Concepts:
+--------------------------------------------------
+  + refund (transaction) - draft
+  + dispute (transaction) - stub
+  ~ customer
+      definition: 'A person...' → 'An individual or organization...'
+      owner: None → '@customer-team'
+
+Relationships:
+--------------------------------------------------
+  + customer:disputes:order (M:N) - draft
+```
+
+This surfaces conceptual drift without blocking merges. Someone notices. Someone cares.
+
+### GitHub Actions Workflow
+
+Automatically show conceptual changes in pull requests:
+
+```yaml
+# .github/workflows/conceptual-diff.yml
+name: Conceptual Model Changes
+
+on:
+  pull_request:
+    paths:
+      - 'models/**/*.yml'
+      - 'models/conceptual/conceptual.yml'
+
+jobs:
+  diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for diff
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install dbt-core dbt-conceptual
+
+      - name: Show conceptual changes
+        run: dbt-conceptual diff --base ${{ github.base_ref }} --format github
+```
+
+The `--format github` output creates annotations that appear inline in the pull request:
+
+```
+::notice title=New Concept::refund (transaction) - draft
+::warning title=New Concept Missing Description::dispute (transaction)
+::notice title=Modified Concept::customer (definition, owner)
+::notice title=New Relationship::customer:disputes:order (M:N) - draft
+```
+
+---
+
 ## Export Formats
 
 ```bash
@@ -389,6 +460,8 @@ This role exists in organizations that actually deliver. It's often informal —
 | `dbt-conceptual status` | Show coverage status |
 | `dbt-conceptual validate` | Validate conceptual model |
 | `dbt-conceptual validate --no-drafts` | Fail if any draft/stub entities |
+| `dbt-conceptual diff --base <ref>` | Compare conceptual model against git ref |
+| `dbt-conceptual diff --base main --format github` | Show changes in GitHub Actions format |
 | `dbt-conceptual sync` | Sync from dbt project |
 | `dbt-conceptual sync --create-stubs` | Create stubs for undefined references |
 | `dbt-conceptual export --format <fmt>` | Export diagram |
