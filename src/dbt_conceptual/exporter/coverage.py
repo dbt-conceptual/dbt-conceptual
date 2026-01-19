@@ -67,8 +67,7 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
     ]
 
     # Write HTML
-    output.write(
-        """<!DOCTYPE html>
+    output.write("""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -315,146 +314,107 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-label">Concept Completion</div>
-                <div class="stat-value">"""
-    )
+                <div class="stat-value">""")
     output.write(f"{completion_pct}%")
-    output.write(
-        """</div>
-                <div class="stat-secondary">"""
-    )
+    output.write("""</div>
+                <div class="stat-secondary">""")
     output.write(f"{complete_concepts} of {total_concepts} concepts complete")
-    output.write(
-        """</div>
+    output.write("""</div>
                 <div class="progress-bar">
-                    <div class="progress-fill" style="width: """
-    )
+                    <div class="progress-fill" style="width: """)
     output.write(f"{completion_pct}%")
-    output.write(
-        """"></div>
+    output.write(""""></div>
                 </div>
             </div>
 
             <div class="stat-card">
                 <div class="stat-label">Silver Coverage</div>
-                <div class="stat-value">"""
-    )
+                <div class="stat-value">""")
     output.write(f"{silver_pct}%")
-    output.write(
-        """</div>
-                <div class="stat-secondary">"""
-    )
+    output.write("""</div>
+                <div class="stat-secondary">""")
     output.write(f"{concepts_with_silver} concepts implemented")
-    output.write(
-        """</div>
+    output.write("""</div>
                 <div class="progress-bar">
-                    <div class="progress-fill" style="width: """
-    )
+                    <div class="progress-fill" style="width: """)
     output.write(f"{silver_pct}%")
-    output.write(
-        """"></div>
+    output.write(""""></div>
                 </div>
             </div>
 
             <div class="stat-card">
                 <div class="stat-label">Gold Coverage</div>
-                <div class="stat-value">"""
-    )
+                <div class="stat-value">""")
     output.write(f"{gold_pct}%")
-    output.write(
-        """</div>
-                <div class="stat-secondary">"""
-    )
+    output.write("""</div>
+                <div class="stat-secondary">""")
     output.write(f"{concepts_with_gold} concepts implemented")
-    output.write(
-        """</div>
+    output.write("""</div>
                 <div class="progress-bar">
-                    <div class="progress-fill" style="width: """
-    )
+                    <div class="progress-fill" style="width: """)
     output.write(f"{gold_pct}%")
-    output.write(
-        """"></div>
+    output.write(""""></div>
                 </div>
             </div>
 
             <div class="stat-card">
                 <div class="stat-label">Relationships Realized</div>
-                <div class="stat-value">"""
-    )
+                <div class="stat-value">""")
     output.write(f"{relationship_pct}%")
-    output.write(
-        """</div>
-                <div class="stat-secondary">"""
-    )
+    output.write("""</div>
+                <div class="stat-secondary">""")
     output.write(f"{realized_relationships} of {total_relationships} have facts")
-    output.write(
-        """</div>
+    output.write("""</div>
                 <div class="progress-bar">
-                    <div class="progress-fill" style="width: """
-    )
+                    <div class="progress-fill" style="width: """)
     output.write(f"{relationship_pct}%")
-    output.write(
-        """"></div>
+    output.write(""""></div>
                 </div>
             </div>
         </div>
-"""
-    )
+""")
 
     # Attention items
     if incomplete_concepts or unrealized_relationships or orphan_count > 0:
-        output.write(
-            """
+        output.write("""
         <section>
             <h2>Needs Attention</h2>
             <div class="attention-list">
-"""
-        )
+""")
 
         if stub_concepts > 0:
-            output.write(
-                """
+            output.write("""
                 <div class="attention-item error">
-                    <div class="attention-title">⚠️ """
-            )
+                    <div class="attention-title">⚠️ """)
             output.write(
                 f"{stub_concepts} Stub Concept{'s' if stub_concepts != 1 else ''}"
             )
-            output.write(
-                """</div>
+            output.write("""</div>
                     <div class="attention-detail">These concepts were auto-generated and need definitions, owners, and domains.</div>
                 </div>
-"""
-            )
+""")
 
         if draft_concepts > 0:
-            output.write(
-                """
+            output.write("""
                 <div class="attention-item warning">
-                    <div class="attention-title">◐ """
-            )
+                    <div class="attention-title">◐ """)
             output.write(
                 f"{draft_concepts} Draft Concept{'s' if draft_concepts != 1 else ''}"
             )
-            output.write(
-                """</div>
+            output.write("""</div>
                     <div class="attention-detail">These concepts are in progress but not yet complete.</div>
                 </div>
-"""
-            )
+""")
 
         if incomplete_concepts:
-            output.write(
-                """
+            output.write("""
                 <div class="attention-item warning">
-                    <div class="attention-title">📝 """
-            )
+                    <div class="attention-title">📝 """)
             output.write(
                 f"{len(incomplete_concepts)} Concept{'s' if len(incomplete_concepts) != 1 else ''} Missing Attributes"
             )
-            output.write(
-                """</div>
-                    <div class="attention-detail">"""
-            )
+            output.write("""</div>
+                    <div class="attention-detail">""")
             for _cid, c in incomplete_concepts[:5]:
                 missing = []
                 if not c.domain:
@@ -466,58 +426,44 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
                 output.write(f"<strong>{c.name}</strong>: {', '.join(missing)}<br>")
             if len(incomplete_concepts) > 5:
                 output.write(f"...and {len(incomplete_concepts) - 5} more")
-            output.write(
-                """</div>
+            output.write("""</div>
                 </div>
-"""
-            )
+""")
 
         if unrealized_relationships:
-            output.write(
-                """
+            output.write("""
                 <div class="attention-item warning">
-                    <div class="attention-title">🔗 """
-            )
+                    <div class="attention-title">🔗 """)
             output.write(
                 f"{len(unrealized_relationships)} Unrealized Relationship{'s' if len(unrealized_relationships) != 1 else ''}"
             )
-            output.write(
-                """</div>
+            output.write("""</div>
                     <div class="attention-detail">These relationships have no fact tables implementing them yet.</div>
                 </div>
-"""
-            )
+""")
 
         if orphan_count > 0:
-            output.write(
-                """
+            output.write("""
                 <div class="attention-item">
-                    <div class="attention-title">🔍 """
-            )
+                    <div class="attention-title">🔍 """)
             output.write(
                 f"{orphan_count} Orphan Model{'s' if orphan_count != 1 else ''}"
             )
-            output.write(
-                """</div>
+            output.write("""</div>
                     <div class="attention-detail">dbt models without concept or realizes tags. Run <code>dbt-conceptual sync</code> to discover them.</div>
                 </div>
-"""
-            )
+""")
 
-        output.write(
-            """
+        output.write("""
             </div>
         </section>
-"""
-        )
+""")
 
     # Concepts by domain
-    output.write(
-        """
+    output.write("""
         <section>
             <h2>Concepts by Domain</h2>
-"""
-    )
+""")
 
     for domain_id in sorted(domain_groups.keys()):
         concepts = domain_groups[domain_id]
@@ -527,31 +473,23 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
                 state.domains[domain_id].display_name or state.domains[domain_id].name
             )
 
-        output.write(
-            """
+        output.write("""
             <div class="domain-section">
-                <div class="domain-header">"""
-        )
+                <div class="domain-header">""")
         output.write(domain_name)
         output.write(f" ({len(concepts)})")
-        output.write(
-            """</div>
+        output.write("""</div>
                 <div class="concept-list">
-"""
-        )
+""")
 
         for _concept_id, concept in sorted(concepts, key=lambda x: x[1].name):
-            output.write(
-                """
+            output.write("""
                     <div class="concept-item">
                         <div>
-                            <div class="concept-name">"""
-            )
+                            <div class="concept-name">""")
             output.write(concept.name)
-            output.write(
-                """</div>
-                            <div class="concept-meta">"""
-            )
+            output.write("""</div>
+                            <div class="concept-meta">""")
 
             # Show model counts
             silver_count = len(concept.silver_models)
@@ -565,68 +503,50 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
             else:
                 output.write("No implementations")
 
-            output.write(
-                """</div>
+            output.write("""</div>
                         </div>
-                        <span class="concept-status """
-            )
+                        <span class="concept-status """)
             output.write(concept.status or "draft")
             output.write("""">""")
             output.write(concept.status or "draft")
-            output.write(
-                """</span>
+            output.write("""</span>
                     </div>
-"""
-            )
+""")
 
-        output.write(
-            """
+        output.write("""
                 </div>
             </div>
-"""
-        )
+""")
 
-    output.write(
-        """
+    output.write("""
         </section>
-"""
-    )
+""")
 
     # Orphan models section
     if orphan_count > 0:
-        output.write(
-            """
+        output.write("""
         <section>
             <h2>Orphan Models</h2>
             <p style="color: #666; margin-bottom: 1rem; font-size: 0.875rem;">
                 These models are in silver or gold layers but lack concept/realizes tags.
             </p>
             <div class="orphan-list">
-"""
-        )
+""")
 
         for orphan in sorted(state.orphan_models, key=lambda o: o.name):
-            output.write(
-                """
-                <div class="orphan-item">"""
-            )
+            output.write("""
+                <div class="orphan-item">""")
             output.write(orphan.name)
-            output.write(
-                """</div>
-"""
-            )
+            output.write("""</div>
+""")
 
-        output.write(
-            """
+        output.write("""
             </div>
         </section>
-"""
-        )
+""")
 
-    output.write(
-        """
+    output.write("""
     </div>
 </body>
 </html>
-"""
-    )
+""")

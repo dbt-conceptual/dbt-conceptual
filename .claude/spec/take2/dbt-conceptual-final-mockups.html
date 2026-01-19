@@ -1,0 +1,2113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dbt-conceptual — Complete UI Mockups</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f6f8;
+            color: #1a1a2e;
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .mockup-section {
+            max-width: 1300px;
+            margin: 0 auto 60px;
+        }
+
+        .mockup-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #4a9eff;
+            margin-bottom: 8px;
+        }
+
+        .mockup-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 6px;
+        }
+
+        .mockup-desc {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        /* ============================================
+           APP FRAME
+           ============================================ */
+        .app-frame {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+
+        /* Top Bar */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: #fafbfc;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-mark {
+            width: 26px;
+            height: 30px;
+            background: linear-gradient(150deg, #1e3a5f 0%, #112235 100%);
+            border: 1.5px solid #4a7fb3;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .logo-mark-header {
+            height: 8px;
+            background: linear-gradient(90deg, #5ba3f5 0%, #3d8ae0 100%);
+            margin: 3px;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            padding-left: 2px;
+        }
+
+        .logo-mark-dot {
+            width: 3px;
+            height: 3px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 50%;
+        }
+
+        .logo-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 500;
+            color: #1a1a2e;
+        }
+
+        .file-path {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: #666;
+            padding: 4px 10px;
+            background: #f0f0f0;
+            border-radius: 4px;
+        }
+
+        .top-bar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .main-tabs {
+            display: flex;
+            gap: 2px;
+        }
+
+        .main-tab {
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #666;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .main-tab:hover {
+            background: #f0f0f0;
+        }
+
+        .main-tab.active {
+            background: #e8f4ff;
+            color: #4a9eff;
+        }
+
+        .settings-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: #888;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+        .settings-btn:hover {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: #fff;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .tool-btn {
+            padding: 5px 10px;
+            font-size: 11px;
+            font-weight: 500;
+            color: #555;
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .tool-btn:hover {
+            background: #eee;
+        }
+
+        .tool-btn.active {
+            background: #e8f4ff;
+            border-color: #4a9eff;
+            color: #4a9eff;
+        }
+
+        .tool-divider {
+            width: 1px;
+            height: 20px;
+            background: #e0e0e0;
+            margin: 0 4px;
+        }
+
+        .toolbar-right {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .zoom-control {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: #888;
+            padding: 4px 8px;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+
+        /* Main Layout */
+        .main-layout {
+            display: flex;
+            height: 520px;
+        }
+
+        /* Canvas Area */
+        .canvas-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .canvas {
+            flex: 1;
+            background: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .canvas-grid {
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(circle, #ddd 1px, transparent 1px);
+            background-size: 16px 16px;
+            opacity: 0.4;
+        }
+
+        .canvas-content {
+            position: relative;
+            z-index: 1;
+            padding: 24px;
+            height: 100%;
+        }
+
+        /* Relationships SVG */
+        .relationships-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .rel-line {
+            stroke: #bbb;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .rel-line.selected {
+            stroke: #4a9eff;
+        }
+
+        .rel-label-bg {
+            fill: #fff;
+        }
+
+        .rel-label {
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            font-weight: 500;
+            fill: #666;
+            text-anchor: middle;
+        }
+
+        .rel-label.selected {
+            fill: #4a9eff;
+        }
+
+        .rel-cardinality {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            fill: #999;
+        }
+
+        /* ============================================
+           CONCEPT BOX — All States
+           ============================================ */
+        .concept {
+            position: absolute;
+            background: #fff;
+            border: 2px solid #d0d0d0;
+            border-radius: 10px;
+            min-width: 120px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+        }
+
+        .concept:hover {
+            border-color: #999;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .concept.selected {
+            border-color: #4a9eff;
+            box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.15);
+        }
+
+        /* Draft state */
+        .concept.draft {
+            border-style: dashed;
+            border-color: #cccccc;
+            opacity: 0.7;
+        }
+
+        .concept.draft:hover {
+            opacity: 0.85;
+        }
+
+        /* Stub state */
+        .concept.stub {
+            border-style: dashed;
+            border-color: #f5a623;
+            opacity: 0.7;
+        }
+
+        .concept.stub:hover {
+            opacity: 0.85;
+            border-color: #e09000;
+        }
+
+        .concept-body {
+            padding: 14px 16px 10px;
+            text-align: center;
+        }
+
+        .concept-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        .concept-domain {
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .concept.stub .concept-domain {
+            color: #f5a623;
+            font-style: italic;
+        }
+
+        /* Model count badge */
+        .concept-count {
+            position: absolute;
+            bottom: 6px;
+            left: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            font-weight: 600;
+            color: #888;
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .concept-count.has-models {
+            background: #e8f4ff;
+            color: #4a9eff;
+        }
+
+        .concept-count.stub {
+            background: #fef3e0;
+            color: #f5a623;
+        }
+
+        /* ============================================
+           PROPERTY PANEL
+           ============================================ */
+        .property-panel {
+            width: 320px;
+            background: #fafbfc;
+            border-left: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fff;
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        .panel-close {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #999;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .panel-close:hover {
+            background: #eee;
+            color: #666;
+        }
+
+        /* Panel Tabs */
+        .panel-tabs {
+            display: flex;
+            border-bottom: 1px solid #e5e7eb;
+            background: #fff;
+        }
+
+        .panel-tab {
+            flex: 1;
+            padding: 10px 16px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #666;
+            text-align: center;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+        }
+
+        .panel-tab:hover {
+            color: #333;
+        }
+
+        .panel-tab.active {
+            color: #4a9eff;
+            border-bottom-color: #4a9eff;
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        /* Form Fields */
+        .field {
+            margin-bottom: 16px;
+        }
+
+        .field-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 6px;
+        }
+
+        .field-input {
+            width: 100%;
+            padding: 8px 10px;
+            font-size: 13px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #fff;
+        }
+
+        .field-input:focus {
+            outline: none;
+            border-color: #4a9eff;
+            box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.1);
+        }
+
+        .field-input.readonly {
+            background: #f5f5f5;
+            color: #888;
+        }
+
+        .field-input-with-btn {
+            display: flex;
+            gap: 6px;
+        }
+
+        .field-input-with-btn .field-input {
+            flex: 1;
+        }
+
+        .field-edit-btn {
+            padding: 8px 12px;
+            font-size: 11px;
+            font-weight: 500;
+            color: #4a9eff;
+            background: #e8f4ff;
+            border: 1px solid #4a9eff;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .field-edit-btn:hover {
+            background: #d0e8ff;
+        }
+
+        .field-textarea {
+            width: 100%;
+            padding: 8px 10px;
+            font-size: 13px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #fff;
+            resize: vertical;
+            min-height: 70px;
+            font-family: inherit;
+        }
+
+        .field-select {
+            width: 100%;
+            padding: 8px 10px;
+            font-size: 13px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        /* Domain Tags Field */
+        .domain-tags-field {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 8px 10px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            min-height: 38px;
+            align-items: center;
+        }
+
+        .domain-tag {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: #e8f4ff;
+            color: #4a9eff;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .domain-tag .remove {
+            font-size: 14px;
+            cursor: pointer;
+            opacity: 0.7;
+        }
+
+        .domain-tag .remove:hover {
+            opacity: 1;
+        }
+
+        .domain-tag.suggested {
+            background: #f5f5f5;
+            color: #999;
+            border: 1px dashed #ccc;
+        }
+
+        .domain-tag.suggested:hover {
+            background: #eee;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .add-domain-btn {
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #4a9eff;
+            background: #fff;
+            border: 1px dashed #4a9eff;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .add-domain-btn:hover {
+            background: #e8f4ff;
+        }
+
+        /* Status Indicator */
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-dot.complete { background: #4caf50; }
+        .status-dot.draft { background: #9e9e9e; }
+        .status-dot.stub { background: #f5a623; }
+
+        .status-text {
+            font-size: 13px;
+            color: #333;
+        }
+
+        .status-text.stub {
+            color: #f5a623;
+        }
+
+        /* Models Tab Content */
+        .models-section {
+            margin-bottom: 20px;
+        }
+
+        .models-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            cursor: pointer;
+        }
+
+        .models-section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .models-section-count {
+            font-size: 11px;
+            font-weight: 500;
+            color: #888;
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+
+        .models-section-toggle {
+            font-size: 10px;
+            color: #999;
+        }
+
+        .models-list {
+            border: 1px solid #eee;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .model-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px;
+            font-size: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            background: #fff;
+        }
+
+        .model-item:last-child {
+            border-bottom: none;
+        }
+
+        .model-item:hover {
+            background: #f8f9fa;
+        }
+
+        .model-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: #333;
+        }
+
+        .model-remove {
+            font-size: 14px;
+            color: #ccc;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .model-remove:hover {
+            color: #e53935;
+            background: #ffebee;
+        }
+
+        .models-inferred {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .models-inferred-list {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: #888;
+            line-height: 1.6;
+        }
+
+        .add-model-btn {
+            width: 100%;
+            padding: 10px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #4a9eff;
+            background: #fff;
+            border: 1px dashed #4a9eff;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 12px;
+        }
+
+        .add-model-btn:hover {
+            background: #e8f4ff;
+        }
+
+        .models-empty {
+            padding: 24px;
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px dashed #ddd;
+        }
+
+        .models-empty-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+            opacity: 0.5;
+        }
+
+        /* Layer badges */
+        .layer-badge {
+            font-size: 9px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 3px;
+            text-transform: uppercase;
+        }
+
+        .layer-badge.gold { background: #fef3c7; color: #b45309; }
+        .layer-badge.silver { background: #f1f5f9; color: #475569; }
+        .layer-badge.bronze { background: #f5f0ed; color: #8d6e63; }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            gap: 20px;
+            padding: 10px 16px;
+            border-top: 1px solid #e5e7eb;
+            background: #fafbfc;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            color: #888;
+        }
+
+        .legend-swatch {
+            width: 20px;
+            height: 14px;
+            border-radius: 3px;
+            border: 2px solid #d0d0d0;
+            background: #fff;
+        }
+
+        .legend-swatch.draft {
+            border-style: dashed;
+            border-color: #ccc;
+            opacity: 0.7;
+        }
+
+        .legend-swatch.stub {
+            border-style: dashed;
+            border-color: #f5a623;
+            opacity: 0.7;
+        }
+
+        /* ============================================
+           MODAL
+           ============================================ */
+        .modal {
+            background: #fff;
+            border-radius: 12px;
+            width: 420px;
+            max-height: 520px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            border: 1px solid #e0e0e0;
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        .modal-close {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #999;
+            cursor: pointer;
+            border-radius: 6px;
+        }
+
+        .modal-close:hover {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        /* Layer Selector */
+        .layer-selector {
+            display: flex;
+            padding: 12px 20px;
+            gap: 8px;
+            border-bottom: 1px solid #e5e7eb;
+            background: #fafbfc;
+        }
+
+        .layer-option {
+            flex: 1;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            text-align: center;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid #e0e0e0;
+            background: #fff;
+            color: #666;
+        }
+
+        .layer-option:hover {
+            border-color: #ccc;
+        }
+
+        .layer-option.active {
+            border-color: #4a9eff;
+            background: #e8f4ff;
+            color: #4a9eff;
+        }
+
+        /* Search */
+        .modal-search {
+            padding: 12px 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 13px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #fff;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #4a9eff;
+        }
+
+        /* Model List */
+        .modal-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+
+        .modal-list-group {
+            padding: 0 12px;
+        }
+
+        .modal-list-group-title {
+            font-size: 10px;
+            font-weight: 600;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 8px;
+        }
+
+        .modal-list-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            cursor: pointer;
+            border-radius: 6px;
+            margin: 2px 0;
+        }
+
+        .modal-list-item:hover {
+            background: #f5f6f8;
+        }
+
+        .modal-list-item.selected {
+            background: #e8f4ff;
+        }
+
+        .modal-list-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .modal-checkbox {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #fff;
+        }
+
+        .modal-checkbox.checked {
+            background: #4a9eff;
+            border-color: #4a9eff;
+        }
+
+        .modal-item-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: #333;
+        }
+
+        .modal-item-path {
+            font-size: 10px;
+            color: #999;
+            margin-left: auto;
+        }
+
+        /* Modal Footer */
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fafbfc;
+        }
+
+        .modal-count {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e5e5;
+        }
+
+        .btn-primary {
+            background: #4a9eff;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #3a8eef;
+        }
+
+        /* Context Menu */
+        .context-menu {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            padding: 6px 0;
+            min-width: 180px;
+        }
+
+        .context-item {
+            padding: 8px 14px;
+            font-size: 12px;
+            color: #333;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .context-item:hover {
+            background: #f5f6f8;
+        }
+
+        .context-item.danger {
+            color: #e53935;
+        }
+
+        .context-divider {
+            height: 1px;
+            background: #eee;
+            margin: 4px 0;
+        }
+
+        .context-icon {
+            width: 16px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        /* ============================================
+           SETTINGS MODAL
+           ============================================ */
+        .settings-modal {
+            width: 560px;
+            max-height: 600px;
+        }
+
+        .settings-tabs {
+            display: flex;
+            border-bottom: 1px solid #e5e7eb;
+            background: #fafbfc;
+        }
+
+        .settings-tab {
+            padding: 12px 20px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+        }
+
+        .settings-tab.active {
+            color: #4a9eff;
+            border-bottom-color: #4a9eff;
+        }
+
+        .settings-content {
+            padding: 20px;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+
+        .settings-section {
+            margin-bottom: 24px;
+        }
+
+        .settings-section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 12px;
+        }
+
+        .settings-list {
+            border: 1px solid #eee;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .settings-list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-bottom: 1px solid #f0f0f0;
+            background: #fff;
+        }
+
+        .settings-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .settings-item-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+
+        .settings-item-name {
+            font-size: 13px;
+            color: #333;
+        }
+
+        .settings-item-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .settings-item-btn {
+            font-size: 12px;
+            color: #999;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .settings-item-btn:hover {
+            color: #666;
+        }
+
+        .settings-item-btn.danger:hover {
+            color: #e53935;
+        }
+
+        .settings-add-btn {
+            width: 100%;
+            padding: 10px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #4a9eff;
+            background: #fff;
+            border: 1px dashed #4a9eff;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        .settings-path-item {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+        }
+
+        /* ============================================
+           COMPONENT SHOWCASE
+           ============================================ */
+        .showcase-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-top: 20px;
+        }
+
+        .showcase-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .showcase-card-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+        }
+
+        .concepts-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .concept-showcase {
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================
+         SECTION 1: FULL APP - CONCEPT SELECTED
+         ============================================ -->
+    <div class="mockup-section">
+        <div class="mockup-label">Full Application</div>
+        <div class="mockup-title">Canvas with Concept Selected — Properties Tab</div>
+        <div class="mockup-desc">Main editor view showing concept selection with the Properties tab active. Note settings gear in top-right, domain as tags, field order, and all three concept states on canvas.</div>
+        
+        <div class="app-frame">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <div class="logo">
+                        <div class="logo-mark">
+                            <div class="logo-mark-header">
+                                <div class="logo-mark-dot"></div>
+                            </div>
+                        </div>
+                        <span class="logo-text">dbt-conceptual</span>
+                    </div>
+                    <span class="file-path">models/conceptual/conceptual.yml</span>
+                </div>
+                <div class="top-bar-right">
+                    <div class="main-tabs">
+                        <div class="main-tab active">Editor</div>
+                        <div class="main-tab">Coverage</div>
+                        <div class="main-tab">Bus Matrix</div>
+                    </div>
+                    <div class="settings-btn" title="Settings">⚙</div>
+                </div>
+            </div>
+
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <button class="tool-btn active">↖ Select</button>
+                <button class="tool-btn">□ Concept</button>
+                <button class="tool-btn">↗ Relationship</button>
+                <div class="tool-divider"></div>
+                <button class="tool-btn">⊞ Domain</button>
+                <div class="toolbar-right">
+                    <span class="zoom-control">100%</span>
+                    <button class="tool-btn">Export</button>
+                    <button class="tool-btn">Sync</button>
+                </div>
+            </div>
+
+            <!-- Main Layout -->
+            <div class="main-layout">
+                <!-- Canvas -->
+                <div class="canvas-area">
+                    <div class="canvas">
+                        <div class="canvas-grid"></div>
+                        
+                        <!-- Relationships -->
+                        <svg class="relationships-layer" style="width: 100%; height: 100%;">
+                            <!-- Customer → Order -->
+                            <path d="M 195 85 C 250 85, 250 100, 305 100" class="rel-line" />
+                            <rect x="218" y="78" width="50" height="16" rx="3" class="rel-label-bg" />
+                            <text x="243" y="90" class="rel-label">places</text>
+                            
+                            <!-- Order → Product -->
+                            <path d="M 435 100 C 490 100, 490 85, 545 85" class="rel-line" />
+                            <rect x="453" y="78" width="60" height="16" rx="3" class="rel-label-bg" />
+                            <text x="483" y="90" class="rel-label">contains</text>
+
+                            <!-- Customer → Shipment -->
+                            <path d="M 130 130 C 130 200, 290 200, 290 250" class="rel-line" />
+                            <rect x="175" y="188" width="60" height="16" rx="3" class="rel-label-bg" />
+                            <text x="205" y="200" class="rel-label">receives</text>
+                            
+                            <!-- Order → Shipment -->
+                            <path d="M 370 145 C 370 200, 340 200, 340 250" class="rel-line" />
+                            <rect x="325" y="188" width="50" height="16" rx="3" class="rel-label-bg" />
+                            <text x="350" y="200" class="rel-label">fulfills</text>
+
+                            <!-- Payment → Order (stub relationship) -->
+                            <path d="M 545 270 C 490 270, 490 145, 435 145" class="rel-line" style="stroke: #f5a623; stroke-dasharray: 4 2;" />
+                            <rect x="458" y="200" width="50" height="16" rx="3" class="rel-label-bg" />
+                            <text x="483" y="212" class="rel-label" style="fill: #f5a623;">pays</text>
+                        </svg>
+
+                        <div class="canvas-content">
+                            <!-- Customer (selected, complete) -->
+                            <div class="concept selected" style="left: 60px; top: 50px;">
+                                <div class="concept-body">
+                                    <div class="concept-name">Customer</div>
+                                    <div class="concept-domain">Party</div>
+                                </div>
+                                <div class="concept-count has-models">3</div>
+                            </div>
+
+                            <!-- Order (complete) -->
+                            <div class="concept" style="left: 305px; top: 65px;">
+                                <div class="concept-body">
+                                    <div class="concept-name">Order</div>
+                                    <div class="concept-domain">Transaction</div>
+                                </div>
+                                <div class="concept-count has-models">2</div>
+                            </div>
+
+                            <!-- Product (complete) -->
+                            <div class="concept" style="left: 545px; top: 50px;">
+                                <div class="concept-body">
+                                    <div class="concept-name">Product</div>
+                                    <div class="concept-domain">Catalog</div>
+                                </div>
+                                <div class="concept-count has-models">2</div>
+                            </div>
+
+                            <!-- Shipment (draft - no models) -->
+                            <div class="concept draft" style="left: 260px; top: 250px;">
+                                <div class="concept-body">
+                                    <div class="concept-name">Shipment</div>
+                                    <div class="concept-domain">Transaction</div>
+                                </div>
+                                <div class="concept-count">0</div>
+                            </div>
+
+                            <!-- Payment (stub - from sync) -->
+                            <div class="concept stub" style="left: 520px; top: 235px;">
+                                <div class="concept-body">
+                                    <div class="concept-name">Payment</div>
+                                    <div class="concept-domain">no domain</div>
+                                </div>
+                                <div class="concept-count stub">↻</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-swatch"></div>
+                            <span>Complete</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-swatch draft"></div>
+                            <span>Draft</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-swatch stub"></div>
+                            <span>Stub (from sync)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Property Panel - Properties Tab -->
+                <div class="property-panel">
+                    <div class="panel-header">
+                        <span class="panel-title">Customer</span>
+                        <span class="panel-close">×</span>
+                    </div>
+
+                    <div class="panel-tabs">
+                        <div class="panel-tab active">Properties</div>
+                        <div class="panel-tab">Models</div>
+                    </div>
+
+                    <div class="panel-content">
+                        <!-- Domain (tags) -->
+                        <div class="field">
+                            <div class="field-label">Domain</div>
+                            <div class="domain-tags-field">
+                                <div class="domain-tag">
+                                    Party
+                                    <span class="remove">×</span>
+                                </div>
+                                <!-- Add button hidden when concept has domain (single allowed) -->
+                            </div>
+                        </div>
+
+                        <!-- Owner -->
+                        <div class="field">
+                            <div class="field-label">Owner</div>
+                            <input type="text" class="field-input" value="customer_team" placeholder="Enter owner...">
+                        </div>
+
+                        <!-- Name -->
+                        <div class="field">
+                            <div class="field-label">Name</div>
+                            <input type="text" class="field-input" value="Customer">
+                        </div>
+
+                        <!-- Status (read-only) -->
+                        <div class="field">
+                            <div class="field-label">Status</div>
+                            <div class="status-indicator">
+                                <div class="status-dot complete"></div>
+                                <span class="status-text">Complete</span>
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="field">
+                            <div class="field-label">Description</div>
+                            <textarea class="field-textarea" placeholder="Enter description...">A person or company that purchases products from our business.</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         SECTION 2: CONCEPT - MODELS TAB
+         ============================================ -->
+    <div class="mockup-section">
+        <div class="mockup-label">Property Panel</div>
+        <div class="mockup-title">Concept — Models Tab</div>
+        <div class="mockup-desc">Shows associated models grouped by layer (Gold, Silver, Bronze inferred). Remove button on hover, Add Model button at bottom.</div>
+        
+        <div style="display: flex; gap: 24px;">
+            <!-- Models Tab with content -->
+            <div class="property-panel" style="height: auto; border: 1px solid #e5e7eb; border-radius: 8px;">
+                <div class="panel-header">
+                    <span class="panel-title">Customer</span>
+                    <span class="panel-close">×</span>
+                </div>
+
+                <div class="panel-tabs">
+                    <div class="panel-tab">Properties</div>
+                    <div class="panel-tab active">Models</div>
+                </div>
+
+                <div class="panel-content">
+                    <!-- Gold -->
+                    <div class="models-section">
+                        <div class="models-section-header">
+                            <div class="models-section-title">
+                                <span class="layer-badge gold">Gold</span>
+                                <span class="models-section-count">1</span>
+                            </div>
+                            <span class="models-section-toggle">▾</span>
+                        </div>
+                        <div class="models-list">
+                            <div class="model-item">
+                                <span class="model-name">dim_customer</span>
+                                <span class="model-remove">×</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Silver -->
+                    <div class="models-section">
+                        <div class="models-section-header">
+                            <div class="models-section-title">
+                                <span class="layer-badge silver">Silver</span>
+                                <span class="models-section-count">2</span>
+                            </div>
+                            <span class="models-section-toggle">▾</span>
+                        </div>
+                        <div class="models-list">
+                            <div class="model-item">
+                                <span class="model-name">stg_shopify__customers</span>
+                                <span class="model-remove">×</span>
+                            </div>
+                            <div class="model-item">
+                                <span class="model-name">stg_crm__customers</span>
+                                <span class="model-remove">×</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bronze (inferred) -->
+                    <div class="models-section">
+                        <div class="models-section-header">
+                            <div class="models-section-title">
+                                <span class="layer-badge bronze">Bronze</span>
+                                <span class="models-section-count">4</span>
+                                <span style="font-size: 9px; color: #999; font-weight: normal;">(inferred)</span>
+                            </div>
+                            <span class="models-section-toggle">▸</span>
+                        </div>
+                        <div class="models-inferred">
+                            <div class="models-inferred-list">
+                                raw_shopify.customers<br>
+                                raw_crm.contacts<br>
+                                raw_crm.accounts<br>
+                                raw_stripe.customers
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="add-model-btn">+ Associate Model...</button>
+                </div>
+            </div>
+
+            <!-- Empty state for comparison -->
+            <div class="property-panel" style="height: auto; border: 1px solid #e5e7eb; border-radius: 8px;">
+                <div class="panel-header">
+                    <span class="panel-title">Shipment</span>
+                    <span class="panel-close">×</span>
+                </div>
+
+                <div class="panel-tabs">
+                    <div class="panel-tab">Properties</div>
+                    <div class="panel-tab active">Models</div>
+                </div>
+
+                <div class="panel-content">
+                    <div class="models-empty">
+                        <div class="models-empty-icon">📦</div>
+                        <div>No models associated yet</div>
+                        <div style="color: #bbb; margin-top: 4px; font-size: 11px;">Associate models to move out of draft status</div>
+                    </div>
+                    <button class="add-model-btn">+ Associate Model...</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         SECTION 3: RELATIONSHIP PANEL
+         ============================================ -->
+    <div class="mockup-section">
+        <div class="mockup-label">Property Panel</div>
+        <div class="mockup-title">Relationship — Properties Tab</div>
+        <div class="mockup-desc">Relationship selected. Domain tags with endpoint suggestions (faded), derived name with edit override, verb with autocomplete, cardinality dropdown.</div>
+        
+        <div style="display: flex; gap: 24px;">
+            <!-- With domain assigned -->
+            <div class="property-panel" style="height: auto; border: 1px solid #e5e7eb; border-radius: 8px;">
+                <div class="panel-header">
+                    <span class="panel-title">customer → order</span>
+                    <span class="panel-close">×</span>
+                </div>
+
+                <div class="panel-tabs">
+                    <div class="panel-tab active">Properties</div>
+                    <div class="panel-tab">Models</div>
+                </div>
+
+                <div class="panel-content">
+                    <!-- Domain (tags with suggestions) -->
+                    <div class="field">
+                        <div class="field-label">Domain</div>
+                        <div class="domain-tags-field">
+                            <div class="domain-tag">
+                                Transaction
+                                <span class="remove">×</span>
+                            </div>
+                            <span class="add-domain-btn">+</span>
+                        </div>
+                    </div>
+
+                    <!-- Owner -->
+                    <div class="field">
+                        <div class="field-label">Owner</div>
+                        <input type="text" class="field-input" value="orders_team" placeholder="Enter owner...">
+                    </div>
+
+                    <!-- Name (derived, with edit) -->
+                    <div class="field">
+                        <div class="field-label">Name</div>
+                        <div class="field-input-with-btn">
+                            <input type="text" class="field-input readonly" value="customer:places:order" readonly>
+                            <button class="field-edit-btn">Edit</button>
+                        </div>
+                    </div>
+
+                    <!-- Verb -->
+                    <div class="field">
+                        <div class="field-label">Verb</div>
+                        <input type="text" class="field-input" value="places" placeholder="e.g. places, contains, owns...">
+                    </div>
+
+                    <!-- Cardinality -->
+                    <div class="field">
+                        <div class="field-label">Cardinality</div>
+                        <select class="field-select">
+                            <option>1:1</option>
+                            <option selected>1:N</option>
+                            <option>N:M</option>
+                        </select>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="field">
+                        <div class="field-label">Status</div>
+                        <div class="status-indicator">
+                            <div class="status-dot complete"></div>
+                            <span class="status-text">Complete</span>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="field">
+                        <div class="field-label">Description</div>
+                        <textarea class="field-textarea" placeholder="Enter description...">A customer places one or more orders over time.</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Without domain - showing suggestions -->
+            <div class="property-panel" style="height: auto; border: 1px solid #e5e7eb; border-radius: 8px;">
+                <div class="panel-header">
+                    <span class="panel-title" style="color: #f5a623;">payment → order</span>
+                    <span class="panel-close">×</span>
+                </div>
+
+                <div class="panel-tabs">
+                    <div class="panel-tab active">Properties</div>
+                    <div class="panel-tab">Models</div>
+                </div>
+
+                <div class="panel-content">
+                    <!-- Domain with suggestions shown -->
+                    <div class="field">
+                        <div class="field-label">Domain</div>
+                        <div class="domain-tags-field">
+                            <div class="domain-tag suggested" title="Click to add (from Payment)">
+                                Finance
+                            </div>
+                            <div class="domain-tag suggested" title="Click to add (from Order)">
+                                Transaction
+                            </div>
+                            <span class="add-domain-btn">+</span>
+                        </div>
+                        <div style="font-size: 10px; color: #999; margin-top: 4px;">Click a suggestion or + to add domain</div>
+                    </div>
+
+                    <!-- Owner -->
+                    <div class="field">
+                        <div class="field-label">Owner</div>
+                        <input type="text" class="field-input" value="" placeholder="Enter owner...">
+                    </div>
+
+                    <!-- Name (derived) -->
+                    <div class="field">
+                        <div class="field-label">Name</div>
+                        <div class="field-input-with-btn">
+                            <input type="text" class="field-input readonly" value="payment:pays:order" readonly>
+                            <button class="field-edit-btn">Edit</button>
+                        </div>
+                    </div>
+
+                    <!-- Verb -->
+                    <div class="field">
+                        <div class="field-label">Verb</div>
+                        <input type="text" class="field-input" value="pays" placeholder="e.g. places, contains, owns...">
+                    </div>
+
+                    <!-- Cardinality -->
+                    <div class="field">
+                        <div class="field-label">Cardinality</div>
+                        <select class="field-select">
+                            <option selected>1:1</option>
+                            <option>1:N</option>
+                            <option>N:M</option>
+                        </select>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="field">
+                        <div class="field-label">Status</div>
+                        <div class="status-indicator">
+                            <div class="status-dot stub"></div>
+                            <span class="status-text stub">Stub (from sync)</span>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="field">
+                        <div class="field-label">Description</div>
+                        <textarea class="field-textarea" placeholder="Enter description..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         SECTION 4: ASSOCIATE MODEL MODAL
+         ============================================ -->
+    <div class="mockup-section">
+        <div class="mockup-label">Modal</div>
+        <div class="mockup-title">Associate Model</div>
+        <div class="mockup-desc">Layer selector at top (Silver/Gold), search filter, models grouped by folder path, checkbox selection. Shows unassociated models only.</div>
+        
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">Associate Model to Customer</span>
+                <span class="modal-close">×</span>
+            </div>
+
+            <div class="layer-selector">
+                <div class="layer-option">Silver</div>
+                <div class="layer-option active">Gold</div>
+            </div>
+
+            <div class="modal-search">
+                <input type="text" class="search-input" placeholder="Search models...">
+            </div>
+
+            <div class="modal-list">
+                <div class="modal-list-group">
+                    <div class="modal-list-group-title">models/gold/</div>
+                    <div class="modal-list-item disabled">
+                        <div class="modal-checkbox checked">✓</div>
+                        <span class="modal-item-name">dim_customer</span>
+                        <span class="modal-item-path">already linked</span>
+                    </div>
+                    <div class="modal-list-item selected">
+                        <div class="modal-checkbox checked">✓</div>
+                        <span class="modal-item-name">dim_customer_segment</span>
+                    </div>
+                    <div class="modal-list-item">
+                        <div class="modal-checkbox"></div>
+                        <span class="modal-item-name">fact_customer_orders</span>
+                    </div>
+                </div>
+                <div class="modal-list-group">
+                    <div class="modal-list-group-title">models/gold/finance/</div>
+                    <div class="modal-list-item">
+                        <div class="modal-checkbox"></div>
+                        <span class="modal-item-name">dim_customer_credit</span>
+                    </div>
+                    <div class="modal-list-item">
+                        <div class="modal-checkbox"></div>
+                        <span class="modal-item-name">fact_customer_payments</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <span class="modal-count">1 model selected</span>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary">Cancel</button>
+                    <button class="btn btn-primary">Associate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         SECTION 5: SETTINGS MODAL
+         ============================================ -->
+    <div class="mockup-section">
+        <div class="mockup-label">Modal</div>
+        <div class="mockup-title">Settings</div>
+        <div class="mockup-desc">Project-level configuration for domains and layer folder paths. Accessed via gear icon in top-right.</div>
+        
+        <div class="modal settings-modal">
+            <div class="modal-header">
+                <span class="modal-title">Settings</span>
+                <span class="modal-close">×</span>
+            </div>
+
+            <div class="settings-tabs">
+                <div class="settings-tab active">Domains</div>
+                <div class="settings-tab">Layer Paths</div>
+            </div>
+
+            <div class="settings-content">
+                <div class="settings-section">
+                    <div class="settings-section-title">Configured Domains</div>
+                    <div class="settings-list">
+                        <div class="settings-list-item">
+                            <div style="display: flex; align-items: center;">
+                                <div class="settings-item-color" style="background: #E3F2FD;"></div>
+                                <span class="settings-item-name">Party</span>
+                            </div>
+                            <div class="settings-item-actions">
+                                <span class="settings-item-btn">✎</span>
+                                <span class="settings-item-btn danger">×</span>
+                            </div>
+                        </div>
+                        <div class="settings-list-item">
+                            <div style="display: flex; align-items: center;">
+                                <div class="settings-item-color" style="background: #FFF3E0;"></div>
+                                <span class="settings-item-name">Transaction</span>
+                            </div>
+                            <div class="settings-item-actions">
+                                <span class="settings-item-btn">✎</span>
+                                <span class="settings-item-btn danger">×</span>
+                            </div>
+                        </div>
+                        <div class="settings-list-item">
+                            <div style="display: flex; align-items: center;">
+                                <div class="settings-item-color" style="background: #F1F8E9;"></div>
+                                <span class="settings-item-name">Catalog</span>
+                            </div>
+                            <div class="settings-item-actions">
+                                <span class="settings-item-btn">✎</span>
+                                <span class="settings-item-btn danger">×</span>
+                            </div>
+                        </div>
+                        <div class="settings-list-item">
+                            <div style="display: flex; align-items: center;">
+                                <div class="settings-item-color" style="background: #FCE4EC;"></div>
+                                <span class="settings-item-name">Finance</span>
+                            </div>
+                            <div class="settings-item-actions">
+                                <span class="settings-item-btn">✎</span>
+                                <span class="settings-item-btn danger">×</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="settings-add-btn">+ Add Domain</button>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <span></span>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary">Cancel</button>
+                    <button class="btn btn-primary">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings - Layer Paths Tab -->
+    <div class="mockup-section">
+        <div class="mockup-label">Modal</div>
+        <div class="mockup-title">Settings — Layer Paths Tab</div>
+        <div class="mockup-desc">Configure which folders map to which medallion layer.</div>
+        
+        <div class="modal settings-modal">
+            <div class="modal-header">
+                <span class="modal-title">Settings</span>
+                <span class="modal-close">×</span>
+            </div>
+
+            <div class="settings-tabs">
+                <div class="settings-tab">Domains</div>
+                <div class="settings-tab active">Layer Paths</div>
+            </div>
+
+            <div class="settings-content">
+                <div class="settings-section">
+                    <div class="settings-section-title">Gold Layer Paths</div>
+                    <div class="settings-list">
+                        <div class="settings-list-item">
+                            <span class="settings-item-name settings-path-item">models/gold</span>
+                            <div class="settings-item-actions">
+                                <span class="settings-item-btn danger">×</span>
+                            </div>
+                        </div>
+                        <div class="settings-list-item">
+                            <span class="settings-item-name settings-path-item">models/marts</span>
+                            <div class="settings-item-actions">
+                                <span class="settings-item-btn danger">×</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="settings-add-btn">+ Add Path</button>
+                </div>
+
+                <div class="settings-section">
+                    <div class="settings-section-title">Silver Layer Paths</div>
+                    <div class="settings-list">
+                        <div class="settings-list-item">
+                            <span class="settings-item-name settings-path-item">models/silver</span>
+                            <div class="settings-item-actions">
+                                <span class="settings-item-btn danger">×</span>
+                            </div>
+                        </div>
+                        <div class="settings-list-item">
+                            <span class="settings-item-name settings-path-item">models/staging</span>
+                            <div class="settings-item-actions">
+                                <span class="settings-item-btn danger">×</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="settings-add-btn">+ Add Path</button>
+                </div>
+
+                <div class="settings-section">
+                    <div class="settings-section-title">Bronze Layer Paths</div>
+                    <div class="settings-list">
+                        <div class="settings-list-item">
+                            <span class="settings-item-name settings-path-item">models/bronze</span>
+                            <div class="settings-item-actions">
+                                <span class="settings-item-btn danger">×</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="settings-add-btn">+ Add Path</button>
+                    <div style="font-size: 10px; color: #999; margin-top: 8px;">Note: Bronze associations are inferred from manifest.json lineage</div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <span></span>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary">Cancel</button>
+                    <button class="btn btn-primary">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         SECTION 6: CONTEXT MENU
+         ============================================ -->
+    <div class="mockup-section">
+        <div class="mockup-label">Component</div>
+        <div class="mockup-title">Context Menu (Right-Click)</div>
+        <div class="mockup-desc">Appears on right-click of concept or relationship.</div>
+        
+        <div style="display: flex; gap: 40px;">
+            <div>
+                <div style="font-size: 11px; color: #888; margin-bottom: 8px;">Concept</div>
+                <div class="context-menu" style="position: relative;">
+                    <div class="context-item"><span class="context-icon">✎</span> Edit Properties</div>
+                    <div class="context-item"><span class="context-icon">⊞</span> View Models</div>
+                    <div class="context-item"><span class="context-icon">+</span> Associate Model...</div>
+                    <div class="context-divider"></div>
+                    <div class="context-item danger"><span class="context-icon">🗑</span> Delete</div>
+                </div>
+            </div>
+            <div>
+                <div style="font-size: 11px; color: #888; margin-bottom: 8px;">Relationship</div>
+                <div class="context-menu" style="position: relative;">
+                    <div class="context-item"><span class="context-icon">✎</span> Edit Properties</div>
+                    <div class="context-item"><span class="context-icon">⊞</span> View Realizations</div>
+                    <div class="context-divider"></div>
+                    <div class="context-item danger"><span class="context-icon">🗑</span> Delete</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         SECTION 7: CONCEPT STATES SHOWCASE
+         ============================================ -->
+    <div class="mockup-section">
+        <div class="mockup-label">Component Reference</div>
+        <div class="mockup-title">Concept Box — All States</div>
+        <div class="mockup-desc">Visual reference for all concept states: Complete, Draft, Stub, and Selected variants.</div>
+        
+        <div class="showcase-grid">
+            <div class="showcase-card">
+                <div class="showcase-card-title">Complete</div>
+                <div class="concepts-row">
+                    <div class="concept-showcase">
+                        <div class="concept" style="position: relative;">
+                            <div class="concept-body">
+                                <div class="concept-name">Customer</div>
+                                <div class="concept-domain">Party</div>
+                            </div>
+                            <div class="concept-count has-models">3</div>
+                        </div>
+                    </div>
+                    <div class="concept-showcase">
+                        <div class="concept selected" style="position: relative;">
+                            <div class="concept-body">
+                                <div class="concept-name">Customer</div>
+                                <div class="concept-domain">Party</div>
+                            </div>
+                            <div class="concept-count has-models">3</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="font-size: 10px; color: #888; margin-top: 12px;">Has domain + has models = solid border, full opacity</div>
+            </div>
+
+            <div class="showcase-card">
+                <div class="showcase-card-title">Draft</div>
+                <div class="concepts-row">
+                    <div class="concept-showcase">
+                        <div class="concept draft" style="position: relative;">
+                            <div class="concept-body">
+                                <div class="concept-name">Shipment</div>
+                                <div class="concept-domain">Transaction</div>
+                            </div>
+                            <div class="concept-count">0</div>
+                        </div>
+                    </div>
+                    <div class="concept-showcase">
+                        <div class="concept draft" style="position: relative;">
+                            <div class="concept-body">
+                                <div class="concept-name">Return</div>
+                                <div class="concept-domain" style="color: #999; font-style: italic;">no domain</div>
+                            </div>
+                            <div class="concept-count">1</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="font-size: 10px; color: #888; margin-top: 12px;">Missing domain OR zero models = dashed gray border, 70% opacity</div>
+            </div>
+
+            <div class="showcase-card">
+                <div class="showcase-card-title">Stub (from sync)</div>
+                <div class="concepts-row">
+                    <div class="concept-showcase">
+                        <div class="concept stub" style="position: relative;">
+                            <div class="concept-body">
+                                <div class="concept-name">Payment</div>
+                                <div class="concept-domain">no domain</div>
+                            </div>
+                            <div class="concept-count stub">↻</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="font-size: 10px; color: #888; margin-top: 12px;">Created from model.yml scan, needs enrichment = dashed amber border, sync icon</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         SECTION 8: LOGO ASSETS
+         ============================================ -->
+    <div class="mockup-section">
+        <div class="mockup-label">Brand Assets</div>
+        <div class="mockup-title">Logo</div>
+        <div class="mockup-desc">Entity Seed logo mark with wordmark combinations.</div>
+        
+        <div class="showcase-grid">
+            <div class="showcase-card" style="background: #fff;">
+                <div class="showcase-card-title">Logo Mark</div>
+                <div style="display: flex; gap: 24px; align-items: center;">
+                    <!-- Large -->
+                    <div style="width: 56px; height: 63px; background: linear-gradient(150deg, #1e3a5f 0%, #112235 100%); border: 2px solid #4a7fb3; border-radius: 12px; overflow: hidden;">
+                        <div style="height: 16px; background: linear-gradient(90deg, #5ba3f5 0%, #3d8ae0 100%); margin: 6px; border-radius: 6px; display: flex; align-items: center; padding-left: 6px;">
+                            <div style="width: 5px; height: 5px; background: rgba(255,255,255,0.9); border-radius: 50%;"></div>
+                        </div>
+                        <div style="height: 2px; background: #4a7fb3; margin: 5px 8px; opacity: 0.4; width: 65%;"></div>
+                        <div style="height: 2px; background: #4a7fb3; margin: 5px 8px; opacity: 0.4; width: 45%;"></div>
+                    </div>
+                    <!-- Medium -->
+                    <div style="width: 40px; height: 45px; background: linear-gradient(150deg, #1e3a5f 0%, #112235 100%); border: 2px solid #4a7fb3; border-radius: 8px; overflow: hidden;">
+                        <div style="height: 11px; background: linear-gradient(90deg, #5ba3f5 0%, #3d8ae0 100%); margin: 4px; border-radius: 4px; display: flex; align-items: center; padding-left: 4px;">
+                            <div style="width: 4px; height: 4px; background: rgba(255,255,255,0.9); border-radius: 50%;"></div>
+                        </div>
+                    </div>
+                    <!-- Small -->
+                    <div style="width: 26px; height: 30px; background: linear-gradient(150deg, #1e3a5f 0%, #112235 100%); border: 1.5px solid #4a7fb3; border-radius: 5px; overflow: hidden;">
+                        <div style="height: 8px; background: linear-gradient(90deg, #5ba3f5 0%, #3d8ae0 100%); margin: 3px; border-radius: 2px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="showcase-card" style="background: #fff;">
+                <div class="showcase-card-title">With Wordmark</div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 40px; height: 45px; background: linear-gradient(150deg, #1e3a5f 0%, #112235 100%); border: 2px solid #4a7fb3; border-radius: 8px; overflow: hidden;">
+                        <div style="height: 11px; background: linear-gradient(90deg, #5ba3f5 0%, #3d8ae0 100%); margin: 4px; border-radius: 4px; display: flex; align-items: center; padding-left: 4px;">
+                            <div style="width: 4px; height: 4px; background: rgba(255,255,255,0.9); border-radius: 50%;"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 500; color: #1a1a2e;">dbt-conceptual</div>
+                        <div style="font-size: 12px; color: #888; margin-top: 2px;">Conceptual data modeling for dbt projects</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="showcase-card" style="background: #0f1117;">
+                <div class="showcase-card-title" style="color: #888;">Dark Background</div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 40px; height: 45px; background: linear-gradient(150deg, #1e3a5f 0%, #112235 100%); border: 2px solid #4a7fb3; border-radius: 8px; overflow: hidden;">
+                        <div style="height: 11px; background: linear-gradient(90deg, #5ba3f5 0%, #3d8ae0 100%); margin: 4px; border-radius: 4px; display: flex; align-items: center; padding-left: 4px;">
+                            <div style="width: 4px; height: 4px; background: rgba(255,255,255,0.9); border-radius: 50%;"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 500; color: #fff;">dbt-conceptual</div>
+                        <div style="font-size: 12px; color: #888; margin-top: 2px;">Conceptual data modeling for dbt projects</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

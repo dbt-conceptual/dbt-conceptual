@@ -63,33 +63,44 @@ class ConceptualModelParser:
                     domain=concept_data.get("domain"),
                     owner=concept_data.get("owner"),
                     definition=concept_data.get("definition"),
-                    status=concept_data.get("status", "stub"),
                     color=concept_data.get("color"),
-                    bronze_models=concept_data.get("bronze_models", []),
-                    silver_models=concept_data.get("silver_models", []),
-                    gold_models=concept_data.get("gold_models", []),
                     replaced_by=concept_data.get("replaced_by"),
-                    discovered_from=concept_data.get("discovered_from"),
+                    # Note: status, bronze_models, silver_models, gold_models are now derived
+                    # and populated by StateBuilder, not read from YAML
                 )
 
         # Parse relationships
         if "relationships" in data:
             for rel in data["relationships"]:
-                rel_name = rel["name"]
+                verb = rel.get(
+                    "verb", rel.get("name", "relates_to")
+                )  # Support both new and old format
                 from_concept = rel["from"]
                 to_concept = rel["to"]
 
-                # Create relationship ID
-                rel_id = f"{from_concept}:{rel_name}:{to_concept}"
+                # Create relationship ID using verb
+                rel_id = f"{from_concept}:{verb}:{to_concept}"
+
+                # Parse domains (handle both array and legacy single domain)
+                domains_raw = rel.get("domains", rel.get("domain"))
+                if isinstance(domains_raw, str):
+                    domains = [domains_raw] if domains_raw else []
+                elif isinstance(domains_raw, list):
+                    domains = domains_raw
+                else:
+                    domains = []
 
                 state.relationships[rel_id] = RelationshipState(
-                    name=rel_name,
+                    verb=verb,
                     from_concept=from_concept,
                     to_concept=to_concept,
                     cardinality=rel.get("cardinality"),
                     definition=rel.get("definition"),
-                    status=rel.get("status", "complete"),
-                    realized_by=rel.get("realized_by", []),
+                    domains=domains,
+                    owner=rel.get("owner"),
+                    custom_name=rel.get("custom_name"),
+                    # Note: status and realized_by are now derived
+                    # and populated by StateBuilder, not read from YAML
                 )
 
         # Parse relationship groups

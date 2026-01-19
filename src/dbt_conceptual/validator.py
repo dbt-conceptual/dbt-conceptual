@@ -352,7 +352,6 @@ class Validator:
                             context={
                                 "concept": concept_id,
                                 "missing": missing,
-                                "discovered_from": concept.discovered_from,
                             },
                         )
                     )

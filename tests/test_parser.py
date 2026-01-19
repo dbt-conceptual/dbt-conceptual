@@ -58,15 +58,16 @@ def test_parse_conceptual_model_with_domains() -> None:
                     "domain": "party",
                     "owner": "data_team",
                     "definition": "A customer",
-                    "status": "complete",
+                    # Note: status is no longer stored, it's derived
                 }
             },
             "relationships": [
                 {
-                    "name": "places",
+                    "verb": "places",
                     "from": "customer",
                     "to": "order",
                     "cardinality": "1:N",
+                    "domains": ["transaction"],  # New: array of domains
                 }
             ],
         }
@@ -86,7 +87,8 @@ def test_parse_conceptual_model_with_domains() -> None:
         assert len(state.concepts) == 1
         assert "customer" in state.concepts
         assert state.concepts["customer"].domain == "party"
-        assert state.concepts["customer"].status == "complete"
+        # Status is now derived: has domain but no models = "draft"
+        assert state.concepts["customer"].status == "draft"
 
         assert len(state.relationships) == 1
         assert "customer:places:order" in state.relationships

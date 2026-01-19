@@ -12,22 +12,21 @@ def test_validate_concept_required_fields() -> None:
     config = Config(project_dir=Path("/tmp"))
     state = ProjectState()
 
-    # Add a complete concept missing fields
+    # Add a complete concept missing fields - status will be draft since no models
     state.concepts["customer"] = ConceptState(
         name="Customer",
-        domain=None,  # Missing
+        domain="party",  # Has domain
         owner=None,  # Missing
         definition=None,  # Missing
-        status="complete",
+        gold_models=["dim_customer"],  # Has models, so status = complete
     )
 
     validator = Validator(config, state)
     issues = validator.validate()
 
-    # Should have an error for missing fields
-    errors = [i for i in issues if i.severity == Severity.ERROR]
-    assert len(errors) > 0
-    assert any("missing required fields" in i.message for i in errors)
+    # Should have a warning for missing owner/definition
+    warnings = [i for i in issues if i.severity == Severity.WARNING]
+    assert len(warnings) > 0
 
 
 def test_validate_relationship_endpoints() -> None:
@@ -37,7 +36,7 @@ def test_validate_relationship_endpoints() -> None:
 
     # Add a relationship with non-existent concepts
     state.relationships["customer:places:order"] = RelationshipState(
-        name="places",
+        verb="places",
         from_concept="customer",
         to_concept="order",
     )
@@ -61,7 +60,7 @@ def test_validate_deprecated_references() -> None:
         domain="party",
         owner="data_team",
         definition="Deprecated",
-        status="deprecated",
+        replaced_by="customer",  # This makes status = deprecated
         gold_models=["dim_old_customer"],
     )
 
@@ -85,7 +84,6 @@ def test_validate_gold_only_warning() -> None:
         domain="analytics",
         owner="data_team",
         definition="A derived metric",
-        status="complete",
         gold_models=["fact_derived"],
         silver_models=[],
     )
@@ -104,10 +102,14 @@ def test_validator_summary() -> None:
     state = ProjectState()
 
     # Add various issues
-    state.concepts["stub"] = ConceptState(name="Stub", status="stub")
+    # Stub concept (no domain) - generates info message
+    state.concepts["stub"] = ConceptState(name="Stub")
+    # Concept with domain but missing owner/definition - generates warnings
     state.concepts["incomplete"] = ConceptState(
-        name="Incomplete", status="complete"
-    )  # Missing required fields
+        name="Incomplete",
+        domain="party",
+        gold_models=["dim_incomplete"],
+    )
 
     validator = Validator(config, state)
     validator.validate()
@@ -123,8 +125,12 @@ def test_validator_has_errors() -> None:
     config = Config(project_dir=Path("/tmp"))
     state = ProjectState()
 
-    # Add an incomplete concept (will generate error)
-    state.concepts["incomplete"] = ConceptState(name="Incomplete", status="complete")
+    # Add a relationship with missing endpoints (generates errors)
+    state.relationships["missing:relates:nonexistent"] = RelationshipState(
+        verb="relates",
+        from_concept="missing",
+        to_concept="nonexistent",
+    )
 
     validator = Validator(config, state)
     validator.validate()
@@ -138,7 +144,7 @@ def test_validator_no_errors() -> None:
     state = ProjectState()
 
     # Add a valid stub concept (only info, no errors)
-    state.concepts["valid_stub"] = ConceptState(name="Valid Stub", status="stub")
+    state.concepts["valid_stub"] = ConceptState(name="Valid Stub")
 
     validator = Validator(config, state)
     validator.validate()
@@ -153,7 +159,9 @@ def test_validate_unknown_domain() -> None:
 
     # Add concept with unknown domain
     state.concepts["customer"] = ConceptState(
-        name="Customer", domain="unknown_domain", status="complete"
+        name="Customer",
+        domain="unknown_domain",
+        gold_models=["dim_customer"],
     )
 
     validator = Validator(config, state)
