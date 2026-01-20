@@ -2,9 +2,7 @@
   <img src="docs/assets/logo-banner-light.svg" alt="dbt-conceptual" width="480">
 </p>
 
-> **The whiteboard sketch that doesn't get erased.**
-
-*Conceptual modeling without the ceremony. Shared vocabulary for data teams who don't have time for meetings.*
+> *Conceptual modeling without the ceremony. Shared vocabulary for data teams who don't have time for meetings.*
 
 [![PyPI version](https://img.shields.io/pypi/v/dbt-conceptual.svg)](https://pypi.org/project/dbt-conceptual/)
 [![Python](https://img.shields.io/badge/python-≥3.11-blue.svg)](https://pypi.org/project/dbt-conceptual/)
