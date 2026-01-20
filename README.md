@@ -1,7 +1,7 @@
 # dbt-conceptual
 
 <p align="center">
-  <img src="docs/assets/logo-banner-light.png" alt="dbt-conceptual" width="480">
+  <img src="docs/assets/logo-banner-light.svg" alt="dbt-conceptual" width="480">
 </p>
 
 > **The whiteboard sketch that doesn't get erased.**
