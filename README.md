@@ -1,5 +1,3 @@
-# dbt-conceptual
-
 <p align="center">
   <img src="docs/assets/logo-banner-light.svg" alt="dbt-conceptual" width="480">
 </p>
