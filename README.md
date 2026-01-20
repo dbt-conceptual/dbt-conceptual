@@ -1,7 +1,7 @@
 # dbt-conceptual
 
-<!-- ASSET: assets/logo-banner-light.png — Full-width banner with logo + tagline -->
-![dbt-conceptual](assets/logo-banner-light.png)
+<!-- ASSET: docs/assets/logo-banner-light.png — Full-width banner with logo + tagline -->
+![dbt-conceptual](docs/assets/logo-banner-light.png)
 
 > **The whiteboard sketch that doesn't get erased.**
 
@@ -60,8 +60,8 @@ The problem was everything *after* the boxes — the cascade into logical models
 
 No logical model. No physical derivation. Just shared vocabulary that lives with the code.
 
-<!-- ASSET: assets/canvas-example.png — Canvas showing concepts with relationships, complete/draft/stub states, and legend -->
-![Conceptual model canvas](assets/canvas-example.png)
+<!-- ASSET: docs/assets/canvas-example.png — Canvas showing concepts with relationships, complete/draft/stub states, and legend -->
+![Conceptual model canvas](docs/assets/canvas-example.png)
 
 ---
 
@@ -240,8 +240,8 @@ dbt-conceptual serve
 
 See which concepts are implemented at each layer:
 
-<!-- ASSET: assets/coverage-status.png — Terminal-style coverage report showing domains and status -->
-![Coverage status](assets/coverage-status.png)
+<!-- ASSET: docs/assets/coverage-status.png — Terminal-style coverage report showing domains and status -->
+![Coverage status](docs/assets/coverage-status.png)
 
 **Status logic:**
 
@@ -258,8 +258,8 @@ pip install dbt-conceptual[serve]
 dbt-conceptual serve
 ```
 
-<!-- ASSET: assets/ui-screenshot.png — Full UI with canvas, selected concept, and property panel -->
-![dbt-conceptual UI](assets/ui-screenshot.png)
+<!-- ASSET: docs/assets/ui-screenshot.png — Full UI with canvas, selected concept, and property panel -->
+![dbt-conceptual UI](docs/assets/ui-screenshot.png)
 
 - **Visual canvas editor** — drag concepts, draw relationships
 - **Property panel** — edit definitions, owners, domains
@@ -270,8 +270,8 @@ dbt-conceptual serve
 
 Catch drift before it ships:
 
-<!-- ASSET: assets/validation-errors.png — Validation report showing errors and warnings -->
-![Validation errors](assets/validation-errors.png)
+<!-- ASSET: docs/assets/validation-errors.png — Validation report showing errors and warnings -->
+![Validation errors](docs/assets/validation-errors.png)
 
 **CI/CD integration:**
 
@@ -288,8 +288,8 @@ The `--no-drafts` flag fails if any concepts or relationships are incomplete —
 
 See what changed in your conceptual model:
 
-<!-- ASSET: assets/diff-cli.png — Terminal output showing conceptual model diff -->
-![Diff CLI output](assets/diff-cli.png)
+<!-- ASSET: docs/assets/diff-cli.png — Terminal output showing conceptual model diff -->
+![Diff CLI output](docs/assets/diff-cli.png)
 
 Surface conceptual changes in PR reviews. Know when someone adds a new business concept or modifies an existing definition.
 
@@ -334,8 +334,8 @@ dbt-conceptual export --format coverage -o coverage.html
 dbt-conceptual export --format bus-matrix -o bus-matrix.html
 ```
 
-<!-- ASSET: assets/bus-matrix.png — Kimball-style bus matrix showing dimensional coverage -->
-![Bus matrix](assets/bus-matrix.png)
+<!-- ASSET: docs/assets/bus-matrix.png — Kimball-style bus matrix showing dimensional coverage -->
+![Bus matrix](docs/assets/bus-matrix.png)
 
 ---
 
