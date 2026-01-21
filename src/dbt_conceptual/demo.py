@@ -22,6 +22,7 @@ model-paths: ["models"]
 
 vars:
   dbt_conceptual:
+    conceptual_path: "."
     silver_paths: ["models/silver"]
     gold_paths: ["models/gold"]
 """.strip()
@@ -110,33 +111,29 @@ concepts:
     domain: analytics
 
 relationships:
-  customer_places_order:
-    from: customer
+  - from: customer
     to: order
-    label: places
+    verb: places
     cardinality: one-to-many
-    description: A customer can place multiple orders
+    definition: A customer can place multiple orders
 
-  order_contains_product:
-    from: order
+  - from: order
     to: product
-    label: contains
+    verb: contains
     cardinality: many-to-many
-    description: An order contains one or more products; products appear in many orders
+    definition: An order contains one or more products; products appear in many orders
 
-  order_generates_revenue:
-    from: order
+  - from: order
     to: revenue
-    label: generates
+    verb: generates
     cardinality: many-to-one
-    description: Orders contribute to revenue calculations
+    definition: Orders contribute to revenue calculations
 
-  customer_contributes_revenue:
-    from: customer
+  - from: customer
     to: revenue
-    label: contributes
+    verb: contributes
     cardinality: many-to-one
-    description: Customer purchases contribute to revenue
+    definition: Customer purchases contribute to revenue
 """.strip()
 
 BRONZE_SCHEMA_YML = """
