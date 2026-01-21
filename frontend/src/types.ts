@@ -30,7 +30,6 @@ export interface Domain {
   name: string;
   display_name: string;
   color?: string;
-  owner?: string;
 }
 
 export interface Concept {

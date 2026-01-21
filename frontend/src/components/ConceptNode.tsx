@@ -1,7 +1,6 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import type { Concept, ConceptStatus, Domain } from '../types';
-import { useStore } from '../store';
+import type { Concept, ConceptStatus } from '../types';
 
 export type ConceptNodeData = {
   concept: Concept;
@@ -10,7 +9,6 @@ export type ConceptNodeData = {
 
 export const ConceptNode = memo((props: any) => {
   const concept: Concept = props.data.concept;
-  const domains = useStore((state) => state.domains);
 
   // Status badge color
   const statusColorMap: Record<ConceptStatus, string> = {
@@ -21,10 +19,8 @@ export const ConceptNode = memo((props: any) => {
   };
   const statusColor = statusColorMap[concept.status];
 
-  // Get domain color if concept has a domain
-  const domain: Domain | undefined = concept.domain ? domains[concept.domain] : undefined;
-  // Use concept's own color if set, otherwise inherit from domain, otherwise default
-  const domainColor = concept.color || domain?.color || 'var(--color-neutral-300)';
+  // Domain color (or default)
+  const domainColor = concept.color || 'var(--color-neutral-300)';
 
   // Validation status
   const isGhost = concept.isGhost;

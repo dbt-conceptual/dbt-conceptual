@@ -21,37 +21,30 @@ export const RelationshipEdge = memo((props: any) => {
     targetPosition: props.targetPosition,
   });
 
-  // Check validation status
-  const isError = relationship.validationStatus === 'error';
-  const isWarning = relationship.validationStatus === 'warning';
-  const hasValidationIssue = isError || isWarning;
+  // Check if this edge is invalid (has validation errors)
+  const isInvalid = relationship.validationStatus === 'error';
 
-  // Status color - use validation color if issue, otherwise use status color
+  // Status color - use error color if invalid, otherwise use status color
   const statusColorMap: Record<RelationshipStatus, string> = {
     complete: 'var(--status-complete)',
     draft: 'var(--status-draft)',
     stub: 'var(--status-stub)',
   };
-  const statusColor = isError
-    ? 'var(--status-error)'
-    : isWarning
-      ? 'var(--status-warning)'
-      : statusColorMap[relationship.status];
+  const statusColor = isInvalid ? 'var(--status-error)' : statusColorMap[relationship.status];
 
   // Edge stroke style based on status or validation
-  const strokeDasharray = hasValidationIssue || relationship.status === 'stub' ? '5,5' : undefined;
+  const strokeDasharray = isInvalid || relationship.status === 'stub' ? '5,5' : undefined;
 
   // Label classes
   const labelClasses = ['relationship-edge-label'];
-  if (isError) labelClasses.push('invalid');
-  if (isWarning) labelClasses.push('warning');
+  if (isInvalid) labelClasses.push('invalid');
 
   return (
     <>
       {/* Edge path */}
       <path
         id={props.id}
-        className={`react-flow__edge-path ${isError ? 'invalid' : ''} ${isWarning ? 'warning' : ''}`}
+        className={`react-flow__edge-path ${isInvalid ? 'invalid' : ''}`}
         d={edgePath}
         stroke={statusColor}
         strokeWidth={2}
@@ -80,8 +73,8 @@ export const RelationshipEdge = memo((props: any) => {
               </div>
             )}
 
-            {/* Model count badge (not shown for edges with validation issues) */}
-            {!hasValidationIssue && relationship.realized_by.length > 0 && (
+            {/* Model count badge (not shown for invalid edges) */}
+            {!isInvalid && relationship.realized_by.length > 0 && (
               <div
                 className="relationship-edge-models"
                 style={{ backgroundColor: statusColor }}
