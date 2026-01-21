@@ -7,6 +7,7 @@ import click
 from rich.console import Console
 
 from dbt_conceptual.config import Config
+from dbt_conceptual.differ import ConceptualDiff
 from dbt_conceptual.parser import StateBuilder
 from dbt_conceptual.state import ConceptState, ProjectState
 from dbt_conceptual.validator import Severity, Validator
@@ -756,6 +757,7 @@ EXPORT_MATRIX: dict[str, set[str]] = {
     "status": {"markdown", "json"},
     "orphans": {"markdown", "json"},
     "validation": {"markdown", "json"},
+    "diff": {"markdown", "json"},
 }
 
 
@@ -785,11 +787,19 @@ def _validate_export_combination(export_type: str, export_format: str) -> None:
     "--type",
     "export_type",
     type=click.Choice(
-        ["diagram", "coverage", "bus-matrix", "status", "orphans", "validation"],
+        [
+            "diagram",
+            "coverage",
+            "bus-matrix",
+            "status",
+            "orphans",
+            "validation",
+            "diff",
+        ],
         case_sensitive=False,
     ),
     required=True,
-    help="What to export: diagram, coverage, bus-matrix, status, orphans, validation",
+    help="What to export: diagram, coverage, bus-matrix, status, orphans, validation, diff",
 )
 @click.option(
     "--format",
@@ -813,12 +823,18 @@ def _validate_export_combination(export_type: str, export_format: str) -> None:
     default=False,
     help="For validation: fail if any concepts are incomplete",
 )
+@click.option(
+    "--base",
+    default=None,
+    help="Base git ref for diff (required when --type diff)",
+)
 def export(
     project_dir: Optional[Path],
     export_type: str,
     export_format: str,
     output: Optional[Path],
     no_drafts: bool,
+    base: Optional[str],
 ) -> None:
     """Export conceptual model to various formats.
 
@@ -832,6 +848,7 @@ def export(
       status:      markdown, json
       orphans:     markdown, json
       validation:  markdown, json
+      diff:        markdown, json (requires --base)
 
     \b
     Examples:
@@ -840,6 +857,7 @@ def export(
         dbt-conceptual export --type status --format json | jq '.summary'
         dbt-conceptual export --type validation --format markdown
         dbt-conceptual export --type diagram --format svg -o diagram.svg
+        dbt-conceptual export --type diff --format markdown --base main
     """
     import sys
 
@@ -860,6 +878,14 @@ def export(
 
     # Validate type/format combination
     _validate_export_combination(export_type, export_format)
+
+    # Validate --base is provided for diff type
+    if export_type == "diff" and not base:
+        console.print("[red]Error: --base is required when --type diff[/red]")
+        console.print(
+            "[yellow]Example: dbt-conceptual export --type diff --format markdown --base main[/yellow]"
+        )
+        raise click.Abort()
 
     config = Config.load(project_dir=project_dir)
 
@@ -928,6 +954,20 @@ def export(
             elif export_format == "json":
                 export_validation_json(validator, issues, out)
 
+        elif export_type == "diff":
+            # Diff requires computing against base ref
+            diff_result = _compute_diff_for_export(config, base)  # type: ignore
+            if export_format == "markdown":
+                from dbt_conceptual.diff_formatter import format_markdown
+
+                out.write(format_markdown(diff_result))
+                out.write("\n")
+            elif export_format == "json":
+                from dbt_conceptual.diff_formatter import format_json
+
+                out.write(format_json(diff_result))
+                out.write("\n")
+
         if is_file:
             out.close()
             console.print(f"[green]✓ Exported to {output}[/green]")
@@ -935,6 +975,114 @@ def export(
     except Exception as e:
         console.print(f"[red]Error during export: {e}[/red]")
         raise click.Abort() from e
+
+
+def _compute_diff_for_export(config: Config, base: str) -> ConceptualDiff:
+    """Compute diff between current state and base git ref.
+
+    Args:
+        config: Project configuration
+        base: Base git ref to compare against
+
+    Returns:
+        ConceptualDiff object with changes
+    """
+    import subprocess
+    import tempfile
+
+    from dbt_conceptual.differ import compute_diff
+    from dbt_conceptual.state import DomainState, RelationshipState
+
+    project_dir = config.project_dir
+
+    # Load current state
+    builder = StateBuilder(config)
+    current_state = builder.build()
+
+    # Check if we're in a git repo
+    try:
+        subprocess.run(
+            ["git", "rev-parse", "--git-dir"],
+            cwd=project_dir,
+            check=True,
+            capture_output=True,
+        )
+    except subprocess.CalledProcessError as e:
+        console.print("[red]Error: Not a git repository[/red]")
+        raise click.Abort() from e
+
+    # Get the conceptual.yml content from base ref
+    conceptual_rel_path = config.conceptual_file.relative_to(project_dir)
+    result = subprocess.run(
+        ["git", "show", f"{base}:{conceptual_rel_path}"],
+        cwd=project_dir,
+        capture_output=True,
+        text=True,
+    )
+
+    if result.returncode != 0:
+        console.print(
+            f"[red]Error: Could not find conceptual.yml at ref '{base}'[/red]"
+        )
+        console.print(f"[dim]{result.stderr.strip()}[/dim]")
+        raise click.Abort()
+
+    # Write base version to temp file and parse
+    import yaml
+
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".yml", delete=False
+    ) as temp_file:
+        temp_file.write(result.stdout)
+        temp_path = Path(temp_file.name)
+
+    try:
+        with open(temp_path) as f:
+            base_data = yaml.safe_load(f) or {}
+
+        base_state = ProjectState()
+
+        # Populate base state (simplified - no dbt manifest needed for diff)
+        for domain_id, domain_data in base_data.get("domains", {}).items():
+            base_state.domains[domain_id] = DomainState(
+                name=domain_id,
+                display_name=domain_data.get("name", domain_id),
+                color=domain_data.get("color"),
+            )
+
+        for concept_id, concept_data in base_data.get("concepts", {}).items():
+            base_state.concepts[concept_id] = ConceptState(
+                name=concept_data.get("name", concept_id),
+                domain=concept_data.get("domain"),
+                owner=concept_data.get("owner"),
+                definition=concept_data.get("definition"),
+                color=concept_data.get("color"),
+                replaced_by=concept_data.get("replaced_by"),
+            )
+
+        for rel in base_data.get("relationships", []):
+            verb = rel.get("verb", "")
+            from_concept = rel.get("from", "")
+            to_concept = rel.get("to", "")
+            rel_key = f"{from_concept}:{verb}:{to_concept}"
+
+            base_state.relationships[rel_key] = RelationshipState(
+                verb=verb,
+                from_concept=from_concept,
+                to_concept=to_concept,
+                cardinality=rel.get("cardinality"),
+                definition=rel.get("definition"),
+                domains=rel.get("domains", []),
+                owner=rel.get("owner"),
+                custom_name=rel.get("name"),
+            )
+
+        # Compute and return diff
+        return compute_diff(base_state, current_state)
+
+    finally:
+        # Clean up temp file
+        temp_path.unlink()
 
 
 def _export_diagram_svg(state: ProjectState, output: TextIO) -> None:
