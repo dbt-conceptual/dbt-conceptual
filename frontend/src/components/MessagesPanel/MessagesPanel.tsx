@@ -40,8 +40,21 @@ export function MessagesPanel() {
     const hasErrors = messageCounts.error > 0;
     const hasWarnings = messageCounts.warning > 0;
 
+    // Handle click on collapsed bar - expand panel, but not if clicking sync button
+    const handleBarClick = (e: React.MouseEvent) => {
+      // Don't expand if clicking the sync button
+      if ((e.target as HTMLElement).closest('.messages-bar-sync')) {
+        return;
+      }
+      toggleMessagesPanel();
+    };
+
     return (
-      <div className="messages-bar">
+      <div
+        className="messages-bar"
+        onClick={handleBarClick}
+        title="Click to expand messages panel"
+      >
         <div className="messages-bar-actions">
           <button
             className="icon-btn"
@@ -51,8 +64,11 @@ export function MessagesPanel() {
             {'\u25B6'} {/* ▶ */}
           </button>
           <button
-            className="icon-btn"
-            onClick={sync}
+            className="icon-btn messages-bar-sync"
+            onClick={(e) => {
+              e.stopPropagation();
+              sync();
+            }}
             disabled={isSyncing}
             title="Sync with dbt project"
           >

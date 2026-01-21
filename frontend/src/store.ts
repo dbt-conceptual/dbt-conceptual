@@ -18,6 +18,11 @@ interface AppState extends ProjectState {
   selectedConceptId: string | null;
   selectedRelationshipId: string | null;
 
+  // Unsaved changes dialog state
+  hasUnsavedChanges: boolean;
+  showUnsavedChangesDialog: boolean;
+  pendingAction: (() => void) | null;
+
   // Messages panel state
   messages: Message[];
   messageFilters: MessageFilters;
@@ -41,6 +46,13 @@ interface AppState extends ProjectState {
   clearSelection: () => void;
   deleteGhostConcept: (id: string) => void;
 
+  // Unsaved changes actions
+  setHasUnsavedChanges: (hasChanges: boolean) => void;
+  requestClearSelection: () => void;
+  confirmDiscardChanges: () => void;
+  cancelDiscardChanges: () => void;
+  forceClearSelection: () => void;
+
   // Messages panel actions
   toggleMessageFilter: (severity: MessageSeverity) => void;
   toggleMessagesPanel: () => void;
@@ -59,6 +71,11 @@ export const useStore = create<AppState>((set, get) => ({
   hasIntegrityErrors: false,
   selectedConceptId: null,
   selectedRelationshipId: null,
+
+  // Unsaved changes dialog state
+  hasUnsavedChanges: false,
+  showUnsavedChangesDialog: false,
+  pendingAction: null,
 
   // Messages panel initial state
   messages: [],
@@ -234,6 +251,42 @@ export const useStore = create<AppState>((set, get) => ({
         concepts: remainingConcepts,
         selectedConceptId: state.selectedConceptId === id ? null : state.selectedConceptId,
       };
+    });
+  },
+
+  // Unsaved changes actions
+  setHasUnsavedChanges: (hasChanges: boolean) => {
+    set({ hasUnsavedChanges: hasChanges });
+  },
+
+  requestClearSelection: () => {
+    const { hasUnsavedChanges } = get();
+    if (hasUnsavedChanges) {
+      set({ showUnsavedChangesDialog: true });
+    } else {
+      set({ selectedConceptId: null, selectedRelationshipId: null });
+    }
+  },
+
+  confirmDiscardChanges: () => {
+    set({
+      showUnsavedChangesDialog: false,
+      hasUnsavedChanges: false,
+      selectedConceptId: null,
+      selectedRelationshipId: null,
+    });
+  },
+
+  cancelDiscardChanges: () => {
+    set({ showUnsavedChangesDialog: false });
+  },
+
+  forceClearSelection: () => {
+    set({
+      selectedConceptId: null,
+      selectedRelationshipId: null,
+      hasUnsavedChanges: false,
+      showUnsavedChangesDialog: false,
     });
   },
 

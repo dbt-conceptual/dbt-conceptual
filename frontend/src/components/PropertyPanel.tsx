@@ -1,24 +1,32 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useStore } from '../store';
 import { PropertiesTab } from './PropertiesTab';
+import type { PropertiesTabHandle } from './PropertiesTab';
 import { ModelsTab } from './ModelsTab';
+import { ConfirmDialog } from './ConfirmDialog';
 
 export function PropertyPanel() {
-  const { selectedConceptId, selectedRelationshipId, concepts, relationships, clearSelection } = useStore();
+  const {
+    selectedConceptId,
+    selectedRelationshipId,
+    concepts,
+    relationships,
+    showUnsavedChangesDialog,
+    requestClearSelection,
+    confirmDiscardChanges,
+    setHasUnsavedChanges,
+    forceClearSelection,
+    fetchState,
+  } = useStore();
   const [activeTab, setActiveTab] = useState<'properties' | 'models'>('properties');
+  const propertiesRef = useRef<PropertiesTabHandle>(null);
 
   const selectedConcept = selectedConceptId ? concepts[selectedConceptId] : null;
   const selectedRelationship = selectedRelationshipId ? relationships[selectedRelationshipId] : null;
 
+  // Hide panel completely when nothing is selected
   if (!selectedConcept && !selectedRelationship) {
-    return (
-      <div className="property-panel">
-        <div className="property-panel-empty">
-          <div className="property-panel-empty-icon">{'\u25C7'}</div>
-          <div className="property-panel-empty-text">Select a concept or relationship to view details</div>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   // Determine if we're showing a ghost concept
@@ -32,46 +40,85 @@ export function PropertyPanel() {
     panelTitle = 'Relationship';
   }
 
-  return (
-    <div className="property-panel">
-      {/* Header */}
-      <div className="property-panel-header">
-        <div className="property-panel-title">{panelTitle}</div>
-        <button className="property-panel-close" onClick={clearSelection} title="Close panel">
-          {'\u00D7'}
-        </button>
-      </div>
+  const handleClose = () => {
+    requestClearSelection();
+  };
 
-      {/* Tabs (only for non-ghost concepts) */}
-      {selectedConcept && !isGhostConcept && (
-        <div className="property-panel-tabs">
-          <button
-            className={`property-panel-tab ${activeTab === 'properties' ? 'active' : ''}`}
-            onClick={() => setActiveTab('properties')}
-          >
-            Properties
-          </button>
-          <button
-            className={`property-panel-tab ${activeTab === 'models' ? 'active' : ''}`}
-            onClick={() => setActiveTab('models')}
-          >
-            Models
+  const handleSaveAndClose = async () => {
+    if (propertiesRef.current) {
+      await propertiesRef.current.save();
+    }
+    forceClearSelection();
+  };
+
+  const handleDiscardAndClose = () => {
+    // Reload state from server to discard local changes
+    fetchState();
+    confirmDiscardChanges();
+  };
+
+  return (
+    <>
+      <div className="property-panel">
+        {/* Header */}
+        <div className="property-panel-header">
+          <div className="property-panel-title">{panelTitle}</div>
+          <button className="property-panel-close" onClick={handleClose} title="Close panel">
+            {'\u00D7'}
           </button>
         </div>
-      )}
 
-      {/* Content */}
-      <div className="property-panel-content">
-        {selectedConcept && activeTab === 'properties' && (
-          <PropertiesTab conceptId={selectedConceptId!} />
+        {/* Tabs (only for non-ghost concepts) */}
+        {selectedConcept && !isGhostConcept && (
+          <div className="property-panel-tabs">
+            <button
+              className={`property-panel-tab ${activeTab === 'properties' ? 'active' : ''}`}
+              onClick={() => setActiveTab('properties')}
+            >
+              Properties
+            </button>
+            <button
+              className={`property-panel-tab ${activeTab === 'models' ? 'active' : ''}`}
+              onClick={() => setActiveTab('models')}
+            >
+              Models
+            </button>
+          </div>
         )}
-        {selectedConcept && !isGhostConcept && activeTab === 'models' && (
-          <ModelsTab conceptId={selectedConceptId!} />
-        )}
-        {selectedRelationship && (
-          <PropertiesTab relationshipId={selectedRelationshipId!} />
-        )}
+
+        {/* Content */}
+        <div className="property-panel-content">
+          {selectedConcept && activeTab === 'properties' && (
+            <PropertiesTab
+              ref={propertiesRef}
+              conceptId={selectedConceptId!}
+              onDirtyChange={setHasUnsavedChanges}
+            />
+          )}
+          {selectedConcept && !isGhostConcept && activeTab === 'models' && (
+            <ModelsTab conceptId={selectedConceptId!} />
+          )}
+          {selectedRelationship && (
+            <PropertiesTab
+              ref={propertiesRef}
+              relationshipId={selectedRelationshipId!}
+              onDirtyChange={setHasUnsavedChanges}
+            />
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Unsaved changes dialog */}
+      {showUnsavedChangesDialog && (
+        <ConfirmDialog
+          title="Unsaved Changes"
+          message="You have unsaved changes. Would you like to save them before closing?"
+          confirmLabel="Save"
+          cancelLabel="Discard"
+          onConfirm={handleSaveAndClose}
+          onCancel={handleDiscardAndClose}
+        />
+      )}
+    </>
   );
 }
