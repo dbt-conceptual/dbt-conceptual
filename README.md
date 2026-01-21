@@ -140,8 +140,8 @@ dbt-conceptual serve
 # Validate in CI
 dbt-conceptual validate
 
-# Export diagram
-dbt-conceptual export --format png -o diagram.png
+# Export coverage report
+dbt-conceptual export --format coverage -o coverage.html
 ```
 
 ---
@@ -351,9 +351,6 @@ dbt-conceptual sync --create-stubs
 ### 📤 Export Formats
 
 ```bash
-# PNG — visual canvas diagram
-dbt-conceptual export --format png -o diagram.png
-
 # Coverage report — HTML dashboard
 dbt-conceptual export --format coverage -o coverage.html
 

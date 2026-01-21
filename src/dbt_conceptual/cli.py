@@ -758,10 +758,10 @@ def sync(project_dir: Optional[Path], create_stubs: bool, model: Optional[str]) 
 @click.option(
     "--format",
     type=click.Choice(
-        ["png", "coverage", "bus-matrix"],
+        ["coverage", "bus-matrix"],
         case_sensitive=False,
     ),
-    default="png",
+    default="coverage",
     help="Export format",
 )
 @click.option(
@@ -774,14 +774,12 @@ def export(project_dir: Optional[Path], format: str, output: Optional[Path]) -> 
     """Export conceptual model to various formats.
 
     Examples:
-        dbt-conceptual export --format png -o diagram.png
         dbt-conceptual export --format coverage -o coverage.html
         dbt-conceptual export --format bus-matrix -o bus-matrix.html
     """
     from dbt_conceptual.exporter import (
         export_bus_matrix,
         export_coverage,
-        export_png,
     )
 
     config = Config.load(project_dir=project_dir)
@@ -819,15 +817,6 @@ def export(project_dir: Optional[Path], format: str, output: Optional[Path]) -> 
             import sys
 
             export_bus_matrix(state, sys.stdout)
-    elif format == "png":
-        if not output:
-            console.print(
-                "[red]Error: PNG export requires an output file (-o option)[/red]"
-            )
-            raise click.Abort()
-        with open(output, "wb") as f:
-            export_png(state, f)
-        console.print(f"[green]✓ Exported to {output}[/green]")
 
 
 @main.command()
