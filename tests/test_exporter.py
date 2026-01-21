@@ -23,7 +23,10 @@ def test_cli_export_without_conceptual_file() -> None:
         with open(tmppath / "dbt_project.yml", "w") as f:
             yaml.dump({"name": "test"}, f)
 
-        result = runner.invoke(export, ["--project-dir", str(tmppath)])
+        result = runner.invoke(
+            export,
+            ["--project-dir", str(tmppath), "--type", "coverage", "--format", "html"],
+        )
 
         assert result.exit_code != 0
         assert "conceptual.yml not found" in result.output
@@ -190,8 +193,10 @@ def test_cli_export_coverage_to_file() -> None:
             [
                 "--project-dir",
                 str(tmppath),
-                "--format",
+                "--type",
                 "coverage",
+                "--format",
+                "html",
                 "-o",
                 str(output_file),
             ],
@@ -378,8 +383,10 @@ def test_cli_export_bus_matrix_to_file() -> None:
             [
                 "--project-dir",
                 str(tmppath),
-                "--format",
+                "--type",
                 "bus-matrix",
+                "--format",
+                "html",
                 "-o",
                 str(output_file),
             ],

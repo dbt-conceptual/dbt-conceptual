@@ -1,7 +1,7 @@
 """CLI for dbt-conceptual."""
 
 from pathlib import Path
-from typing import Optional
+from typing import Optional, TextIO
 
 import click
 from rich.console import Console
@@ -748,6 +748,32 @@ def sync(project_dir: Optional[Path], create_stubs: bool, model: Optional[str]) 
     )
 
 
+# Valid type/format combinations matrix
+EXPORT_MATRIX: dict[str, set[str]] = {
+    "diagram": {"svg"},
+    "coverage": {"html", "markdown", "json"},
+    "bus-matrix": {"html", "markdown", "json"},
+    "status": {"markdown", "json"},
+    "orphans": {"markdown", "json"},
+    "validation": {"markdown", "json"},
+}
+
+
+def _validate_export_combination(export_type: str, export_format: str) -> None:
+    """Validate that the type/format combination is supported."""
+    valid_formats = EXPORT_MATRIX.get(export_type, set())
+    if export_format not in valid_formats:
+        valid_str = ", ".join(sorted(valid_formats)) if valid_formats else "none"
+        console.print(
+            f"[red]Error: --type {export_type} does not support --format {export_format}[/red]"
+        )
+        console.print(f"[yellow]Valid formats for {export_type}: {valid_str}[/yellow]")
+        console.print("\n[dim]Export matrix:[/dim]")
+        for t, formats in EXPORT_MATRIX.items():
+            console.print(f"  {t}: {', '.join(sorted(formats))}")
+        raise click.Abort()
+
+
 @main.command()
 @click.option(
     "--project-dir",
@@ -756,31 +782,84 @@ def sync(project_dir: Optional[Path], create_stubs: bool, model: Optional[str]) 
     help="Path to dbt project directory",
 )
 @click.option(
-    "--format",
+    "--type",
+    "export_type",
     type=click.Choice(
-        ["coverage", "bus-matrix"],
+        ["diagram", "coverage", "bus-matrix", "status", "orphans", "validation"],
         case_sensitive=False,
     ),
-    default="coverage",
-    help="Export format",
+    required=True,
+    help="What to export: diagram, coverage, bus-matrix, status, orphans, validation",
+)
+@click.option(
+    "--format",
+    "export_format",
+    type=click.Choice(
+        ["svg", "html", "markdown", "json"],
+        case_sensitive=False,
+    ),
+    required=True,
+    help="Output format: svg, html, markdown, json",
 )
 @click.option(
     "--output",
     "-o",
     type=click.Path(path_type=Path),
-    help="Output file (default: stdout)",
+    help="Output file (default: stdout for text formats)",
 )
-def export(project_dir: Optional[Path], format: str, output: Optional[Path]) -> None:
+@click.option(
+    "--no-drafts",
+    is_flag=True,
+    default=False,
+    help="For validation: fail if any concepts are incomplete",
+)
+def export(
+    project_dir: Optional[Path],
+    export_type: str,
+    export_format: str,
+    output: Optional[Path],
+    no_drafts: bool,
+) -> None:
     """Export conceptual model to various formats.
 
+    Use --type to specify what to export and --format to specify the output format.
+
+    \b
+    Export Matrix:
+      diagram:     svg
+      coverage:    html, markdown, json
+      bus-matrix:  html, markdown, json
+      status:      markdown, json
+      orphans:     markdown, json
+      validation:  markdown, json
+
+    \b
     Examples:
-        dbt-conceptual export --format coverage -o coverage.html
-        dbt-conceptual export --format bus-matrix -o bus-matrix.html
+        dbt-conceptual export --type coverage --format html -o coverage.html
+        dbt-conceptual export --type coverage --format markdown >> $GITHUB_STEP_SUMMARY
+        dbt-conceptual export --type status --format json | jq '.summary'
+        dbt-conceptual export --type validation --format markdown
+        dbt-conceptual export --type diagram --format svg -o diagram.svg
     """
+    import sys
+
     from dbt_conceptual.exporter import (
         export_bus_matrix,
+        export_bus_matrix_json,
+        export_bus_matrix_markdown,
         export_coverage,
+        export_coverage_json,
+        export_coverage_markdown,
+        export_orphans_json,
+        export_orphans_markdown,
+        export_status_json,
+        export_status_markdown,
+        export_validation_json,
+        export_validation_markdown,
     )
+
+    # Validate type/format combination
+    _validate_export_combination(export_type, export_format)
 
     config = Config.load(project_dir=project_dir)
 
@@ -798,25 +877,197 @@ def export(project_dir: Optional[Path], format: str, output: Optional[Path]) -> 
     builder = StateBuilder(config)
     state = builder.build()
 
-    # Export based on format
-    if format == "coverage":
+    # Determine output stream
+    def get_output() -> TextIO:
         if output:
-            with open(output, "w") as f:
-                export_coverage(state, f)
-            console.print(f"[green]✓ Exported to {output}[/green]")
-        else:
-            import sys
+            return open(output, "w")
+        return sys.stdout
 
-            export_coverage(state, sys.stdout)
-    elif format == "bus-matrix":
-        if output:
-            with open(output, "w") as f:
-                export_bus_matrix(state, f)
-            console.print(f"[green]✓ Exported to {output}[/green]")
-        else:
-            import sys
+    # Export based on type and format
+    try:
+        out = get_output()
+        is_file = output is not None
 
-            export_bus_matrix(state, sys.stdout)
+        if export_type == "diagram":
+            if export_format == "svg":
+                _export_diagram_svg(state, out)
+
+        elif export_type == "coverage":
+            if export_format == "html":
+                export_coverage(state, out)
+            elif export_format == "markdown":
+                export_coverage_markdown(state, out)
+            elif export_format == "json":
+                export_coverage_json(state, out)
+
+        elif export_type == "bus-matrix":
+            if export_format == "html":
+                export_bus_matrix(state, out)
+            elif export_format == "markdown":
+                export_bus_matrix_markdown(state, out)
+            elif export_format == "json":
+                export_bus_matrix_json(state, out)
+
+        elif export_type == "status":
+            if export_format == "markdown":
+                export_status_markdown(state, out)
+            elif export_format == "json":
+                export_status_json(state, out)
+
+        elif export_type == "orphans":
+            if export_format == "markdown":
+                export_orphans_markdown(state, out)
+            elif export_format == "json":
+                export_orphans_json(state, out)
+
+        elif export_type == "validation":
+            validator = Validator(config, state, no_drafts=no_drafts)
+            issues = validator.validate()
+            if export_format == "markdown":
+                export_validation_markdown(validator, issues, out)
+            elif export_format == "json":
+                export_validation_json(validator, issues, out)
+
+        if is_file:
+            out.close()
+            console.print(f"[green]✓ Exported to {output}[/green]")
+
+    except Exception as e:
+        console.print(f"[red]Error during export: {e}[/red]")
+        raise click.Abort() from e
+
+
+def _export_diagram_svg(state: ProjectState, output: TextIO) -> None:
+    """Export conceptual model as SVG diagram.
+
+    Creates a visual diagram showing concepts and relationships.
+    """
+    # Calculate layout dimensions
+    concepts_list = list(state.concepts.items())
+    num_concepts = len(concepts_list)
+
+    if num_concepts == 0:
+        output.write(
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">'
+            '<text x="200" y="100" text-anchor="middle" fill="#666">'
+            "No concepts defined</text></svg>"
+        )
+        return
+
+    # Simple grid layout
+    cols = min(4, num_concepts)
+    rows = (num_concepts + cols - 1) // cols
+
+    node_width = 160
+    node_height = 80
+    h_spacing = 200
+    v_spacing = 120
+    padding = 50
+
+    width = cols * h_spacing + padding * 2
+    height = rows * v_spacing + padding * 2
+
+    # Calculate node positions
+    positions: dict[str, tuple[int, int]] = {}
+    for i, (concept_id, _concept) in enumerate(concepts_list):
+        col = i % cols
+        row = i // cols
+        x = padding + col * h_spacing + node_width // 2
+        y = padding + row * v_spacing + node_height // 2
+        positions[concept_id] = (x, y)
+
+    # Domain colors
+    domain_colors: dict[str, str] = {}
+    for domain_id, domain in state.domains.items():
+        domain_colors[domain_id] = domain.color or "#3498db"
+
+    # Start SVG
+    output.write(
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}">\n'
+    )
+    output.write("  <defs>\n")
+    output.write('    <marker id="arrowhead" markerWidth="10" markerHeight="7" ')
+    output.write('refX="9" refY="3.5" orient="auto">\n')
+    output.write('      <polygon points="0 0, 10 3.5, 0 7" fill="#666"/>\n')
+    output.write("    </marker>\n")
+    output.write("  </defs>\n")
+
+    # Draw relationships (edges)
+    for _rel_id, rel in state.relationships.items():
+        if rel.from_concept in positions and rel.to_concept in positions:
+            from_pos = positions[rel.from_concept]
+            to_pos = positions[rel.to_concept]
+
+            # Calculate edge points (from edge of node, not center)
+            dx = to_pos[0] - from_pos[0]
+            dy = to_pos[1] - from_pos[1]
+            dist = max(1, (dx * dx + dy * dy) ** 0.5)
+
+            # Offset from center to edge
+            from_x = from_pos[0] + (dx / dist) * (node_width // 2)
+            from_y = from_pos[1] + (dy / dist) * (node_height // 2)
+            to_x = to_pos[0] - (dx / dist) * (node_width // 2 + 10)
+            to_y = to_pos[1] - (dy / dist) * (node_height // 2 + 10)
+
+            output.write(f'  <line x1="{from_x}" y1="{from_y}" ')
+            output.write(f'x2="{to_x}" y2="{to_y}" ')
+            output.write(
+                'stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"/>\n'
+            )
+
+            # Relationship label
+            mid_x = (from_x + to_x) // 2
+            mid_y = (from_y + to_y) // 2
+            output.write(f'  <text x="{mid_x}" y="{mid_y - 5}" ')
+            output.write('text-anchor="middle" font-size="10" fill="#666">')
+            output.write(f"{rel.verb}</text>\n")
+
+    # Draw concepts (nodes)
+    for concept_id, concept in concepts_list:
+        x, y = positions[concept_id]
+        color = domain_colors.get(concept.domain or "", "#3498db")
+
+        # Status-based styling
+        if concept.status == "stub":
+            stroke_dash = "5,5"
+            opacity = "0.7"
+        elif concept.status == "draft":
+            stroke_dash = "none"
+            opacity = "0.85"
+        else:
+            stroke_dash = "none"
+            opacity = "1"
+
+        # Node rectangle
+        output.write(f'  <rect x="{x - node_width // 2}" y="{y - node_height // 2}" ')
+        output.write(f'width="{node_width}" height="{node_height}" ')
+        output.write(f'rx="8" fill="white" stroke="{color}" stroke-width="2" ')
+        output.write(f'stroke-dasharray="{stroke_dash}" opacity="{opacity}"/>\n')
+
+        # Domain color bar
+        output.write(f'  <rect x="{x - node_width // 2}" y="{y - node_height // 2}" ')
+        output.write(f'width="{node_width}" height="6" rx="8" fill="{color}"/>\n')
+        output.write(
+            f'  <rect x="{x - node_width // 2}" y="{y - node_height // 2 + 3}" '
+        )
+        output.write(f'width="{node_width}" height="3" fill="{color}"/>\n')
+
+        # Concept name
+        output.write(f'  <text x="{x}" y="{y + 5}" ')
+        output.write('text-anchor="middle" font-family="system-ui, sans-serif" ')
+        output.write(
+            f'font-size="14" font-weight="600" fill="#333">{concept.name}</text>\n'
+        )
+
+        # Status indicator
+        status_icon = {"complete": "✓", "draft": "◐", "stub": "○"}.get(
+            concept.status, "?"
+        )
+        output.write(f'  <text x="{x + node_width // 2 - 15}" ')
+        output.write(f'y="{y - node_height // 2 + 20}" ')
+        output.write(f'font-size="12" fill="{color}">{status_icon}</text>\n')
+
+    output.write("</svg>\n")
 
 
 @main.command()
