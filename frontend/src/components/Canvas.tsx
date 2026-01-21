@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   ReactFlow,
   Background,
@@ -12,6 +12,7 @@ import '@xyflow/react/dist/style.css';
 import { useStore } from '../store';
 import { ConceptNode, type ConceptNodeData } from './ConceptNode';
 import { RelationshipEdge } from './RelationshipEdge';
+import { applyAutoLayout, needsAutoLayout } from '../layout';
 
 const nodeTypes = {
   concept: ConceptNode,
@@ -35,10 +36,28 @@ export function Canvas() {
     clearSelection,
   } = useStore();
 
+  // Track if we've applied auto-layout to avoid re-running
+  const hasAppliedAutoLayout = useRef(false);
+
   // Load state on mount
   useEffect(() => {
     fetchState();
   }, [fetchState]);
+
+  // Apply auto-layout when needed (no saved positions)
+  useEffect(() => {
+    if (
+      !hasAppliedAutoLayout.current &&
+      Object.keys(concepts).length > 0 &&
+      needsAutoLayout(concepts, positions)
+    ) {
+      hasAppliedAutoLayout.current = true;
+      const autoPositions = applyAutoLayout(concepts, relationships);
+      updatePositions(autoPositions);
+      // Save the auto-generated layout
+      saveLayout().catch(console.error);
+    }
+  }, [concepts, relationships, positions, updatePositions, saveLayout]);
 
   // Convert concepts to React Flow nodes
   const initialNodes = useMemo(() => {
@@ -76,12 +95,12 @@ export function Canvas() {
     setEdges(initialEdges);
   }, [initialEdges, setEdges]);
 
-  // Handle node position changes
+  // Handle node position changes (updates local state during drag)
   const handleNodesChange = useCallback(
     (changes: any) => {
       onNodesChange(changes);
 
-      // Extract position changes
+      // Extract position changes to keep store in sync
       const positionChanges = changes.filter(
         (change: any) => change.type === 'position' && change.position
       );
@@ -94,14 +113,15 @@ export function Canvas() {
           }
         });
         updatePositions(newPositions);
-
-        // Debounced save (you might want to add debouncing logic)
-        // For now, we'll save on every change
-        saveLayout().catch(console.error);
       }
     },
-    [onNodesChange, updatePositions, saveLayout]
+    [onNodesChange, updatePositions]
   );
+
+  // Save layout when drag ends
+  const handleNodeDragStop = useCallback(() => {
+    saveLayout().catch(console.error);
+  }, [saveLayout]);
 
   // Handle node selection
   const handleNodeClick = useCallback(
@@ -142,6 +162,7 @@ export function Canvas() {
         edges={edges}
         onNodesChange={handleNodesChange}
         onEdgesChange={onEdgesChange}
+        onNodeDragStop={handleNodeDragStop}
         onNodeClick={handleNodeClick}
         onEdgeClick={handleEdgeClick}
         onPaneClick={handlePaneClick}

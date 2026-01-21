@@ -1,5 +1,6 @@
 """Tests for Flask server."""
 
+import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -58,8 +59,8 @@ def temp_project():
                 "customer": {"x": 100, "y": 100},
             },
         }
-        with open(conceptual_dir / "layout.yml", "w") as f:
-            yaml.dump(layout_data, f)
+        with open(conceptual_dir / "conceptual.layout.json", "w") as f:
+            json.dump(layout_data, f)
 
         yield project_dir
 
@@ -175,6 +176,7 @@ def test_api_layout_get(temp_project):
     assert response.status_code == 200
 
     data = response.get_json()
+    # API returns the positions dict directly
     assert "customer" in data
     assert data["customer"]["x"] == 100
     assert data["customer"]["y"] == 100
@@ -197,10 +199,10 @@ def test_api_layout_post(temp_project):
     data = response.get_json()
     assert data["success"] is True
 
-    # Verify positions were saved
-    layout_file = temp_project / "models" / "conceptual" / "layout.yml"
+    # Verify positions were saved to conceptual.layout.json
+    layout_file = temp_project / "models" / "conceptual" / "conceptual.layout.json"
     with open(layout_file) as f:
-        saved_data = yaml.safe_load(f)
+        saved_data = json.load(f)
     assert saved_data["positions"]["customer"]["x"] == 200
     assert saved_data["positions"]["customer"]["y"] == 200
 

@@ -88,14 +88,14 @@ def create_app(project_dir: Path) -> Flask:
                     missing_refs.append(rel.to_concept)
             has_integrity_errors = len(missing_refs) > 0
 
-            # Load positions from layout.yml
+            # Load positions from conceptual.layout.json
             layout_file = config.layout_file
             positions = {}
             if layout_file.exists():
-                import yaml
+                import json
 
                 with open(layout_file) as f:
-                    layout_data = yaml.safe_load(f) or {}
+                    layout_data = json.load(f) or {}
                     positions = layout_data.get("positions", {})
 
             # Convert state to JSON-serializable format
@@ -277,16 +277,16 @@ def create_app(project_dir: Path) -> Flask:
 
     @app.route("/api/layout", methods=["GET"])
     def get_layout() -> Any:
-        """Get layout positions from layout.yml."""
+        """Get layout positions from conceptual.layout.json."""
         try:
             layout_file = config.layout_file
             if not layout_file.exists():
                 return jsonify({"positions": {}})
 
-            import yaml
+            import json
 
             with open(layout_file) as f:
-                layout_data = yaml.safe_load(f) or {}
+                layout_data = json.load(f) or {}
 
             return jsonify(layout_data.get("positions", {}))
         except Exception as e:
@@ -294,7 +294,7 @@ def create_app(project_dir: Path) -> Flask:
 
     @app.route("/api/layout", methods=["POST"])
     def save_layout() -> Any:
-        """Save layout positions to layout.yml."""
+        """Save layout positions to conceptual.layout.json."""
         try:
             data = request.json
             if not data:
@@ -306,10 +306,10 @@ def create_app(project_dir: Path) -> Flask:
             layout_data = {"version": 1, "positions": data.get("positions", {})}
 
             # Write to file
-            import yaml
+            import json
 
             with open(layout_file, "w") as f:
-                yaml.dump(layout_data, f, sort_keys=False, default_flow_style=False)
+                json.dump(layout_data, f, indent=2)
 
             return jsonify({"success": True, "message": "Layout saved"})
         except Exception as e:
@@ -334,8 +334,6 @@ def create_app(project_dir: Path) -> Flask:
         runs validation, and returns messages.
         """
         try:
-            import yaml as yaml_lib
-
             # Rebuild state from current dbt project
             builder = StateBuilder(config)
             state = builder.build()
@@ -343,12 +341,14 @@ def create_app(project_dir: Path) -> Flask:
             # Run validation and create ghosts
             validation = builder.validate_and_sync(state)
 
-            # Load positions from layout.yml
+            # Load positions from conceptual.layout.json
             layout_file = config.layout_file
             positions: dict[str, Any] = {}
             if layout_file.exists():
+                import json as json_lib
+
                 with open(layout_file) as f:
-                    layout_data = yaml_lib.safe_load(f) or {}
+                    layout_data = json_lib.load(f) or {}
                     positions = layout_data.get("positions", {})
 
             # Identify ghost concepts

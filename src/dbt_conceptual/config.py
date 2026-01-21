@@ -44,8 +44,8 @@ class Config:
 
     @property
     def layout_file(self) -> Path:
-        """Get the path to layout.yml."""
-        return self.project_dir / self.conceptual_path / "layout.yml"
+        """Get the path to conceptual.layout.json."""
+        return self.project_dir / self.conceptual_path / "conceptual.layout.json"
 
     @classmethod
     def load(
