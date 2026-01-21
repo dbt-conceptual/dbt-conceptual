@@ -157,3 +157,8 @@ PUBLISHING.md
 
 # Local testing folder (for development)
 user_testing/
+
+# Frontend build output (built during CI/release, not committed)
+src/dbt_conceptual/static/assets/
+frontend/dist/
+frontend/node_modules/
