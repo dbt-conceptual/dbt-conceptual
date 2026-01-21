@@ -78,12 +78,22 @@ jobs:
         working-directory: frontend
         run: npm run build
 
-      - name: Verify build output exists
+      - name: Verify committed assets match build
         run: |
-          if [ ! -f "frontend/dist/index.html" ]; then
-            echo "ERROR: Frontend build did not produce expected output"
+          # Copy built assets to static folder
+          rm -rf src/dbt_conceptual/static/assets
+          cp -r frontend/dist/* src/dbt_conceptual/static/
+
+          # Check if committed assets match the fresh build
+          if git diff --exit-code src/dbt_conceptual/static/; then
+            echo "OK: Committed assets match frontend build"
+          else
+            echo ""
+            echo "ERROR: Committed static assets don't match frontend source!"
+            echo ""
+            echo "To fix, run locally:"
+            echo "  cd frontend && npm run build && cp -r dist/* ../src/dbt_conceptual/static/"
+            echo "  git add src/dbt_conceptual/static/"
+            echo ""
             exit 1
           fi
-          echo "Frontend build successful"
-          ls -la frontend/dist/
-          ls -la frontend/dist/assets/
