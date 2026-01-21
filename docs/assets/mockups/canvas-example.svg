@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="920" height="440" viewBox="0 0 920 440" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="920" height="440" fill="#f5f6f8"/>
+
+  <!-- Dotted grid pattern -->
+  <defs>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="10" cy="10" r="1" fill="#d1d5db"/>
+    </pattern>
+    <style>
+      .node-name { font-family: 'Inter', -apple-system, sans-serif; font-size: 14px; font-weight: 600; fill: #1a1a2e; }
+      .node-domain { font-family: 'Inter', -apple-system, sans-serif; font-size: 9px; font-weight: 500; }
+      .status-text { font-family: 'Inter', -apple-system, sans-serif; font-size: 8px; font-weight: 500; fill: white; text-transform: uppercase; letter-spacing: 0.3px; }
+      .edge-verb { font-family: 'Inter', -apple-system, sans-serif; font-size: 12px; font-weight: 500; }
+      .edge-cardinality { font-family: 'JetBrains Mono', monospace; font-size: 9px; }
+      .model-count { font-family: 'Inter', -apple-system, sans-serif; font-size: 9px; font-weight: 500; }
+      .legend-text { font-family: 'Inter', -apple-system, sans-serif; font-size: 11px; fill: #666666; }
+    </style>
+    <!-- Arrow markers -->
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L8,3 z" fill="#9ca3af"/>
+    </marker>
+    <marker id="arrow-stub" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L8,3 z" fill="#f5a623"/>
+    </marker>
+  </defs>
+  <rect width="920" height="440" fill="url(#grid)"/>
+
+  <!-- ========== ROW 1: Customer -> Order -> Product ========== -->
+
+  <!-- Customer Node -->
+  <g transform="translate(40, 60)">
+    <filter id="shadow1" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000000" flood-opacity="0.08"/>
+    </filter>
+    <rect x="0" y="0" width="170" height="110" rx="6" fill="white" stroke="#e5e7eb" stroke-width="1" filter="url(#shadow1)"/>
+    <rect x="0" y="0" width="3" height="110" rx="1.5" fill="#4a9eff"/>
+
+    <text x="12" y="26" class="node-name">Customer</text>
+    <rect x="102" y="10" width="56" height="20" rx="3" fill="#4caf50"/>
+    <text x="130" y="23" text-anchor="middle" class="status-text">complete</text>
+
+    <rect x="12" y="36" width="40" height="14" rx="3" fill="#f0f7ff"/>
+    <text x="32" y="47" text-anchor="middle" class="node-domain" fill="#4a9eff">party</text>
+
+    <line x1="12" y1="60" x2="158" y2="60" stroke="#f0f0f0" stroke-width="1"/>
+
+    <g transform="translate(12, 68)">
+      <rect x="0" y="0" width="28" height="18" rx="3" fill="#f5f0ed"/>
+      <text x="8" y="13" class="model-count" fill="#8d6e63">3</text>
+      <rect x="32" y="0" width="28" height="18" rx="3" fill="#f1f5f9"/>
+      <text x="40" y="13" class="model-count" fill="#475569">2</text>
+      <rect x="64" y="0" width="28" height="18" rx="3" fill="#fef3c7"/>
+      <text x="72" y="13" class="model-count" fill="#b45309">1</text>
+    </g>
+  </g>
+
+  <!-- Arrow: Customer -> Order -->
+  <line x1="218" y1="115" x2="328" y2="115" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <g transform="translate(245, 90)">
+    <text x="15" y="0" text-anchor="middle" class="edge-verb" fill="#1a1a2e">places</text>
+    <text x="15" y="14" text-anchor="middle" class="edge-cardinality" fill="#666666">1:N</text>
+  </g>
+
+  <!-- Order Node -->
+  <g transform="translate(340, 60)">
+    <filter id="shadow2" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000000" flood-opacity="0.08"/>
+    </filter>
+    <rect x="0" y="0" width="170" height="110" rx="6" fill="white" stroke="#e5e7eb" stroke-width="1" filter="url(#shadow2)"/>
+    <rect x="0" y="0" width="3" height="110" rx="1.5" fill="#f5a623"/>
+
+    <text x="12" y="26" class="node-name">Order</text>
+    <rect x="102" y="10" width="56" height="20" rx="3" fill="#4caf50"/>
+    <text x="130" y="23" text-anchor="middle" class="status-text">complete</text>
+
+    <rect x="12" y="36" width="68" height="14" rx="3" fill="#fff7ed"/>
+    <text x="46" y="47" text-anchor="middle" class="node-domain" fill="#f5a623">transaction</text>
+
+    <line x1="12" y1="60" x2="158" y2="60" stroke="#f0f0f0" stroke-width="1"/>
+
+    <g transform="translate(12, 68)">
+      <rect x="0" y="0" width="28" height="18" rx="3" fill="#f5f0ed"/>
+      <text x="8" y="13" class="model-count" fill="#8d6e63">2</text>
+      <rect x="32" y="0" width="28" height="18" rx="3" fill="#f1f5f9"/>
+      <text x="40" y="13" class="model-count" fill="#475569">1</text>
+      <rect x="64" y="0" width="28" height="18" rx="3" fill="#fef3c7"/>
+      <text x="72" y="13" class="model-count" fill="#b45309">1</text>
+    </g>
+  </g>
+
+  <!-- Arrow: Order -> Product -->
+  <line x1="518" y1="115" x2="628" y2="115" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <g transform="translate(540, 90)">
+    <text x="22" y="0" text-anchor="middle" class="edge-verb" fill="#1a1a2e">contains</text>
+    <text x="22" y="14" text-anchor="middle" class="edge-cardinality" fill="#666666">N:M</text>
+  </g>
+
+  <!-- Product Node -->
+  <g transform="translate(640, 60)">
+    <filter id="shadow3" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000000" flood-opacity="0.08"/>
+    </filter>
+    <rect x="0" y="0" width="170" height="110" rx="6" fill="white" stroke="#e5e7eb" stroke-width="1" filter="url(#shadow3)"/>
+    <rect x="0" y="0" width="3" height="110" rx="1.5" fill="#10b981"/>
+
+    <text x="12" y="26" class="node-name">Product</text>
+    <rect x="102" y="10" width="56" height="20" rx="3" fill="#4caf50"/>
+    <text x="130" y="23" text-anchor="middle" class="status-text">complete</text>
+
+    <rect x="12" y="36" width="48" height="14" rx="3" fill="#ecfdf5"/>
+    <text x="36" y="47" text-anchor="middle" class="node-domain" fill="#10b981">catalog</text>
+
+    <line x1="12" y1="60" x2="158" y2="60" stroke="#f0f0f0" stroke-width="1"/>
+
+    <g transform="translate(12, 68)">
+      <rect x="0" y="0" width="28" height="18" rx="3" fill="#f5f0ed"/>
+      <text x="8" y="13" class="model-count" fill="#8d6e63">2</text>
+      <rect x="32" y="0" width="28" height="18" rx="3" fill="#f1f5f9"/>
+      <text x="40" y="13" class="model-count" fill="#475569">1</text>
+      <rect x="64" y="0" width="28" height="18" rx="3" fill="#fef3c7"/>
+      <text x="72" y="13" class="model-count" fill="#b45309">1</text>
+    </g>
+  </g>
+
+  <!-- ========== ROW 2: Shipment, Payment (with connections) ========== -->
+
+  <!-- Diagonal arrow: Customer -> Shipment (receives) -->
+  <path d="M 125 175 Q 160 230 210 260" fill="none" stroke="#f5a623" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow-stub)"/>
+  <g transform="translate(110, 220)">
+    <text x="0" y="0" class="edge-verb" fill="#f5a623">receives</text>
+  </g>
+
+  <!-- Shipment Node (Stub) -->
+  <g transform="translate(220, 270)">
+    <rect x="0" y="0" width="170" height="100" rx="6" fill="white" stroke="#f5a623" stroke-width="1" stroke-dasharray="4 3"/>
+    <rect x="0" y="0" width="3" height="100" rx="1.5" fill="#f5a623"/>
+
+    <!-- Warning badge -->
+    <circle cx="166" cy="4" r="10" fill="#d97706"/>
+    <text x="166" y="8" text-anchor="middle" style="font-family: Inter, sans-serif; font-size: 10px; font-weight: 600; fill: white;">!</text>
+
+    <text x="12" y="26" class="node-name">Shipment</text>
+    <rect x="108" y="10" width="36" height="20" rx="3" fill="#f5a623"/>
+    <text x="126" y="23" text-anchor="middle" class="status-text">stub</text>
+
+    <rect x="12" y="36" width="68" height="14" rx="3" fill="#fff7ed"/>
+    <text x="46" y="47" text-anchor="middle" class="node-domain" fill="#f5a623">transaction</text>
+
+    <line x1="12" y1="58" x2="158" y2="58" stroke="#f0f0f0" stroke-width="1"/>
+
+    <g transform="translate(12, 66)">
+      <rect x="0" y="0" width="28" height="18" rx="3" fill="#f5f0ed"/>
+      <text x="8" y="13" class="model-count" fill="#8d6e63">0</text>
+      <rect x="32" y="0" width="28" height="18" rx="3" fill="#f1f5f9"/>
+      <text x="40" y="13" class="model-count" fill="#475569">0</text>
+      <rect x="64" y="0" width="28" height="18" rx="3" fill="#fef3c7"/>
+      <text x="72" y="13" class="model-count" fill="#b45309">0</text>
+    </g>
+  </g>
+
+  <!-- Diagonal arrow: Order -> Shipment (fulfills) -->
+  <path d="M 425 175 Q 395 230 395 260" fill="none" stroke="#f5a623" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow-stub)"/>
+  <g transform="translate(400, 220)">
+    <text x="0" y="0" class="edge-verb" fill="#f5a623">fulfills</text>
+  </g>
+
+  <!-- Diagonal arrow: Order -> Payment (requires) -->
+  <path d="M 500 175 Q 520 230 520 260" fill="none" stroke="#f5a623" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow-stub)"/>
+  <g transform="translate(525, 220)">
+    <text x="0" y="0" class="edge-verb" fill="#f5a623">requires</text>
+  </g>
+
+  <!-- Payment Node (Stub - no domain) -->
+  <g transform="translate(480, 270)">
+    <rect x="0" y="0" width="170" height="100" rx="6" fill="white" stroke="#f5a623" stroke-width="1" stroke-dasharray="4 3"/>
+    <rect x="0" y="0" width="3" height="100" rx="1.5" fill="#9e9e9e"/>
+
+    <!-- Warning badge -->
+    <circle cx="166" cy="4" r="10" fill="#d97706"/>
+    <text x="166" y="8" text-anchor="middle" style="font-family: Inter, sans-serif; font-size: 10px; font-weight: 600; fill: white;">!</text>
+
+    <text x="12" y="26" class="node-name">Payment</text>
+    <rect x="108" y="10" width="36" height="20" rx="3" fill="#f5a623"/>
+    <text x="126" y="23" text-anchor="middle" class="status-text">stub</text>
+
+    <text x="12" y="47" class="node-domain" fill="#9ca3af" style="font-style: italic;">NO DOMAIN</text>
+
+    <line x1="12" y1="58" x2="158" y2="58" stroke="#f0f0f0" stroke-width="1"/>
+
+    <g transform="translate(12, 66)">
+      <rect x="0" y="0" width="28" height="18" rx="3" fill="#f5f0ed"/>
+      <text x="8" y="13" class="model-count" fill="#8d6e63">0</text>
+      <rect x="32" y="0" width="28" height="18" rx="3" fill="#f1f5f9"/>
+      <text x="40" y="13" class="model-count" fill="#475569">0</text>
+      <rect x="64" y="0" width="28" height="18" rx="3" fill="#fef3c7"/>
+      <text x="72" y="13" class="model-count" fill="#b45309">0</text>
+    </g>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(40, 405)">
+    <!-- Complete -->
+    <rect x="0" y="0" width="14" height="14" rx="2" fill="white" stroke="#e5e7eb"/>
+    <rect x="0" y="0" width="2" height="14" rx="1" fill="#4a9eff"/>
+    <text x="22" y="11" class="legend-text">Complete</text>
+
+    <!-- Draft -->
+    <rect x="110" y="0" width="14" height="14" rx="2" fill="white" stroke="#cccccc" stroke-dasharray="2 2"/>
+    <text x="132" y="11" class="legend-text">Draft</text>
+
+    <!-- Stub -->
+    <rect x="200" y="0" width="14" height="14" rx="2" fill="white" stroke="#f5a623" stroke-dasharray="2 2"/>
+    <text x="222" y="11" class="legend-text">Stub (from sync)</text>
+  </g>
+</svg>

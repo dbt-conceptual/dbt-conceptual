@@ -13,6 +13,7 @@ interface AppState extends ProjectState {
   isSyncing: boolean;
   error: string | null;
   hasIntegrityErrors: boolean;
+  demoMode: boolean;
 
   // Selection state
   selectedConceptId: string | null;
@@ -34,6 +35,7 @@ interface AppState extends ProjectState {
   };
 
   // Actions
+  fetchMode: () => Promise<void>;
   fetchState: () => Promise<void>;
   sync: () => Promise<void>;
   updateConcept: (id: string, updates: Partial<Concept>) => void;
@@ -68,6 +70,7 @@ export const useStore = create<AppState>((set, get) => ({
   isLoading: false,
   isSyncing: false,
   error: null,
+  demoMode: false,
   hasIntegrityErrors: false,
   selectedConceptId: null,
   selectedRelationshipId: null,
@@ -89,6 +92,19 @@ export const useStore = create<AppState>((set, get) => ({
     error: 0,
     warning: 0,
     info: 0,
+  },
+
+  // Fetch mode (demo or normal)
+  fetchMode: async () => {
+    try {
+      const response = await fetch('/api/mode');
+      if (response.ok) {
+        const data = await response.json();
+        set({ demoMode: data.demoMode || false });
+      }
+    } catch {
+      // Silently ignore - default to normal mode
+    }
   },
 
   // Fetch state from API (no validation on initial load)

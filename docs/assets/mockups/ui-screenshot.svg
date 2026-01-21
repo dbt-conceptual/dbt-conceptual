@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="700" viewBox="0 0 1200 700" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="10" cy="10" r="1" fill="#d1d5db"/>
+    </pattern>
+    <style>
+      .toolbar-text { font-family: 'Inter', -apple-system, sans-serif; font-size: 13px; font-weight: 600; fill: #1a1a2e; }
+      .toolbar-path { font-family: 'JetBrains Mono', monospace; font-size: 12px; fill: #666666; }
+      .btn-text { font-family: 'Inter', -apple-system, sans-serif; font-size: 12px; font-weight: 500; }
+      .node-name { font-family: 'Inter', -apple-system, sans-serif; font-size: 14px; font-weight: 600; fill: #1a1a2e; }
+      .node-domain { font-family: 'Inter', -apple-system, sans-serif; font-size: 9px; font-weight: 500; }
+      .status-text { font-family: 'Inter', -apple-system, sans-serif; font-size: 8px; font-weight: 500; fill: white; text-transform: uppercase; letter-spacing: 0.3px; }
+      .edge-verb { font-family: 'Inter', -apple-system, sans-serif; font-size: 12px; font-weight: 500; fill: #1a1a2e; }
+      .edge-cardinality { font-family: 'JetBrains Mono', monospace; font-size: 9px; fill: #666666; }
+      .model-count { font-family: 'Inter', -apple-system, sans-serif; font-size: 9px; font-weight: 500; }
+      .panel-title { font-family: 'Inter', -apple-system, sans-serif; font-size: 16px; font-weight: 600; fill: #1a1a2e; }
+      .panel-label { font-family: 'Inter', -apple-system, sans-serif; font-size: 11px; font-weight: 500; fill: #1a1a2e; }
+      .panel-value { font-family: 'Inter', -apple-system, sans-serif; font-size: 13px; fill: #1a1a2e; }
+      .panel-tab { font-family: 'Inter', -apple-system, sans-serif; font-size: 12px; font-weight: 500; }
+      .legend-text { font-family: 'Inter', -apple-system, sans-serif; font-size: 11px; fill: #666666; }
+    </style>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L8,3 z" fill="#9ca3af"/>
+    </marker>
+    <!-- Clip path for rounded corners -->
+    <clipPath id="windowClip">
+      <rect x="0" y="0" width="1200" height="700" rx="10"/>
+    </clipPath>
+  </defs>
+
+  <!-- Window frame -->
+  <rect width="1200" height="700" rx="10" fill="white" stroke="#e5e7eb" stroke-width="1"/>
+
+  <!-- ========== TOOLBAR ========== -->
+  <rect x="0" y="0" width="1200" height="48" fill="white"/>
+  <line x1="0" y1="48" x2="1200" y2="48" stroke="#e5e7eb"/>
+
+  <!-- Logo -->
+  <g transform="translate(16, 10)">
+    <rect x="0" y="0" width="28" height="28" rx="6" fill="url(#logoGradient)"/>
+    <defs>
+      <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#1e3a5f"/>
+        <stop offset="100%" style="stop-color:#112235"/>
+      </linearGradient>
+    </defs>
+    <rect x="4" y="4" width="20" height="5" rx="1" fill="#5ba3f5"/>
+    <rect x="4" y="11" width="20" height="3" rx="1" fill="#4a7fb3" opacity="0.7"/>
+    <rect x="4" y="16" width="12" height="3" rx="1" fill="#4a7fb3" opacity="0.5"/>
+    <rect x="4" y="21" width="16" height="3" rx="1" fill="#4a7fb3" opacity="0.3"/>
+  </g>
+
+  <text x="52" y="30" class="toolbar-text">dbt-conceptual</text>
+
+  <!-- File path -->
+  <rect x="160" y="12" width="260" height="24" rx="4" fill="#fafbfc" stroke="#e5e7eb"/>
+  <text x="172" y="29" class="toolbar-path">models/conceptual/conceptual.yml</text>
+
+  <!-- Tab buttons (right side of toolbar) -->
+  <g transform="translate(750, 12)">
+    <rect x="0" y="0" width="60" height="24" rx="4" fill="#4a9eff"/>
+    <text x="30" y="16" text-anchor="middle" class="btn-text" fill="white">Editor</text>
+
+    <rect x="70" y="0" width="70" height="24" rx="4" fill="white" stroke="#e5e7eb"/>
+    <text x="105" y="16" text-anchor="middle" class="btn-text" fill="#666666">Coverage</text>
+
+    <rect x="150" y="0" width="80" height="24" rx="4" fill="white" stroke="#e5e7eb"/>
+    <text x="190" y="16" text-anchor="middle" class="btn-text" fill="#666666">Bus Matrix</text>
+  </g>
+
+  <!-- Settings icon -->
+  <g transform="translate(1160, 14)">
+    <circle cx="10" cy="10" r="10" fill="white" stroke="#e5e7eb"/>
+    <text x="10" y="14" text-anchor="middle" style="font-size: 12px; fill: #666666;">&#9881;</text>
+  </g>
+
+  <!-- ========== CANVAS TOOLBAR ========== -->
+  <rect x="44" y="48" width="816" height="44" fill="white"/>
+  <line x1="44" y1="92" x2="860" y2="92" stroke="#e5e7eb"/>
+
+  <!-- Tool buttons -->
+  <g transform="translate(56, 58)">
+    <rect x="0" y="0" width="60" height="26" rx="4" fill="#e8f4ff" stroke="#4a9eff"/>
+    <text x="30" y="17" text-anchor="middle" class="btn-text" fill="#4a9eff">Select</text>
+
+    <rect x="70" y="0" width="75" height="26" rx="4" fill="white" stroke="#e5e7eb"/>
+    <text x="108" y="17" text-anchor="middle" class="btn-text" fill="#666666">Concept</text>
+
+    <rect x="155" y="0" width="90" height="26" rx="4" fill="white" stroke="#e5e7eb"/>
+    <text x="200" y="17" text-anchor="middle" class="btn-text" fill="#666666">Relationship</text>
+
+    <rect x="255" y="0" width="65" height="26" rx="4" fill="white" stroke="#e5e7eb"/>
+    <text x="288" y="17" text-anchor="middle" class="btn-text" fill="#666666">Domain</text>
+  </g>
+
+  <!-- Right side buttons -->
+  <g transform="translate(690, 58)">
+    <rect x="0" y="0" width="45" height="26" rx="4" fill="white" stroke="#e5e7eb"/>
+    <text x="23" y="17" text-anchor="middle" class="btn-text" fill="#666666">100%</text>
+
+    <rect x="55" y="0" width="55" height="26" rx="4" fill="white" stroke="#e5e7eb"/>
+    <text x="83" y="17" text-anchor="middle" class="btn-text" fill="#666666">Export</text>
+
+    <rect x="120" y="0" width="50" height="26" rx="4" fill="white" stroke="#e5e7eb"/>
+    <text x="145" y="17" text-anchor="middle" class="btn-text" fill="#666666">Sync</text>
+  </g>
+
+  <!-- ========== MESSAGES BAR (collapsed) ========== -->
+  <rect x="0" y="48" width="44" height="652" fill="#fafbfc"/>
+  <line x1="44" y1="48" x2="44" y2="700" stroke="#e5e7eb"/>
+
+  <!-- Expand button -->
+  <g transform="translate(9, 60)">
+    <rect x="0" y="0" width="26" height="26" rx="4" fill="white" stroke="#e5e7eb"/>
+    <text x="13" y="18" text-anchor="middle" style="font-size: 14px; fill: #666666;">&#9654;</text>
+  </g>
+
+  <!-- Sync button -->
+  <g transform="translate(9, 96)">
+    <rect x="0" y="0" width="26" height="26" rx="4" fill="white" stroke="#e5e7eb"/>
+    <text x="13" y="18" text-anchor="middle" style="font-size: 12px; fill: #666666;">&#8635;</text>
+  </g>
+
+  <!-- Message count -->
+  <text x="22" y="145" text-anchor="middle" style="font-family: Inter, sans-serif; font-size: 14px; font-weight: 600; fill: #888888;">0</text>
+
+  <!-- ========== CANVAS AREA ========== -->
+  <rect x="44" y="92" width="816" height="608" fill="url(#grid)"/>
+
+  <!-- Customer Node (selected) -->
+  <g transform="translate(100, 180)">
+    <filter id="shadowS" x="-15%" y="-15%" width="130%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#4a9eff" flood-opacity="0.15"/>
+    </filter>
+    <rect x="0" y="0" width="180" height="120" rx="6" fill="white" stroke="#4a9eff" stroke-width="2" filter="url(#shadowS)"/>
+    <rect x="0" y="0" width="3" height="120" rx="1.5" fill="#4a9eff"/>
+
+    <text x="14" y="28" class="node-name">Customer</text>
+    <rect x="110" y="12" width="56" height="20" rx="3" fill="#4caf50"/>
+    <text x="138" y="25" text-anchor="middle" class="status-text">complete</text>
+
+    <rect x="14" y="38" width="40" height="16" rx="3" fill="#f0f7ff"/>
+    <text x="34" y="50" text-anchor="middle" class="node-domain" fill="#4a9eff">party</text>
+
+    <line x1="14" y1="68" x2="166" y2="68" stroke="#f0f0f0" stroke-width="1"/>
+
+    <g transform="translate(14, 78)">
+      <rect x="0" y="0" width="30" height="20" rx="3" fill="#f5f0ed"/>
+      <text x="8" y="14" class="model-count" fill="#8d6e63">3</text>
+      <rect x="36" y="0" width="30" height="20" rx="3" fill="#f1f5f9"/>
+      <text x="44" y="14" class="model-count" fill="#475569">2</text>
+      <rect x="72" y="0" width="30" height="20" rx="3" fill="#fef3c7"/>
+      <text x="80" y="14" class="model-count" fill="#b45309">1</text>
+    </g>
+  </g>
+
+  <!-- Arrow: Customer -> Order -->
+  <line x1="288" y1="240" x2="388" y2="240" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="320" y="225" class="edge-verb">places</text>
+  <text x="328" y="260" class="edge-cardinality">1:N</text>
+
+  <!-- Order Node -->
+  <g transform="translate(400, 180)">
+    <filter id="shadow2" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000000" flood-opacity="0.08"/>
+    </filter>
+    <rect x="0" y="0" width="180" height="120" rx="6" fill="white" stroke="#e5e7eb" stroke-width="1" filter="url(#shadow2)"/>
+    <rect x="0" y="0" width="3" height="120" rx="1.5" fill="#f5a623"/>
+
+    <text x="14" y="28" class="node-name">Order</text>
+    <rect x="110" y="12" width="56" height="20" rx="3" fill="#4caf50"/>
+    <text x="138" y="25" text-anchor="middle" class="status-text">complete</text>
+
+    <rect x="14" y="38" width="68" height="16" rx="3" fill="#fff7ed"/>
+    <text x="48" y="50" text-anchor="middle" class="node-domain" fill="#f5a623">transaction</text>
+
+    <line x1="14" y1="68" x2="166" y2="68" stroke="#f0f0f0" stroke-width="1"/>
+
+    <g transform="translate(14, 78)">
+      <rect x="0" y="0" width="30" height="20" rx="3" fill="#f5f0ed"/>
+      <text x="8" y="14" class="model-count" fill="#8d6e63">2</text>
+      <rect x="36" y="0" width="30" height="20" rx="3" fill="#f1f5f9"/>
+      <text x="44" y="14" class="model-count" fill="#475569">1</text>
+      <rect x="72" y="0" width="30" height="20" rx="3" fill="#fef3c7"/>
+      <text x="80" y="14" class="model-count" fill="#b45309">1</text>
+    </g>
+  </g>
+
+  <!-- Arrow: Order -> Product -->
+  <line x1="588" y1="240" x2="688" y2="240" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="615" y="225" class="edge-verb">contains</text>
+  <text x="628" y="260" class="edge-cardinality">N:M</text>
+
+  <!-- Product Node -->
+  <g transform="translate(700, 180)">
+    <filter id="shadow3" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000000" flood-opacity="0.08"/>
+    </filter>
+    <rect x="0" y="0" width="140" height="120" rx="6" fill="white" stroke="#e5e7eb" stroke-width="1" filter="url(#shadow3)"/>
+    <rect x="0" y="0" width="3" height="120" rx="1.5" fill="#10b981"/>
+
+    <text x="14" y="28" class="node-name">Product</text>
+    <rect x="76" y="12" width="50" height="20" rx="3" fill="#4caf50"/>
+    <text x="101" y="25" text-anchor="middle" class="status-text">complete</text>
+
+    <rect x="14" y="38" width="48" height="16" rx="3" fill="#ecfdf5"/>
+    <text x="38" y="50" text-anchor="middle" class="node-domain" fill="#10b981">catalog</text>
+
+    <line x1="14" y1="68" x2="126" y2="68" stroke="#f0f0f0" stroke-width="1"/>
+
+    <g transform="translate(14, 78)">
+      <rect x="0" y="0" width="28" height="20" rx="3" fill="#f5f0ed"/>
+      <text x="8" y="14" class="model-count" fill="#8d6e63">2</text>
+      <rect x="32" y="0" width="28" height="20" rx="3" fill="#f1f5f9"/>
+      <text x="40" y="14" class="model-count" fill="#475569">1</text>
+      <rect x="64" y="0" width="28" height="20" rx="3" fill="#fef3c7"/>
+      <text x="72" y="14" class="model-count" fill="#b45309">1</text>
+    </g>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(64, 650)">
+    <rect x="0" y="0" width="14" height="14" rx="2" fill="white" stroke="#e5e7eb"/>
+    <rect x="0" y="0" width="2" height="14" rx="1" fill="#4a9eff"/>
+    <text x="22" y="11" class="legend-text">Complete</text>
+
+    <rect x="110" y="0" width="14" height="14" rx="2" fill="white" stroke="#cccccc" stroke-dasharray="2 2"/>
+    <text x="132" y="11" class="legend-text">Draft</text>
+
+    <rect x="200" y="0" width="14" height="14" rx="2" fill="white" stroke="#f5a623" stroke-dasharray="2 2"/>
+    <text x="222" y="11" class="legend-text">Stub (from sync)</text>
+  </g>
+
+  <!-- ========== PROPERTY PANEL ========== -->
+  <rect x="860" y="48" width="340" height="652" fill="white"/>
+  <line x1="860" y1="48" x2="860" y2="700" stroke="#e5e7eb"/>
+
+  <!-- Panel Header -->
+  <g transform="translate(876, 60)">
+    <text x="0" y="20" class="panel-title">Customer</text>
+    <!-- Close button -->
+    <g transform="translate(292, 4)">
+      <rect x="0" y="0" width="24" height="24" rx="4" fill="white"/>
+      <text x="12" y="17" text-anchor="middle" style="font-size: 18px; fill: #888888;">&times;</text>
+    </g>
+  </g>
+
+  <!-- Tabs -->
+  <g transform="translate(860, 96)">
+    <rect x="0" y="0" width="340" height="36" fill="#fafbfc"/>
+    <rect x="0" y="0" width="170" height="36" fill="white"/>
+    <line x1="0" y1="36" x2="340" y2="36" stroke="#e5e7eb"/>
+    <rect x="0" y="34" width="170" height="2" fill="#4a9eff"/>
+
+    <text x="85" y="23" text-anchor="middle" class="panel-tab" fill="#4a9eff">Properties</text>
+    <text x="255" y="23" text-anchor="middle" class="panel-tab" fill="#666666">Models</text>
+  </g>
+
+  <!-- Panel Content -->
+  <g transform="translate(876, 150)">
+    <!-- Domain field -->
+    <text x="0" y="0" class="panel-label">DOMAIN</text>
+    <g transform="translate(0, 10)">
+      <rect x="0" y="0" width="70" height="28" rx="14" fill="#4a9eff"/>
+      <text x="35" y="19" text-anchor="middle" style="font-family: Inter, sans-serif; font-size: 12px; font-weight: 600; fill: white;">Party</text>
+      <text x="58" y="18" style="font-size: 10px; fill: white; opacity: 0.8;">&times;</text>
+    </g>
+
+    <!-- Owner field -->
+    <text x="0" y="65" class="panel-label">OWNER</text>
+    <rect x="0" y="75" width="308" height="36" rx="4" fill="white" stroke="#dddddd"/>
+    <text x="12" y="98" class="panel-value">customer_team</text>
+
+    <!-- Name field -->
+    <text x="0" y="135" class="panel-label">NAME</text>
+    <rect x="0" y="145" width="308" height="36" rx="4" fill="white" stroke="#dddddd"/>
+    <text x="12" y="168" class="panel-value">Customer</text>
+
+    <!-- Status field -->
+    <text x="0" y="205" class="panel-label">STATUS</text>
+    <g transform="translate(0, 215)">
+      <rect x="0" y="0" width="308" height="36" rx="4" fill="#fafbfc" stroke="#e5e7eb"/>
+      <rect x="12" y="8" width="65" height="20" rx="3" fill="#4caf50"/>
+      <text x="45" y="22" text-anchor="middle" style="font-family: Inter, sans-serif; font-size: 9px; font-weight: 500; fill: white; text-transform: uppercase; letter-spacing: 0.3px;">Complete</text>
+    </g>
+
+    <!-- Definition field -->
+    <text x="0" y="280" class="panel-label">DEFINITION</text>
+    <rect x="0" y="290" width="308" height="100" rx="4" fill="#fafbfc" stroke="#e5e7eb"/>
+    <text x="12" y="315" style="font-family: Inter, sans-serif; font-size: 13px; fill: #1a1a2e; line-height: 1.5;">
+      <tspan x="12" dy="0">A person or company that purchases</tspan>
+      <tspan x="12" dy="20">products from our business.</tspan>
+    </text>
+  </g>
+</svg>

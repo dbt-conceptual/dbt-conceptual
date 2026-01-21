@@ -1418,9 +1418,17 @@ code, pre {
   transform: translateX(-50%);
 }
 
-.toolbar-title {
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-semibold);
+/* === Logo Component === */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.logo-text {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
   color: var(--text-primary);
 }
 
@@ -2005,4 +2013,22 @@ code, pre {
 .confirm-dialog-btn.danger:hover {
   background: #c0392b;
   border-color: #c0392b;
+}
+
+/* === Demo Mode Watermark === */
+.demo-mode-watermark {
+  position: absolute;
+  top: var(--space-5);
+  left: var(--space-5);
+  z-index: 5;
+  padding: var(--space-3) var(--space-5);
+  background: rgba(155, 89, 182, 0.15);
+  border: 2px solid rgba(155, 89, 182, 0.4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: #8e44ad;
+  letter-spacing: 1px;
+  pointer-events: none;
+  user-select: none;
 }

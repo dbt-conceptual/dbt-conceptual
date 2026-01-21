@@ -12,11 +12,12 @@ from dbt_conceptual.parser import StateBuilder
 from dbt_conceptual.scanner import DbtProjectScanner
 
 
-def create_app(project_dir: Path) -> Flask:
+def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
     """Create and configure Flask app.
 
     Args:
         project_dir: Path to dbt project directory
+        demo_mode: Whether running in demo mode (default: False)
 
     Returns:
         Configured Flask app
@@ -30,6 +31,7 @@ def create_app(project_dir: Path) -> Flask:
 
     app = Flask(__name__, static_folder=str(static_dir), static_url_path="")
     app.config["PROJECT_DIR"] = project_dir
+    app.config["DEMO_MODE"] = demo_mode
 
     # Enable CORS in debug mode (for Vite dev server)
     @app.after_request
@@ -532,16 +534,27 @@ def create_app(project_dir: Path) -> Flask:
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
+    @app.route("/api/mode", methods=["GET"])
+    def get_mode() -> Any:
+        """Get current mode (demo or normal)."""
+        return jsonify({"demoMode": app.config.get("DEMO_MODE", False)})
+
     return app
 
 
-def run_server(project_dir: Path, host: str = "127.0.0.1", port: int = 8050) -> None:
+def run_server(
+    project_dir: Path,
+    host: str = "127.0.0.1",
+    port: int = 8050,
+    demo_mode: bool = False,
+) -> None:
     """Run the Flask development server.
 
     Args:
         project_dir: Path to dbt project directory
         host: Host to bind to (default: 127.0.0.1)
         port: Port to bind to (default: 8050)
+        demo_mode: Whether running in demo mode (default: False)
     """
-    app = create_app(project_dir)
+    app = create_app(project_dir, demo_mode=demo_mode)
     app.run(host=host, port=port, debug=True)

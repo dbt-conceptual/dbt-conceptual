@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="280" viewBox="0 0 800 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="800" height="280" fill="#f5f6f8"/>
+
+  <!-- Dotted grid pattern -->
+  <defs>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="10" cy="10" r="1" fill="#d1d5db"/>
+    </pattern>
+    <style>
+      .node-name { font-family: 'Inter', -apple-system, sans-serif; font-size: 14px; font-weight: 600; fill: #1a1a2e; }
+      .node-domain { font-family: 'Inter', -apple-system, sans-serif; font-size: 9px; font-weight: 500; }
+      .status-text { font-family: 'Inter', -apple-system, sans-serif; font-size: 8px; font-weight: 500; fill: white; text-transform: uppercase; letter-spacing: 0.3px; }
+      .model-count { font-family: 'Inter', -apple-system, sans-serif; font-size: 9px; font-weight: 500; }
+      .ghost-name { font-family: 'Inter', -apple-system, sans-serif; font-size: 14px; font-weight: 600; fill: #6b7280; }
+      .ghost-domain { font-family: 'Inter', -apple-system, sans-serif; font-size: 9px; font-weight: 500; fill: #9ca3af; font-style: italic; }
+    </style>
+  </defs>
+  <rect width="800" height="280" fill="url(#grid)"/>
+
+  <!-- Orders Node (regular, complete) -->
+  <g transform="translate(80, 80)">
+    <filter id="shadow1" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000000" flood-opacity="0.08"/>
+    </filter>
+    <rect x="0" y="0" width="200" height="120" rx="6" fill="white" stroke="#e5e7eb" stroke-width="1" filter="url(#shadow1)"/>
+    <rect x="0" y="0" width="3" height="120" rx="1.5" fill="#f5a623"/>
+
+    <text x="14" y="28" class="node-name">Orders</text>
+    <rect x="130" y="12" width="56" height="20" rx="3" fill="#4caf50"/>
+    <text x="158" y="25" text-anchor="middle" class="status-text">complete</text>
+
+    <rect x="14" y="38" width="68" height="16" rx="3" fill="#fff7ed"/>
+    <text x="48" y="50" text-anchor="middle" class="node-domain" fill="#f5a623">transaction</text>
+
+    <line x1="14" y1="68" x2="186" y2="68" stroke="#f0f0f0" stroke-width="1"/>
+
+    <g transform="translate(14, 78)">
+      <rect x="0" y="0" width="32" height="20" rx="3" fill="#f5f0ed"/>
+      <text x="10" y="14" class="model-count" fill="#8d6e63">1</text>
+      <rect x="38" y="0" width="32" height="20" rx="3" fill="#f1f5f9"/>
+      <text x="48" y="14" class="model-count" fill="#475569">1</text>
+      <rect x="76" y="0" width="32" height="20" rx="3" fill="#fef3c7"/>
+      <text x="86" y="14" class="model-count" fill="#b45309">1</text>
+    </g>
+  </g>
+
+  <!-- Ghost concept node -->
+  <g transform="translate(480, 80)">
+    <!-- Ghost dashed border -->
+    <rect x="0" y="0" width="200" height="100" rx="6" fill="#f3f4f6" stroke="#9ca3af" stroke-width="2" stroke-dasharray="6 4"/>
+
+    <!-- Error badge -->
+    <circle cx="196" cy="4" r="12" fill="#dc2626"/>
+    <text x="196" y="9" text-anchor="middle" style="font-family: Inter, sans-serif; font-size: 12px; font-weight: 600; fill: white;">!</text>
+
+    <!-- Header with question mark -->
+    <text x="16" y="40" class="ghost-name">? product</text>
+
+    <!-- Undefined label -->
+    <text x="16" y="65" class="ghost-domain">UNDEFINED</text>
+  </g>
+
+  <!-- Connection line between nodes (no arrow for ghost) -->
+  <line x1="288" y1="140" x2="472" y2="130" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="5 5"/>
+
+  <!-- Annotation box -->
+  <g transform="translate(320, 200)">
+    <rect x="0" y="0" width="340" height="50" rx="6" fill="#fef2f2" stroke="#dc2626" stroke-width="1"/>
+    <text x="16" y="22" style="font-family: Inter, sans-serif; font-size: 12px; font-weight: 600; fill: #dc2626;">Ghost Concept</text>
+    <text x="16" y="40" style="font-family: Inter, sans-serif; font-size: 11px; fill: #666666;">Referenced by relationship but not defined in conceptual.yml</text>
+  </g>
+</svg>

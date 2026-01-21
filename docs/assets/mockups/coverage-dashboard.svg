@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="420" viewBox="0 0 800 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .tab-text { font-family: 'Inter', -apple-system, sans-serif; font-size: 13px; font-weight: 500; }
+      .pct-text { font-family: 'Inter', -apple-system, sans-serif; font-size: 32px; font-weight: 600; fill: #1a1a2e; }
+      .pct-label { font-family: 'Inter', -apple-system, sans-serif; font-size: 11px; font-weight: 500; fill: #4caf50; text-transform: uppercase; letter-spacing: 0.5px; }
+      .legend-text { font-family: 'Inter', -apple-system, sans-serif; font-size: 12px; fill: #666666; }
+      .legend-count { font-family: 'Inter', -apple-system, sans-serif; font-size: 13px; font-weight: 600; fill: #1a1a2e; }
+      .domain-title { font-family: 'Inter', -apple-system, sans-serif; font-size: 14px; font-weight: 600; fill: #1a1a2e; }
+      .domain-count { font-family: 'Inter', -apple-system, sans-serif; font-size: 11px; fill: #888888; }
+      .concept-name { font-family: 'Inter', -apple-system, sans-serif; font-size: 12px; font-weight: 500; fill: #1a1a2e; }
+      .concept-badge { font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 500; }
+      .stub-badge { font-family: 'Inter', -apple-system, sans-serif; font-size: 9px; font-weight: 500; fill: #d97706; text-transform: uppercase; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="420" fill="#f5f6f8"/>
+
+  <!-- Tab bar -->
+  <g transform="translate(30, 30)">
+    <rect x="0" y="0" width="740" height="40" fill="white"/>
+    <line x1="0" y1="40" x2="740" y2="40" stroke="#e5e7eb"/>
+
+    <text x="30" y="26" class="tab-text" fill="#666666">Editor</text>
+    <text x="110" y="26" class="tab-text" fill="#4a9eff">Coverage</text>
+    <rect x="95" y="38" width="60" height="2" fill="#4a9eff"/>
+    <text x="200" y="26" class="tab-text" fill="#666666">Bus Matrix</text>
+
+    <!-- Export button -->
+    <rect x="665" y="8" width="60" height="26" rx="4" fill="white" stroke="#e5e7eb"/>
+    <text x="695" y="26" text-anchor="middle" class="tab-text" fill="#666666">Export</text>
+  </g>
+
+  <!-- Coverage card -->
+  <rect x="30" y="90" width="740" height="300" rx="8" fill="white" stroke="#e5e7eb"/>
+
+  <!-- Donut chart area -->
+  <g transform="translate(80, 130)">
+    <!-- Donut ring (background) -->
+    <circle cx="60" cy="60" r="55" fill="none" stroke="#e5e7eb" stroke-width="16"/>
+    <!-- Donut ring (complete - 75%) -->
+    <circle cx="60" cy="60" r="55" fill="none" stroke="#4caf50" stroke-width="16"
+            stroke-dasharray="259 86" stroke-dashoffset="86" transform="rotate(-90 60 60)"/>
+    <!-- Donut ring (stub - 25%) -->
+    <circle cx="60" cy="60" r="55" fill="none" stroke="#f5a623" stroke-width="16"
+            stroke-dasharray="86 259" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+
+    <!-- Center text -->
+    <text x="60" y="55" text-anchor="middle" class="pct-text">75%</text>
+    <text x="60" y="75" text-anchor="middle" class="pct-label">COVERAGE</text>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(200, 140)">
+    <!-- Complete -->
+    <rect x="0" y="0" width="12" height="12" rx="2" fill="#4caf50"/>
+    <text x="20" y="11" class="legend-text">Complete</text>
+    <rect x="100" y="0" width="200" height="12" rx="2" fill="#4caf50"/>
+    <text x="310" y="11" class="legend-count">3</text>
+
+    <!-- Stub -->
+    <rect x="0" y="30" width="12" height="12" rx="2" fill="#f5a623"/>
+    <text x="20" y="41" class="legend-text">Stub</text>
+    <rect x="100" y="30" width="67" height="12" rx="2" fill="#f5a623"/>
+    <text x="310" y="41" class="legend-count">1</text>
+
+    <!-- Draft -->
+    <rect x="0" y="60" width="12" height="12" rx="2" fill="#9e9e9e"/>
+    <text x="20" y="71" class="legend-text">Draft</text>
+    <text x="310" y="71" class="legend-count">0</text>
+  </g>
+
+  <!-- Domains breakdown -->
+  <g transform="translate(50, 250)">
+    <!-- Party domain -->
+    <g transform="translate(0, 0)">
+      <rect x="0" y="0" width="10" height="40" rx="2" fill="#4a9eff"/>
+      <text x="22" y="16" class="domain-title">Party</text>
+      <text x="22" y="34" class="domain-count">1 concept</text>
+
+      <!-- Concepts -->
+      <g transform="translate(100, 6)">
+        <circle cx="6" cy="10" r="5" fill="#4caf50"/>
+        <text x="18" y="14" class="concept-name">Customer</text>
+        <rect x="80" y="2" width="50" height="16" rx="3" fill="#f1f5f9"/>
+        <text x="88" y="14" class="concept-badge" fill="#475569">S:2 G:1</text>
+      </g>
+    </g>
+
+    <!-- Transaction domain -->
+    <g transform="translate(0, 55)">
+      <rect x="0" y="0" width="10" height="55" rx="2" fill="#f5a623"/>
+      <text x="22" y="16" class="domain-title">Transaction</text>
+      <text x="22" y="34" class="domain-count">2 concepts</text>
+
+      <!-- Concepts -->
+      <g transform="translate(100, 0)">
+        <circle cx="6" cy="10" r="5" fill="#4caf50"/>
+        <text x="18" y="14" class="concept-name">Order</text>
+        <rect x="60" y="2" width="50" height="16" rx="3" fill="#f1f5f9"/>
+        <text x="68" y="14" class="concept-badge" fill="#475569">S:1 G:1</text>
+      </g>
+
+      <g transform="translate(220, 0)">
+        <circle cx="6" cy="10" r="5" fill="#f5a623"/>
+        <text x="18" y="14" class="concept-name">Shipment</text>
+        <rect x="75" y="2" width="35" height="16" rx="3" fill="#fff7ed"/>
+        <text x="83" y="14" class="stub-badge">stub</text>
+      </g>
+    </g>
+
+    <!-- Catalog domain -->
+    <g transform="translate(0, 125)">
+      <rect x="0" y="0" width="10" height="40" rx="2" fill="#10b981"/>
+      <text x="22" y="16" class="domain-title">Catalog</text>
+      <text x="22" y="34" class="domain-count">1 concept</text>
+
+      <!-- Concepts -->
+      <g transform="translate(100, 6)">
+        <circle cx="6" cy="10" r="5" fill="#4caf50"/>
+        <text x="18" y="14" class="concept-name">Product</text>
+        <rect x="65" y="2" width="50" height="16" rx="3" fill="#f1f5f9"/>
+        <text x="73" y="14" class="concept-badge" fill="#475569">S:1 G:1</text>
+      </g>
+    </g>
+  </g>
+</svg>

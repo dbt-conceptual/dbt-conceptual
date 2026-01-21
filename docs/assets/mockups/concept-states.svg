@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1080" height="520" viewBox="0 0 1080 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1080" height="520" fill="#f5f6f8"/>
+
+  <!-- Dotted grid pattern -->
+  <defs>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="10" cy="10" r="1" fill="#d1d5db"/>
+    </pattern>
+    <!-- Fonts -->
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap');
+      .label { font-family: 'Inter', -apple-system, sans-serif; font-size: 11px; font-weight: 600; fill: #666666; letter-spacing: 0.5px; }
+      .node-name { font-family: 'Inter', -apple-system, sans-serif; font-size: 14px; font-weight: 600; fill: #1a1a2e; }
+      .node-domain { font-family: 'Inter', -apple-system, sans-serif; font-size: 9px; font-weight: 500; fill: #4a9eff; }
+      .node-domain-none { font-family: 'Inter', -apple-system, sans-serif; font-size: 9px; font-weight: 500; fill: #9ca3af; }
+      .status-text { font-family: 'Inter', -apple-system, sans-serif; font-size: 8px; font-weight: 500; fill: white; text-transform: uppercase; letter-spacing: 0.3px; }
+      .model-count { font-family: 'Inter', -apple-system, sans-serif; font-size: 9px; font-weight: 500; }
+      .ghost-name { font-family: 'Inter', -apple-system, sans-serif; font-size: 14px; font-weight: 600; fill: #6b7280; }
+      .ghost-domain { font-family: 'Inter', -apple-system, sans-serif; font-size: 9px; font-weight: 500; fill: #9ca3af; font-style: italic; }
+    </style>
+  </defs>
+  <rect width="1080" height="520" fill="url(#grid)"/>
+
+  <!-- Row 1 Labels -->
+  <text x="180" y="40" text-anchor="middle" class="label">COMPLETE</text>
+  <text x="400" y="40" text-anchor="middle" class="label">DRAFT</text>
+  <text x="620" y="40" text-anchor="middle" class="label">STUB</text>
+
+  <!-- Row 2 Labels -->
+  <text x="180" y="280" text-anchor="middle" class="label">GHOST</text>
+  <text x="510" y="280" text-anchor="middle" class="label">ERROR</text>
+  <text x="840" y="280" text-anchor="middle" class="label">WARNING</text>
+
+  <!-- === COMPLETE Node === -->
+  <g transform="translate(80, 70)">
+    <!-- Node background -->
+    <rect x="0" y="0" width="200" height="140" rx="6" fill="white" stroke="#e5e7eb" stroke-width="1"/>
+    <!-- Domain color left border -->
+    <rect x="0" y="0" width="3" height="140" rx="1.5" fill="#4a9eff"/>
+    <!-- Shadow -->
+    <filter id="shadow1" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000000" flood-opacity="0.08"/>
+    </filter>
+    <rect x="0" y="0" width="200" height="140" rx="6" fill="white" stroke="#e5e7eb" stroke-width="1" filter="url(#shadow1)"/>
+    <rect x="0" y="0" width="3" height="140" rx="1.5" fill="#4a9eff"/>
+
+    <!-- Header -->
+    <text x="14" y="30" class="node-name">Customer</text>
+    <!-- Status badge -->
+    <rect x="130" y="15" width="56" height="20" rx="3" fill="#4caf50"/>
+    <text x="158" y="28" text-anchor="middle" class="status-text">complete</text>
+
+    <!-- Domain badge -->
+    <rect x="14" y="42" width="40" height="18" rx="3" fill="#f0f7ff"/>
+    <text x="34" y="54" text-anchor="middle" class="node-domain">party</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="75" x2="186" y2="75" stroke="#f0f0f0" stroke-width="1"/>
+
+    <!-- Model counts -->
+    <g transform="translate(14, 85)">
+      <!-- Bronze -->
+      <rect x="0" y="0" width="34" height="22" rx="3" fill="#f5f0ed"/>
+      <text x="10" y="15" class="model-count" fill="#8d6e63">2</text>
+      <!-- Silver -->
+      <rect x="40" y="0" width="34" height="22" rx="3" fill="#f1f5f9"/>
+      <text x="50" y="15" class="model-count" fill="#475569">1</text>
+      <!-- Gold -->
+      <rect x="80" y="0" width="34" height="22" rx="3" fill="#fef3c7"/>
+      <text x="90" y="15" class="model-count" fill="#b45309">1</text>
+    </g>
+
+    <!-- Owner -->
+    <text x="14" y="128" style="font-family: Inter, sans-serif; font-size: 9px; fill: #888888;">@customer_team</text>
+  </g>
+
+  <!-- === DRAFT Node === -->
+  <g transform="translate(300, 70)">
+    <!-- Dashed border for draft -->
+    <rect x="0" y="0" width="200" height="140" rx="6" fill="white" stroke="#cccccc" stroke-width="1" stroke-dasharray="4 3"/>
+    <!-- Left border (lighter) -->
+    <rect x="0" y="0" width="3" height="140" rx="1.5" fill="#9e9e9e"/>
+
+    <!-- Header -->
+    <text x="14" y="30" class="node-name">Supplier</text>
+    <!-- Status badge -->
+    <rect x="145" y="15" width="42" height="20" rx="3" fill="#9e9e9e"/>
+    <text x="166" y="28" text-anchor="middle" class="status-text">draft</text>
+
+    <!-- Domain badge -->
+    <rect x="14" y="42" width="40" height="18" rx="3" fill="#f0f7ff"/>
+    <text x="34" y="54" text-anchor="middle" class="node-domain">party</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="75" x2="186" y2="75" stroke="#f0f0f0" stroke-width="1"/>
+
+    <!-- Model counts (all zero) -->
+    <g transform="translate(14, 85)">
+      <rect x="0" y="0" width="34" height="22" rx="3" fill="#f5f0ed"/>
+      <text x="10" y="15" class="model-count" fill="#8d6e63">0</text>
+      <rect x="40" y="0" width="34" height="22" rx="3" fill="#f1f5f9"/>
+      <text x="50" y="15" class="model-count" fill="#475569">0</text>
+      <rect x="80" y="0" width="34" height="22" rx="3" fill="#fef3c7"/>
+      <text x="90" y="15" class="model-count" fill="#b45309">0</text>
+    </g>
+  </g>
+
+  <!-- === STUB Node === -->
+  <g transform="translate(520, 70)">
+    <!-- Dashed border for stub -->
+    <rect x="0" y="0" width="200" height="140" rx="6" fill="white" stroke="#f5a623" stroke-width="1" stroke-dasharray="4 3"/>
+    <!-- Left border (stub color) -->
+    <rect x="0" y="0" width="3" height="140" rx="1.5" fill="#f5a623"/>
+
+    <!-- Warning badge -->
+    <circle cx="196" cy="4" r="12" fill="#d97706"/>
+    <text x="196" y="9" text-anchor="middle" style="font-family: Inter, sans-serif; font-size: 12px; font-weight: 600; fill: white;">!</text>
+
+    <!-- Header -->
+    <text x="14" y="30" class="node-name">Inventory</text>
+    <!-- Status badge -->
+    <rect x="150" y="15" width="36" height="20" rx="3" fill="#f5a623"/>
+    <text x="168" y="28" text-anchor="middle" class="status-text">stub</text>
+
+    <!-- No domain -->
+    <text x="14" y="54" class="node-domain-none">-</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="75" x2="186" y2="75" stroke="#f0f0f0" stroke-width="1"/>
+
+    <!-- Model counts -->
+    <g transform="translate(14, 85)">
+      <rect x="0" y="0" width="34" height="22" rx="3" fill="#f5f0ed"/>
+      <text x="10" y="15" class="model-count" fill="#8d6e63">0</text>
+      <rect x="40" y="0" width="34" height="22" rx="3" fill="#f1f5f9"/>
+      <text x="50" y="15" class="model-count" fill="#475569">0</text>
+      <rect x="80" y="0" width="34" height="22" rx="3" fill="#fef3c7"/>
+      <text x="90" y="15" class="model-count" fill="#b45309">0</text>
+    </g>
+  </g>
+
+  <!-- === GHOST Node === -->
+  <g transform="translate(80, 310)">
+    <!-- Ghost dashed border -->
+    <rect x="0" y="0" width="200" height="110" rx="6" fill="#f3f4f6" stroke="#9ca3af" stroke-width="2" stroke-dasharray="6 4"/>
+
+    <!-- Error badge -->
+    <circle cx="196" cy="4" r="12" fill="#dc2626"/>
+    <text x="196" y="9" text-anchor="middle" style="font-family: Inter, sans-serif; font-size: 12px; font-weight: 600; fill: white;">!</text>
+
+    <!-- Header with question mark -->
+    <text x="14" y="35" class="ghost-name">? product</text>
+
+    <!-- Undefined label -->
+    <text x="14" y="58" class="ghost-domain">UNDEFINED</text>
+  </g>
+
+  <!-- === ERROR Node === -->
+  <g transform="translate(365, 310)">
+    <!-- Error border -->
+    <rect x="0" y="0" width="200" height="140" rx="6" fill="white" stroke="#dc2626" stroke-width="2"/>
+    <!-- Domain color left border -->
+    <rect x="0" y="0" width="3" height="140" rx="1.5" fill="#dc2626"/>
+
+    <!-- Error badge -->
+    <circle cx="196" cy="4" r="12" fill="#dc2626"/>
+    <text x="196" y="9" text-anchor="middle" style="font-family: Inter, sans-serif; font-size: 12px; font-weight: 600; fill: white;">!</text>
+
+    <!-- Header -->
+    <text x="14" y="30" class="node-name">Customer</text>
+    <!-- Status badge -->
+    <rect x="130" y="15" width="56" height="20" rx="3" fill="#4caf50"/>
+    <text x="158" y="28" text-anchor="middle" class="status-text">complete</text>
+
+    <!-- Domain badge (showing domain has error - e.g. duplicate name) -->
+    <rect x="14" y="42" width="62" height="18" rx="3" fill="#fef2f2"/>
+    <text x="45" y="54" text-anchor="middle" style="font-family: Inter, sans-serif; font-size: 9px; font-weight: 500; fill: #dc2626;">marketing</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="75" x2="186" y2="75" stroke="#f0f0f0" stroke-width="1"/>
+
+    <!-- Model counts -->
+    <g transform="translate(14, 85)">
+      <rect x="0" y="0" width="34" height="22" rx="3" fill="#f5f0ed"/>
+      <text x="10" y="15" class="model-count" fill="#8d6e63">1</text>
+      <rect x="40" y="0" width="34" height="22" rx="3" fill="#f1f5f9"/>
+      <text x="50" y="15" class="model-count" fill="#475569">0</text>
+      <rect x="80" y="0" width="34" height="22" rx="3" fill="#fef3c7"/>
+      <text x="90" y="15" class="model-count" fill="#b45309">1</text>
+    </g>
+  </g>
+
+  <!-- === WARNING Node === -->
+  <g transform="translate(695, 310)">
+    <!-- Warning border -->
+    <rect x="0" y="0" width="200" height="140" rx="6" fill="white" stroke="#d97706" stroke-width="2"/>
+    <!-- Domain color left border -->
+    <rect x="0" y="0" width="3" height="140" rx="1.5" fill="#d97706"/>
+
+    <!-- Warning badge -->
+    <circle cx="196" cy="4" r="12" fill="#d97706"/>
+    <text x="196" y="9" text-anchor="middle" style="font-family: Inter, sans-serif; font-size: 12px; font-weight: 600; fill: white;">!</text>
+
+    <!-- Header -->
+    <text x="14" y="30" class="node-name">Payment</text>
+    <!-- Status badge -->
+    <rect x="145" y="15" width="42" height="20" rx="3" fill="#9e9e9e"/>
+    <text x="166" y="28" text-anchor="middle" class="status-text">draft</text>
+
+    <!-- Domain badge -->
+    <rect x="14" y="42" width="68" height="18" rx="3" fill="#fff7ed"/>
+    <text x="48" y="54" text-anchor="middle" style="font-family: Inter, sans-serif; font-size: 9px; font-weight: 500; fill: #d97706;">transaction</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="75" x2="186" y2="75" stroke="#f0f0f0" stroke-width="1"/>
+
+    <!-- Model counts -->
+    <g transform="translate(14, 85)">
+      <rect x="0" y="0" width="34" height="22" rx="3" fill="#f5f0ed"/>
+      <text x="10" y="15" class="model-count" fill="#8d6e63">0</text>
+      <rect x="40" y="0" width="34" height="22" rx="3" fill="#f1f5f9"/>
+      <text x="50" y="15" class="model-count" fill="#475569">0</text>
+      <rect x="80" y="0" width="34" height="22" rx="3" fill="#fef3c7"/>
+      <text x="90" y="15" class="model-count" fill="#b45309">0</text>
+    </g>
+  </g>
+
+  <!-- Legend at bottom -->
+  <g transform="translate(40, 480)">
+    <!-- Complete -->
+    <rect x="0" y="0" width="14" height="14" rx="2" fill="white" stroke="#e5e7eb"/>
+    <rect x="0" y="0" width="2" height="14" rx="1" fill="#4a9eff"/>
+    <text x="22" y="11" style="font-family: Inter, sans-serif; font-size: 11px; fill: #666666;">Complete</text>
+
+    <!-- Draft -->
+    <rect x="110" y="0" width="14" height="14" rx="2" fill="white" stroke="#cccccc" stroke-dasharray="2 2"/>
+    <text x="132" y="11" style="font-family: Inter, sans-serif; font-size: 11px; fill: #666666;">Draft</text>
+
+    <!-- Stub -->
+    <rect x="200" y="0" width="14" height="14" rx="2" fill="white" stroke="#f5a623" stroke-dasharray="2 2"/>
+    <text x="222" y="11" style="font-family: Inter, sans-serif; font-size: 11px; fill: #666666;">Stub (from sync)</text>
+
+    <!-- Ghost -->
+    <rect x="340" y="0" width="14" height="14" rx="2" fill="#f3f4f6" stroke="#9ca3af" stroke-dasharray="2 2"/>
+    <text x="362" y="11" style="font-family: Inter, sans-serif; font-size: 11px; fill: #666666;">Ghost (undefined)</text>
+  </g>
+</svg>

@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1000" height="500" viewBox="0 0 1000 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1000" height="500" fill="#f5f6f8"/>
+
+  <!-- Dotted grid pattern -->
+  <defs>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="10" cy="10" r="1" fill="#d1d5db"/>
+    </pattern>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap');
+      .label { font-family: 'Inter', -apple-system, sans-serif; font-size: 12px; font-weight: 600; fill: #666666; letter-spacing: 0.5px; }
+      .node-name { font-family: 'Inter', -apple-system, sans-serif; font-size: 14px; font-weight: 600; fill: #1a1a2e; }
+      .node-domain { font-family: 'Inter', -apple-system, sans-serif; font-size: 9px; font-weight: 500; }
+      .status-text { font-family: 'Inter', -apple-system, sans-serif; font-size: 8px; font-weight: 500; fill: white; text-transform: uppercase; letter-spacing: 0.3px; }
+      .edge-verb { font-family: 'Inter', -apple-system, sans-serif; font-size: 13px; font-weight: 500; }
+      .edge-cardinality { font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+      .ghost-name { font-family: 'Inter', -apple-system, sans-serif; font-size: 14px; font-weight: 600; fill: #6b7280; }
+      .ghost-domain { font-family: 'Inter', -apple-system, sans-serif; font-size: 9px; font-weight: 500; fill: #9ca3af; font-style: italic; }
+      .model-count { font-family: 'Inter', -apple-system, sans-serif; font-size: 9px; font-weight: 500; }
+    </style>
+    <!-- Arrow markers -->
+    <marker id="arrow-valid" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#6b7280"/>
+    </marker>
+    <marker id="arrow-invalid" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect width="1000" height="500" fill="url(#grid)"/>
+
+  <!-- Section Labels -->
+  <text x="50" y="45" class="label">VALID RELATIONSHIP</text>
+  <text x="50" y="285" class="label">INVALID RELATIONSHIP</text>
+
+  <!-- ========== VALID RELATIONSHIP ========== -->
+
+  <!-- Customer Node (Source) -->
+  <g transform="translate(80, 80)">
+    <filter id="shadowV1" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000000" flood-opacity="0.08"/>
+    </filter>
+    <rect x="0" y="0" width="180" height="120" rx="6" fill="white" stroke="#e5e7eb" stroke-width="1" filter="url(#shadowV1)"/>
+    <rect x="0" y="0" width="3" height="120" rx="1.5" fill="#4a9eff"/>
+
+    <!-- Header -->
+    <text x="14" y="28" class="node-name">Customer</text>
+    <rect x="110" y="12" width="56" height="20" rx="3" fill="#4caf50"/>
+    <text x="138" y="25" text-anchor="middle" class="status-text">complete</text>
+
+    <!-- Domain -->
+    <rect x="14" y="38" width="40" height="16" rx="3" fill="#f0f7ff"/>
+    <text x="34" y="50" text-anchor="middle" class="node-domain" fill="#4a9eff">party</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="65" x2="166" y2="65" stroke="#f0f0f0" stroke-width="1"/>
+
+    <!-- Model counts -->
+    <g transform="translate(14, 75)">
+      <rect x="0" y="0" width="30" height="20" rx="3" fill="#f5f0ed"/>
+      <text x="8" y="14" class="model-count" fill="#8d6e63">3</text>
+      <rect x="36" y="0" width="30" height="20" rx="3" fill="#f1f5f9"/>
+      <text x="44" y="14" class="model-count" fill="#475569">2</text>
+      <rect x="72" y="0" width="30" height="20" rx="3" fill="#fef3c7"/>
+      <text x="80" y="14" class="model-count" fill="#b45309">1</text>
+    </g>
+  </g>
+
+  <!-- Arrow and Label (Valid) -->
+  <line x1="268" y1="140" x2="438" y2="140" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrow-valid)"/>
+  <g transform="translate(310, 115)">
+    <text x="42" y="0" text-anchor="middle" class="edge-verb" fill="#1a1a2e">places</text>
+    <text x="42" y="16" text-anchor="middle" class="edge-cardinality" fill="#666666">1:N</text>
+  </g>
+
+  <!-- Orders Node (Target - Valid) -->
+  <g transform="translate(450, 80)">
+    <filter id="shadowV2" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000000" flood-opacity="0.08"/>
+    </filter>
+    <rect x="0" y="0" width="180" height="120" rx="6" fill="white" stroke="#e5e7eb" stroke-width="1" filter="url(#shadowV2)"/>
+    <rect x="0" y="0" width="3" height="120" rx="1.5" fill="#f5a623"/>
+
+    <!-- Header -->
+    <text x="14" y="28" class="node-name">Orders</text>
+    <rect x="110" y="12" width="56" height="20" rx="3" fill="#4caf50"/>
+    <text x="138" y="25" text-anchor="middle" class="status-text">complete</text>
+
+    <!-- Domain -->
+    <rect x="14" y="38" width="68" height="16" rx="3" fill="#fff7ed"/>
+    <text x="48" y="50" text-anchor="middle" class="node-domain" fill="#f5a623">transaction</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="65" x2="166" y2="65" stroke="#f0f0f0" stroke-width="1"/>
+
+    <!-- Model counts -->
+    <g transform="translate(14, 75)">
+      <rect x="0" y="0" width="30" height="20" rx="3" fill="#f5f0ed"/>
+      <text x="8" y="14" class="model-count" fill="#8d6e63">1</text>
+      <rect x="36" y="0" width="30" height="20" rx="3" fill="#f1f5f9"/>
+      <text x="44" y="14" class="model-count" fill="#475569">1</text>
+      <rect x="72" y="0" width="30" height="20" rx="3" fill="#fef3c7"/>
+      <text x="80" y="14" class="model-count" fill="#b45309">1</text>
+    </g>
+  </g>
+
+  <!-- ========== INVALID RELATIONSHIP ========== -->
+
+  <!-- Orders Node (Source) -->
+  <g transform="translate(80, 320)">
+    <filter id="shadowI1" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000000" flood-opacity="0.08"/>
+    </filter>
+    <rect x="0" y="0" width="180" height="120" rx="6" fill="white" stroke="#e5e7eb" stroke-width="1" filter="url(#shadowI1)"/>
+    <rect x="0" y="0" width="3" height="120" rx="1.5" fill="#f5a623"/>
+
+    <!-- Header -->
+    <text x="14" y="28" class="node-name">Orders</text>
+    <rect x="110" y="12" width="56" height="20" rx="3" fill="#4caf50"/>
+    <text x="138" y="25" text-anchor="middle" class="status-text">complete</text>
+
+    <!-- Domain -->
+    <rect x="14" y="38" width="68" height="16" rx="3" fill="#fff7ed"/>
+    <text x="48" y="50" text-anchor="middle" class="node-domain" fill="#f5a623">transaction</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="65" x2="166" y2="65" stroke="#f0f0f0" stroke-width="1"/>
+
+    <!-- Model counts -->
+    <g transform="translate(14, 75)">
+      <rect x="0" y="0" width="30" height="20" rx="3" fill="#f5f0ed"/>
+      <text x="8" y="14" class="model-count" fill="#8d6e63">1</text>
+      <rect x="36" y="0" width="30" height="20" rx="3" fill="#f1f5f9"/>
+      <text x="44" y="14" class="model-count" fill="#475569">1</text>
+      <rect x="72" y="0" width="30" height="20" rx="3" fill="#fef3c7"/>
+      <text x="80" y="14" class="model-count" fill="#b45309">1</text>
+    </g>
+  </g>
+
+  <!-- Arrow and Label (Invalid - dashed red) -->
+  <line x1="268" y1="380" x2="438" y2="380" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="5 5" marker-end="url(#arrow-invalid)"/>
+  <g transform="translate(310, 355)">
+    <text x="42" y="0" text-anchor="middle" class="edge-verb" fill="#dc2626">contains</text>
+    <text x="42" y="16" text-anchor="middle" class="edge-cardinality" fill="#dc2626">N:M</text>
+  </g>
+
+  <!-- Ghost Node (Target - Invalid/Undefined) -->
+  <g transform="translate(450, 320)">
+    <!-- Ghost dashed border -->
+    <rect x="0" y="0" width="180" height="100" rx="6" fill="#f3f4f6" stroke="#9ca3af" stroke-width="2" stroke-dasharray="6 4"/>
+
+    <!-- Error badge -->
+    <circle cx="176" cy="4" r="12" fill="#dc2626"/>
+    <text x="176" y="9" text-anchor="middle" style="font-family: Inter, sans-serif; font-size: 12px; font-weight: 600; fill: white;">!</text>
+
+    <!-- Header with question mark -->
+    <text x="14" y="35" class="ghost-name">? product</text>
+
+    <!-- Undefined label -->
+    <text x="14" y="58" class="ghost-domain">UNDEFINED</text>
+  </g>
+
+  <!-- Annotation for invalid -->
+  <g transform="translate(660, 360)">
+    <rect x="0" y="0" width="280" height="50" rx="6" fill="#fef2f2" stroke="#dc2626" stroke-width="1"/>
+    <text x="14" y="20" style="font-family: Inter, sans-serif; font-size: 11px; font-weight: 600; fill: #dc2626;">Target concept not defined</text>
+    <text x="14" y="38" style="font-family: Inter, sans-serif; font-size: 10px; fill: #666666;">Define "product" in conceptual.yml to resolve</text>
+  </g>
+</svg>

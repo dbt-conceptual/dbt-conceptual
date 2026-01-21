@@ -265,6 +265,16 @@ dbt-conceptual serve
 - **Real-time sync** — changes save directly to `conceptual.yml`
 - **Coverage and Bus Matrix** views built in
 
+#### Try It Without a Project
+
+Want to explore before committing? Run demo mode:
+
+```bash
+dbt-conceptual serve --demo
+```
+
+Launches the UI with a self-contained example project — four concepts, relationships, and models across bronze/silver/gold layers. No dbt project required. Changes are not persisted; everything resets when you press Ctrl+C.
+
 ### ✅ CI Validation
 
 Catch drift before it ships:

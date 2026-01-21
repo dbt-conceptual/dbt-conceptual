@@ -155,5 +155,5 @@ logs/
 PUBLISHING.md
 .claude/
 
-# Local demo/test folder
-demo/
+# Local testing folder (for development)
+user_testing/

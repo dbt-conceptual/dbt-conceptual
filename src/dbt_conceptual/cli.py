@@ -848,7 +848,13 @@ def export(project_dir: Optional[Path], format: str, output: Optional[Path]) -> 
     type=int,
     help="Port to bind to (default: 8050)",
 )
-def serve(project_dir: Optional[Path], host: str, port: int) -> None:
+@click.option(
+    "--demo",
+    is_flag=True,
+    default=False,
+    help="Launch with a self-contained demo project (no dbt project required)",
+)
+def serve(project_dir: Optional[Path], host: str, port: int, demo: bool) -> None:
     """Launch the interactive web UI for editing conceptual models.
 
     This starts a local web server with a visual editor for your conceptual
@@ -863,6 +869,7 @@ def serve(project_dir: Optional[Path], host: str, port: int) -> None:
         dbt-conceptual serve
         dbt-conceptual serve --port 8080
         dbt-conceptual serve --host 0.0.0.0 --port 3000
+        dbt-conceptual serve --demo
 
     Note:
         Port 5000 is often occupied by macOS AirPlay Receiver.
@@ -879,12 +886,35 @@ def serve(project_dir: Optional[Path], host: str, port: int) -> None:
         )
         return
 
+    # Handle demo mode
+    demo_dir: Optional[Path] = None
+    if demo:
+        import atexit
+        import shutil
+
+        from dbt_conceptual.demo import create_demo_project
+
+        demo_dir = create_demo_project()
+        console.print("[magenta]🎭 DEMO MODE[/magenta]")
+        console.print(f"[dim]Demo project created at: {demo_dir}[/dim]")
+        console.print("[dim]Changes will not be persisted after exit.[/dim]\n")
+
+        # Register cleanup on exit
+        def cleanup_demo() -> None:
+            if demo_dir and demo_dir.exists():
+                shutil.rmtree(demo_dir, ignore_errors=True)
+
+        atexit.register(cleanup_demo)
+
+        # Use demo directory instead of project_dir
+        project_dir = demo_dir
+
     console.print("[cyan]Starting dbt-conceptual UI server...[/cyan]")
     console.print(f"[cyan]Open your browser to: http://{host}:{port}[/cyan]")
     console.print("[dim]Press Ctrl+C to stop[/dim]\n")
 
     try:
-        run_server(project_dir or Path.cwd(), host=host, port=port)
+        run_server(project_dir or Path.cwd(), host=host, port=port, demo_mode=demo)
     except KeyboardInterrupt:
         console.print("\n[yellow]Server stopped[/yellow]")
 
