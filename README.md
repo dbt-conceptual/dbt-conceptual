@@ -141,7 +141,7 @@ dbt-conceptual serve
 dbt-conceptual validate
 
 # Export coverage report
-dbt-conceptual export --format coverage -o coverage.html
+dbt-conceptual export --type coverage --format html -o coverage.html
 ```
 
 ---
@@ -351,12 +351,36 @@ dbt-conceptual sync --create-stubs
 ### 📤 Export Formats
 
 ```bash
-# Coverage report — HTML dashboard
-dbt-conceptual export --format coverage -o coverage.html
+# Coverage report
+dbt-conceptual export --type coverage --format html -o coverage.html
+dbt-conceptual export --type coverage --format markdown >> $GITHUB_STEP_SUMMARY
+dbt-conceptual export --type coverage --format json -o coverage.json
 
-# Bus matrix — dimensions vs facts
-dbt-conceptual export --format bus-matrix -o bus-matrix.html
+# Bus matrix
+dbt-conceptual export --type bus-matrix --format html -o bus-matrix.html
+
+# Status summary
+dbt-conceptual export --type status --format markdown >> $GITHUB_STEP_SUMMARY
+
+# Orphan models
+dbt-conceptual export --type orphans --format json | jq '.count'
+
+# Validation results
+dbt-conceptual export --type validation --format markdown
+
+# Diagram (SVG)
+dbt-conceptual export --type diagram --format svg -o diagram.svg
 ```
+
+**Export Matrix:**
+| Type | svg | html | markdown | json |
+|------|-----|------|----------|------|
+| diagram | ✅ | — | — | — |
+| coverage | — | ✅ | ✅ | ✅ |
+| bus-matrix | — | ✅ | ✅ | ✅ |
+| status | — | — | ✅ | ✅ |
+| orphans | — | — | ✅ | ✅ |
+| validation | — | — | ✅ | ✅ |
 
 <!-- ASSET: docs/assets/bus-matrix.png — Kimball-style bus matrix showing dimensional coverage -->
 ![Bus matrix](docs/assets/bus-matrix.png)
