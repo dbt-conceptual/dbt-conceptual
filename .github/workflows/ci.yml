@@ -53,3 +53,68 @@ jobs:
 
       - name: Run mypy
         run: mypy src/dbt_conceptual
+
+  frontend-check:
+    runs-on: ubuntu-latest
+    name: Frontend build check
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Check static assets are up to date
+        run: |
+          # Compare built assets with committed static assets
+          # If they differ, the frontend was changed without rebuilding
+
+          echo "Comparing built frontend with committed static assets..."
+
+          # Check if JS files exist in both locations
+          BUILT_JS=$(ls frontend/dist/assets/index-*.js 2>/dev/null | head -1)
+          STATIC_JS=$(ls src/dbt_conceptual/static/assets/index-*.js 2>/dev/null | head -1)
+
+          if [ -z "$BUILT_JS" ]; then
+            echo "ERROR: No JS file found in frontend/dist/assets/"
+            exit 1
+          fi
+
+          if [ -z "$STATIC_JS" ]; then
+            echo "ERROR: No JS file found in src/dbt_conceptual/static/assets/"
+            exit 1
+          fi
+
+          # Extract just the hash part of filenames
+          BUILT_HASH=$(basename "$BUILT_JS" | sed 's/index-\(.*\)\.js/\1/')
+          STATIC_HASH=$(basename "$STATIC_JS" | sed 's/index-\(.*\)\.js/\1/')
+
+          echo "Built JS hash:  $BUILT_HASH"
+          echo "Static JS hash: $STATIC_HASH"
+
+          if [ "$BUILT_HASH" != "$STATIC_HASH" ]; then
+            echo ""
+            echo "ERROR: Frontend source has changed but static assets are outdated!"
+            echo ""
+            echo "The frontend source code has been modified but the built assets"
+            echo "in src/dbt_conceptual/static/ have not been updated."
+            echo ""
+            echo "To fix this, run:"
+            echo "  cd frontend && npm run build && cp -r dist/* ../src/dbt_conceptual/static/"
+            echo ""
+            exit 1
+          fi
+
+          echo "OK: Frontend build matches committed static assets"
