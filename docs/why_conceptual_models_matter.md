@@ -14,6 +14,30 @@ Then someone takes a photo. The photo goes into Confluence. The project moves fo
 
 Six months later, that photo is archaeology.
 
+### The Effort Paradox
+
+But here's the thing — many teams *do* invest in proper tooling. The whiteboard photo gets redrawn in Visio or Lucidchart. Someone cleans it up, adds proper notation, makes it look official. Now it gets referenced in meetings. It goes into the architecture wiki. It looks authoritative.
+
+And it still drifts.
+
+Some teams go further. They bring in ERwin, Visual Paradigm, Enterprise Architect — real conceptual modeling tools. Maybe there's a dedicated data modeler who maintains the model. Weeks of effort go into building a proper, normalized, well-documented conceptual model.
+
+And it still drifts.
+
+The problem isn't lack of effort. It's **disconnection**. These tools live in their own ecosystems — separate from git, separate from dbt, separate from the CI/CD pipeline. Updating the model requires context-switching into a different tool, different workflow, different mental model. That friction accumulates. Every update becomes a small project. Small projects get deprioritized. Eventually "we should update the conceptual model" becomes a backlog item that never quite makes the sprint.
+
+The cruel irony: **the more effort you invest, the more painful the drift becomes.**
+
+| Investment Level | Artifact | Drift Consequence |
+|-----------------|----------|-------------------|
+| Low | Whiteboard photo | Easily dismissed — everyone knows it's stale |
+| Medium | Visio/Lucidchart diagram | Looks authoritative but isn't — creates confusion |
+| High | ERwin/Enterprise Architect model | Significant sunk cost — organizational friction about whether to update or abandon |
+
+A stale Confluence photo is honest in its ephemerality. A stale ERwin model that took weeks to build? That creates real organizational confusion: "Is this still accurate? Should we update it? Should we start over? Who owns this? Why are we paying for this tool?"
+
+The traditional tools aren't the problem. They're good at what they do. The problem is that **they exist outside the delivery workflow**. As long as the conceptual model lives in a separate tool, updated by a separate process, on a separate cadence — it will drift. The question is only how much effort you burn before accepting that drift.
+
 ---
 
 ## What Conceptual Models Actually Do
