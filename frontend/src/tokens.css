@@ -1408,6 +1408,19 @@ code, pre {
   color: var(--text-primary);
 }
 
+.logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.logo-text {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
 /* === Search Bar Component === */
 .search-bar {
   position: relative;
