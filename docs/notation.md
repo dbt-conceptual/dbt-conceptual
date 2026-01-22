@@ -181,4 +181,4 @@ Based on current edge stroke width of 2px:
 - [ ] Self-referential relationships display properly
 - [ ] Edges without cardinality show arrow only
 - [ ] Symbols scale appropriately if zoom is implemented
-- [ ] Export formats (PNG, SVG via Excalidraw) preserve symbols
+- [ ] Export formats (PNG, SVG via Excalidraw) preserve symbols — see [CLI Reference](/.claude/doc/reference-cli.md) for export options
