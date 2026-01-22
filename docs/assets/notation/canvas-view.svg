@@ -1,8 +1,8 @@
-<svg width="900" height="500" viewBox="0 0 900 500" xmlns="http://www.w3.org/2000/svg">
-  <rect width="900" height="500" fill="#f5f6f8"/>
+<svg width="900" height="280" viewBox="0 0 900 280" xmlns="http://www.w3.org/2000/svg">
+  <rect width="900" height="280" fill="#f5f6f8"/>
 
-  <!-- Customer Concept Node (bottom-left) -->
-  <g transform="translate(100, 340)">
+  <!-- Customer Concept Node (left) -->
+  <g transform="translate(50, 100)">
     <rect x="0" y="0" width="140" height="80" rx="10" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
     <rect x="0" y="0" width="3" height="80" rx="1.5" fill="#4a9eff"/>
 
@@ -15,8 +15,8 @@
     </g>
   </g>
 
-  <!-- Order Concept Node (top-center) -->
-  <g transform="translate(380, 60)">
+  <!-- Order Concept Node (center) -->
+  <g transform="translate(380, 100)">
     <rect x="0" y="0" width="140" height="80" rx="10" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
     <rect x="0" y="0" width="3" height="80" rx="1.5" fill="#ff9800"/>
 
@@ -29,8 +29,8 @@
     </g>
   </g>
 
-  <!-- Product Concept Node (bottom-right) -->
-  <g transform="translate(660, 340)">
+  <!-- Product Concept Node (right) -->
+  <g transform="translate(710, 100)">
     <rect x="0" y="0" width="140" height="80" rx="10" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
     <rect x="0" y="0" width="3" height="80" rx="1.5" fill="#4caf50"/>
 
@@ -43,47 +43,47 @@
     </g>
   </g>
 
-  <!-- Relationship: Customer → Order (dramatic curve up) -->
+  <!-- Relationship: Customer → Order -->
   <g>
-    <!-- Much more dramatic Bezier curve - control points far from endpoints -->
-    <path d="M 240 360 C 280 200, 340 100, 380 100" fill="none" stroke="#94a3b8" stroke-width="1.5"/>
+    <!-- Straight line -->
+    <line x1="190" y1="140" x2="368" y2="140" stroke="#94a3b8" stroke-width="1.5"/>
 
-    <!-- Customer end: Exactly One (||) - angled for curve direction -->
-    <line x1="244" y1="352" x2="248" y2="364" stroke="#94a3b8" stroke-width="1.5"/>
-    <line x1="250" y1="350" x2="254" y2="362" stroke="#94a3b8" stroke-width="1.5"/>
+    <!-- Customer end: Exactly One (||) -->
+    <line x1="195" y1="134" x2="195" y2="146" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="201" y1="134" x2="201" y2="146" stroke="#94a3b8" stroke-width="1.5"/>
 
-    <!-- Order end: Zero or Many (○⋔) - pointing into Order -->
-    <circle cx="372" cy="100" r="4" fill="#f5f6f8" stroke="#94a3b8" stroke-width="1.5"/>
-    <line x1="365" y1="98" x2="350" y2="92" stroke="#94a3b8" stroke-width="1.5"/>
-    <line x1="365" y1="100" x2="348" y2="100" stroke="#94a3b8" stroke-width="1.5"/>
-    <line x1="365" y1="102" x2="350" y2="108" stroke="#94a3b8" stroke-width="1.5"/>
+    <!-- Order end: Zero or Many (○⋔) -->
+    <circle cx="342" cy="140" r="4" fill="#f5f6f8" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="348" y1="140" x2="368" y2="130" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="348" y1="140" x2="368" y2="140" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="348" y1="140" x2="368" y2="150" stroke="#94a3b8" stroke-width="1.5"/>
 
     <!-- Verb label -->
-    <rect x="260" y="210" width="50" height="18" fill="#f5f6f8"/>
-    <text x="285" y="224" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="500" fill="#1a1a2e">places</text>
+    <rect x="255" y="130" width="50" height="18" fill="#f5f6f8"/>
+    <text x="280" y="144" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="500" fill="#1a1a2e">places</text>
   </g>
 
-  <!-- Relationship: Order → Product (dramatic curve down) -->
+  <!-- Relationship: Order → Product -->
   <g>
-    <!-- Dramatic downward curve from Order to Product -->
-    <path d="M 520 100 C 560 100, 620 200, 660 360" fill="none" stroke="#94a3b8" stroke-width="1.5"/>
+    <!-- Straight line -->
+    <line x1="520" y1="140" x2="698" y2="140" stroke="#94a3b8" stroke-width="1.5"/>
 
     <!-- Order end: Exactly One (||) -->
-    <line x1="524" y1="94" x2="524" y2="106" stroke="#94a3b8" stroke-width="1.5"/>
-    <line x1="530" y1="94" x2="530" y2="106" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="525" y1="134" x2="525" y2="146" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="531" y1="134" x2="531" y2="146" stroke="#94a3b8" stroke-width="1.5"/>
 
-    <!-- Product end: Zero or Many (○⋔) - angled for curve direction -->
-    <circle cx="656" cy="352" r="4" fill="#f5f6f8" stroke="#94a3b8" stroke-width="1.5"/>
-    <line x1="652" y1="356" x2="644" y2="370" stroke="#94a3b8" stroke-width="1.5"/>
-    <line x1="654" y1="358" x2="652" y2="376" stroke="#94a3b8" stroke-width="1.5"/>
-    <line x1="660" y1="356" x2="668" y2="370" stroke="#94a3b8" stroke-width="1.5"/>
+    <!-- Product end: Zero or Many (○⋔) -->
+    <circle cx="672" cy="140" r="4" fill="#f5f6f8" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="678" y1="140" x2="698" y2="130" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="678" y1="140" x2="698" y2="140" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="678" y1="140" x2="698" y2="150" stroke="#94a3b8" stroke-width="1.5"/>
 
     <!-- Verb label -->
-    <rect x="570" y="210" width="60" height="18" fill="#f5f6f8"/>
-    <text x="600" y="224" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="500" fill="#1a1a2e">contains</text>
+    <rect x="578" y="130" width="60" height="18" fill="#f5f6f8"/>
+    <text x="608" y="144" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="500" fill="#1a1a2e">contains</text>
   </g>
 
   <!-- Legend -->
-  <text x="450" y="470" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#888888">Canvas View: Customer (1) places Orders (N) contains Products (N)</text>
-  <text x="450" y="485" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#888888">Bezier curves match React Flow edge rendering</text>
+  <text x="450" y="250" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#888888">Canvas View: Customer (1) places Orders (N) contains Products (N)</text>
+  <text x="450" y="265" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#888888">Straight lines for documentation diagrams</text>
 </svg>

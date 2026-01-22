@@ -17,7 +17,8 @@
 
   <!-- Left Relationship: Student → Enrollment -->
   <g>
-    <path d="M 170 90 C 220 90, 280 90, 330 90" fill="none" stroke="#94a3b8" stroke-width="1.5"/>
+    <!-- Straight line -->
+    <line x1="170" y1="90" x2="344" y2="90" stroke="#94a3b8" stroke-width="1.5"/>
 
     <!-- Student end: Exactly One (||) -->
     <line x1="175" y1="84" x2="175" y2="96" stroke="#94a3b8" stroke-width="1.5"/>
@@ -50,7 +51,8 @@
 
   <!-- Right Relationship: Enrollment ← Course -->
   <g>
-    <path d="M 495 90 C 545 90, 605 90, 655 90" fill="none" stroke="#94a3b8" stroke-width="1.5"/>
+    <!-- Straight line -->
+    <line x1="495" y1="90" x2="670" y2="90" stroke="#94a3b8" stroke-width="1.5"/>
 
     <!-- Enrollment end: Zero or Many (○⋔) pointing toward enrollment -->
     <line x1="495" y1="90" x2="515" y2="80" stroke="#94a3b8" stroke-width="1.5"/>

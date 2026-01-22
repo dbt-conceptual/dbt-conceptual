@@ -17,7 +17,8 @@
 
   <!-- Relationship Line with arrow (no cardinality) -->
   <g>
-    <path d="M 200 90 C 280 90, 380 90, 470 90" fill="none" stroke="#94a3b8" stroke-width="1.5"/>
+    <!-- Straight line -->
+    <line x1="200" y1="90" x2="470" y2="90" stroke="#94a3b8" stroke-width="1.5"/>
 
     <!-- Arrow at target end -->
     <polygon points="470,90 460,85 460,95" fill="#94a3b8"/>

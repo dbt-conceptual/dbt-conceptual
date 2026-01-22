@@ -18,8 +18,8 @@
 
   <!-- Relationship Line with Crow's Foot -->
   <g>
-    <!-- Main line -->
-    <path d="M 200 90 C 280 90, 380 90, 460 90" fill="none" stroke="#94a3b8" stroke-width="1.5"/>
+    <!-- Straight line -->
+    <line x1="200" y1="90" x2="478" y2="90" stroke="#94a3b8" stroke-width="1.5"/>
 
     <!-- Source end: Exactly One (||) -->
     <line x1="205" y1="84" x2="205" y2="96" stroke="#94a3b8" stroke-width="1.5"/>

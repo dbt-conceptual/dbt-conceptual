@@ -1,23 +1,24 @@
 <svg width="700" height="180" viewBox="0 0 700 180" xmlns="http://www.w3.org/2000/svg">
   <rect width="700" height="180" fill="#f5f6f8"/>
 
-  <!-- Source Node (Draft) -->
+  <!-- Source Node -->
   <g transform="translate(50, 50)">
-    <rect x="0" y="0" width="150" height="80" rx="10" fill="#ffffff" stroke="#cccccc" stroke-width="1" stroke-dasharray="5,3"/>
-    <rect x="0" y="0" width="3" height="80" rx="1.5" fill="#9e9e9e"/>
+    <rect x="0" y="0" width="150" height="80" rx="10" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+    <rect x="0" y="0" width="3" height="80" rx="1.5" fill="#4a9eff"/>
 
     <text x="75" y="35" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1a1a2e">Invoice</text>
 
     <g transform="translate(20, 50)">
       <rect x="0" y="0" width="28" height="22" rx="3" fill="#e8f4ff"/>
-      <text x="14" y="15" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#4a9eff">1</text>
+      <text x="14" y="15" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#4a9eff">2</text>
       <text x="38" y="14" font-family="Inter, sans-serif" font-size="9" font-weight="500" fill="#666666" letter-spacing="0.3">BILLING</text>
     </g>
   </g>
 
   <!-- Relationship Line (Draft - dashed, gray) -->
   <g>
-    <path d="M 200 90 C 280 90, 380 90, 460 90" fill="none" stroke="#9e9e9e" stroke-width="1.5" stroke-dasharray="5,5"/>
+    <!-- Dashed straight line for draft -->
+    <line x1="200" y1="90" x2="478" y2="90" stroke="#9e9e9e" stroke-width="1.5" stroke-dasharray="6,4"/>
 
     <!-- Source end: Exactly One (||) - gray -->
     <line x1="205" y1="84" x2="205" y2="96" stroke="#9e9e9e" stroke-width="1.5"/>

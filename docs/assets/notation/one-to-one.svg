@@ -4,20 +4,21 @@
   <!-- User Concept Node -->
   <g transform="translate(50, 50)">
     <rect x="0" y="0" width="150" height="80" rx="10" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
-    <rect x="0" y="0" width="3" height="80" rx="1.5" fill="#9c27b0"/>
+    <rect x="0" y="0" width="3" height="80" rx="1.5" fill="#4a9eff"/>
 
     <text x="75" y="35" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1a1a2e">User</text>
 
     <g transform="translate(20, 50)">
       <rect x="0" y="0" width="28" height="22" rx="3" fill="#e8f4ff"/>
-      <text x="14" y="15" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#4a9eff">2</text>
+      <text x="14" y="15" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#4a9eff">4</text>
       <text x="38" y="14" font-family="Inter, sans-serif" font-size="9" font-weight="500" fill="#666666" letter-spacing="0.3">IDENTITY</text>
     </g>
   </g>
 
-  <!-- Relationship Line -->
+  <!-- Relationship Line with Crow's Foot (1:1) -->
   <g>
-    <path d="M 200 90 C 280 90, 380 90, 460 90" fill="none" stroke="#94a3b8" stroke-width="1.5"/>
+    <!-- Straight line -->
+    <line x1="200" y1="90" x2="500" y2="90" stroke="#94a3b8" stroke-width="1.5"/>
 
     <!-- Source end: Exactly One (||) -->
     <line x1="205" y1="84" x2="205" y2="96" stroke="#94a3b8" stroke-width="1.5"/>
@@ -41,11 +42,11 @@
 
     <g transform="translate(20, 50)">
       <rect x="0" y="0" width="28" height="22" rx="3" fill="#e8f4ff"/>
-      <text x="14" y="15" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#4a9eff">2</text>
+      <text x="14" y="15" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#4a9eff">4</text>
       <text x="38" y="14" font-family="Inter, sans-serif" font-size="9" font-weight="500" fill="#666666" letter-spacing="0.3">IDENTITY</text>
     </g>
   </g>
 
-  <text x="350" y="155" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#888888">Both ends: ││ (exactly one)</text>
-  <text x="350" y="170" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#888888">"Each User has exactly one Profile"</text>
+  <text x="350" y="155" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#888888">Source: ││ (exactly one) — Target: ││ (exactly one)</text>
+  <text x="350" y="170" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#888888">"One User has exactly one Profile"</text>
 </svg>
