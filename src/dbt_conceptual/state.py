@@ -145,6 +145,22 @@ class DomainState:
     name: str
     display_name: str
     color: Optional[str] = None
+    owner: Optional[str] = None
+
+
+@dataclass
+class ModelInfo:
+    """Represents metadata about a dbt model for tag validation."""
+
+    name: str
+    concept: Optional[str] = None  # From meta.concept
+    realizes: list[str] = field(default_factory=list)  # From meta.realizes
+    domain_tags: list[str] = field(
+        default_factory=list
+    )  # domain:X tags or databricks domain
+    owner_tag: Optional[str] = None  # owner:X tag or databricks owner
+    layer: Optional[str] = None  # silver or gold
+    path: Optional[str] = None
 
 
 @dataclass
@@ -169,4 +185,7 @@ class ProjectState:
     )  # Extension: relationship groups
     domains: dict[str, DomainState] = field(default_factory=dict)
     orphan_models: list[OrphanModel] = field(default_factory=list)
+    models: dict[str, ModelInfo] = field(
+        default_factory=dict
+    )  # Model tag info for validation
     metadata: dict[str, str] = field(default_factory=dict)

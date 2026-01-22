@@ -86,6 +86,17 @@ class DbtProjectScanner:
             # Determine model type
             model_type = self.config.get_model_type(model_name)
 
+            # Extract tags for tag validation
+            config = model.get("config", {})
+            tags = model.get("tags", []) or config.get("tags", [])
+            if not isinstance(tags, list):
+                tags = []
+
+            # Extract databricks_tags for Unity Catalog format
+            databricks_tags = config.get("databricks_tags", {})
+            if not isinstance(databricks_tags, dict):
+                databricks_tags = {}
+
             models.append(
                 {
                     "name": model_name,
@@ -95,6 +106,8 @@ class DbtProjectScanner:
                     "layer": layer,
                     "type": model_type,
                     "file": str(file_path),
+                    "tags": tags,
+                    "databricks_tags": databricks_tags,
                 }
             )
 

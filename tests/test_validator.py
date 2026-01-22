@@ -2,8 +2,14 @@
 
 from pathlib import Path
 
-from dbt_conceptual.config import Config
-from dbt_conceptual.state import ConceptState, ProjectState, RelationshipState
+from dbt_conceptual.config import Config, TagValidationConfig, ValidationConfig
+from dbt_conceptual.state import (
+    ConceptState,
+    DomainState,
+    ModelInfo,
+    ProjectState,
+    RelationshipState,
+)
 from dbt_conceptual.validator import Severity, Validator
 
 
@@ -170,3 +176,190 @@ def test_validate_unknown_domain() -> None:
     # Should have warning about unknown domain
     warnings = [i for i in issues if i.severity == Severity.WARNING]
     assert any("unknown domain" in i.message.lower() for i in warnings)
+
+
+def test_tag_validation_disabled_by_default() -> None:
+    """Test that tag validation is disabled by default."""
+    config = Config(project_dir=Path("/tmp"))
+    state = ProjectState()
+
+    # Add concept and model without domain tag
+    state.concepts["customer"] = ConceptState(
+        name="Customer",
+        domain="party",
+        silver_models=["stg_customer"],
+    )
+    state.domains["party"] = DomainState(name="party", display_name="Party")
+    state.models["stg_customer"] = ModelInfo(
+        name="stg_customer",
+        concept="customer",
+        domain_tags=[],  # Missing domain tag
+        layer="silver",
+    )
+
+    validator = Validator(config, state)
+    issues = validator.validate()
+
+    # Should NOT have tag validation warnings (disabled by default)
+    tag_issues = [i for i in issues if i.code.startswith("T")]
+    assert len(tag_issues) == 0
+
+
+def test_tag_validation_missing_domain_tag() -> None:
+    """Test that missing domain tags are detected when enabled."""
+    validation_config = ValidationConfig(
+        tag_validation=TagValidationConfig(enabled=True)
+    )
+    config = Config(project_dir=Path("/tmp"), validation=validation_config)
+    state = ProjectState()
+
+    # Add concept and model without domain tag
+    state.concepts["customer"] = ConceptState(
+        name="Customer",
+        domain="party",
+        silver_models=["stg_customer"],
+    )
+    state.domains["party"] = DomainState(name="party", display_name="Party")
+    state.models["stg_customer"] = ModelInfo(
+        name="stg_customer",
+        concept="customer",
+        domain_tags=[],  # Missing domain tag
+        layer="silver",
+    )
+
+    validator = Validator(config, state)
+    issues = validator.validate()
+
+    # Should have T001 warning for missing domain tag
+    tag_issues = [i for i in issues if i.code == "T001"]
+    assert len(tag_issues) == 1
+    assert "missing domain tag" in tag_issues[0].message.lower()
+
+
+def test_tag_validation_wrong_domain_tag() -> None:
+    """Test that wrong domain tags are detected."""
+    validation_config = ValidationConfig(
+        tag_validation=TagValidationConfig(enabled=True)
+    )
+    config = Config(project_dir=Path("/tmp"), validation=validation_config)
+    state = ProjectState()
+
+    # Add concept and model with wrong domain tag
+    state.concepts["customer"] = ConceptState(
+        name="Customer",
+        domain="party",
+        silver_models=["stg_customer"],
+    )
+    state.domains["party"] = DomainState(name="party", display_name="Party")
+    state.models["stg_customer"] = ModelInfo(
+        name="stg_customer",
+        concept="customer",
+        domain_tags=["wrong_domain"],  # Wrong domain tag
+        layer="silver",
+    )
+
+    validator = Validator(config, state)
+    issues = validator.validate()
+
+    # Should have T002 warning for wrong domain tag
+    tag_issues = [i for i in issues if i.code == "T002"]
+    assert len(tag_issues) == 1
+    assert "wrong domain tag" in tag_issues[0].message.lower()
+
+
+def test_tag_validation_correct_tags() -> None:
+    """Test that correct tags don't generate warnings."""
+    validation_config = ValidationConfig(
+        tag_validation=TagValidationConfig(enabled=True)
+    )
+    config = Config(project_dir=Path("/tmp"), validation=validation_config)
+    state = ProjectState()
+
+    # Add concept and model with correct tags
+    state.concepts["customer"] = ConceptState(
+        name="Customer",
+        domain="party",
+        owner="data_team",
+        silver_models=["stg_customer"],
+    )
+    state.domains["party"] = DomainState(name="party", display_name="Party")
+    state.models["stg_customer"] = ModelInfo(
+        name="stg_customer",
+        concept="customer",
+        domain_tags=["party"],
+        owner_tag="data_team",
+        layer="silver",
+    )
+
+    validator = Validator(config, state)
+    issues = validator.validate()
+
+    # Should have no tag validation warnings
+    tag_issues = [i for i in issues if i.code.startswith("T")]
+    assert len(tag_issues) == 0
+
+
+def test_tag_validation_missing_owner_tag() -> None:
+    """Test that missing owner tags are detected."""
+    validation_config = ValidationConfig(
+        tag_validation=TagValidationConfig(enabled=True)
+    )
+    config = Config(project_dir=Path("/tmp"), validation=validation_config)
+    state = ProjectState()
+
+    # Add concept with owner and model without owner tag
+    state.concepts["customer"] = ConceptState(
+        name="Customer",
+        domain="party",
+        owner="data_team",
+        silver_models=["stg_customer"],
+    )
+    state.domains["party"] = DomainState(name="party", display_name="Party")
+    state.models["stg_customer"] = ModelInfo(
+        name="stg_customer",
+        concept="customer",
+        domain_tags=["party"],
+        owner_tag=None,  # Missing owner tag
+        layer="silver",
+    )
+
+    validator = Validator(config, state)
+    issues = validator.validate()
+
+    # Should have T004 warning for missing owner tag
+    tag_issues = [i for i in issues if i.code == "T004"]
+    assert len(tag_issues) == 1
+
+
+def test_tag_validation_owner_from_domain() -> None:
+    """Test that owner can be inherited from domain."""
+    validation_config = ValidationConfig(
+        tag_validation=TagValidationConfig(enabled=True)
+    )
+    config = Config(project_dir=Path("/tmp"), validation=validation_config)
+    state = ProjectState()
+
+    # Add concept without owner, but domain has owner
+    state.concepts["customer"] = ConceptState(
+        name="Customer",
+        domain="party",
+        owner=None,  # No concept-level owner
+        silver_models=["stg_customer"],
+    )
+    state.domains["party"] = DomainState(
+        name="party", display_name="Party", owner="party_team"
+    )
+    state.models["stg_customer"] = ModelInfo(
+        name="stg_customer",
+        concept="customer",
+        domain_tags=["party"],
+        owner_tag="party_team",  # Matches domain owner
+        layer="silver",
+    )
+
+    validator = Validator(config, state)
+    issues = validator.validate()
+
+    # Should have no owner tag warnings
+    owner_issues = [i for i in issues if i.code in ("T004", "T005")]
+    assert len(owner_issues) == 0

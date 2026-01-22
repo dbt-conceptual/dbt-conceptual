@@ -10,6 +10,7 @@ from dbt_conceptual.state import (
     ConceptState,
     DomainState,
     Message,
+    ModelInfo,
     OrphanModel,
     ProjectState,
     RelationshipState,
@@ -57,6 +58,7 @@ class ConceptualModelParser:
                     name=domain_id,
                     display_name=domain_data.get("name", domain_id),
                     color=domain_data.get("color"),
+                    owner=domain_data.get("owner"),
                 )
 
         # Parse concepts
@@ -212,6 +214,47 @@ class StateBuilder:
                         path=model.get("path"),
                     )
                     state.orphan_models.append(orphan)
+
+            # Build ModelInfo for tag validation
+            if layer in ("silver", "gold"):
+                tags = model.get("tags", [])
+                databricks_tags = model.get("databricks_tags", {})
+                realizes_list = meta.get("realizes", [])
+                if not isinstance(realizes_list, list):
+                    realizes_list = [realizes_list] if realizes_list else []
+
+                # Extract domain and owner tags
+                domain_tags = []
+                owner_tag = None
+
+                # Standard format: tags like "domain:party", "owner:team"
+                for tag in tags:
+                    if isinstance(tag, str):
+                        if tag.startswith("domain:"):
+                            domain_tags.append(tag[7:])  # Strip "domain:" prefix
+                        elif tag.startswith("owner:"):
+                            owner_tag = tag[6:]  # Strip "owner:" prefix
+
+                # Databricks format: databricks_tags dict
+                if databricks_tags:
+                    if "domain" in databricks_tags:
+                        domain_val = databricks_tags["domain"]
+                        if isinstance(domain_val, list):
+                            domain_tags.extend(domain_val)
+                        elif domain_val:
+                            domain_tags.append(str(domain_val))
+                    if "owner" in databricks_tags:
+                        owner_tag = str(databricks_tags["owner"])
+
+                state.models[model_name] = ModelInfo(
+                    name=model_name,
+                    concept=meta.get("concept"),
+                    realizes=realizes_list,
+                    domain_tags=domain_tags,
+                    owner_tag=owner_tag,
+                    layer=layer,
+                    path=model.get("path"),
+                )
 
         # Parse bronze dependencies from manifest.json if available
         self._parse_bronze_dependencies(state)

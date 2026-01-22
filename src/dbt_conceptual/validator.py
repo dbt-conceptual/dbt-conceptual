@@ -77,6 +77,10 @@ class Validator:
         self._validate_missing_definitions()
         self._validate_domain_mismatch()
 
+        # Tag validation (opt-in)
+        if self.config.validation.tag_validation.enabled:
+            self._validate_tag_drift()
+
         # Other validations (always run)
         self._validate_concept_required_fields()
         self._validate_domain_references()
@@ -395,6 +399,114 @@ class Validator:
                                 "relationship": rel.name,
                                 "missing": missing,
                                 "status": rel.status,
+                            },
+                        )
+                    )
+
+    def _validate_tag_drift(self) -> None:
+        """Validate model tags match their concept metadata.
+
+        This detects drift between dbt model tags and conceptual model metadata.
+        Checks:
+        - Missing domain tags on models
+        - Wrong domain tags (tag doesn't match concept domain)
+        - Missing owner tags on models
+        - Conflicting owner tags (multiple concepts with different owners)
+        """
+        tag_config = self.config.validation.tag_validation
+
+        for model_name, model_info in self.state.models.items():
+            # Skip models without concept linkage
+            if not model_info.concept:
+                continue
+
+            concept = self.state.concepts.get(model_info.concept)
+            if not concept or concept.is_ghost:
+                continue
+
+            # Get expected domain from concept
+            expected_domain = concept.domain
+            if not expected_domain:
+                continue  # Concept has no domain, skip
+
+            # Check domain tag
+            if not model_info.domain_tags:
+                self.issues.append(
+                    ValidationIssue(
+                        severity=Severity.WARNING,
+                        code="T001",
+                        message=f"Model '{model_name}' is missing domain tag (expected: {expected_domain})",
+                        context={
+                            "model": model_name,
+                            "concept": model_info.concept,
+                            "expected_domain": expected_domain,
+                        },
+                    )
+                )
+            elif expected_domain not in model_info.domain_tags:
+                self.issues.append(
+                    ValidationIssue(
+                        severity=Severity.WARNING,
+                        code="T002",
+                        message=f"Model '{model_name}' has wrong domain tag: {model_info.domain_tags} (expected: {expected_domain})",
+                        context={
+                            "model": model_name,
+                            "concept": model_info.concept,
+                            "expected_domain": expected_domain,
+                            "actual_tags": model_info.domain_tags,
+                        },
+                    )
+                )
+
+            # Check if multiple domains allowed
+            if (
+                not tag_config.domains_allow_multiple
+                and len(model_info.domain_tags) > 1
+            ):
+                self.issues.append(
+                    ValidationIssue(
+                        severity=Severity.WARNING,
+                        code="T003",
+                        message=f"Model '{model_name}' has multiple domain tags but only one is allowed: {model_info.domain_tags}",
+                        context={
+                            "model": model_name,
+                            "domain_tags": model_info.domain_tags,
+                        },
+                    )
+                )
+
+            # Get expected owner (from concept or domain)
+            expected_owner = concept.owner
+            if not expected_owner:
+                domain_state = self.state.domains.get(expected_domain)
+                if domain_state:
+                    expected_owner = domain_state.owner
+
+            if expected_owner:
+                if not model_info.owner_tag:
+                    self.issues.append(
+                        ValidationIssue(
+                            severity=Severity.WARNING,
+                            code="T004",
+                            message=f"Model '{model_name}' is missing owner tag (expected: {expected_owner})",
+                            context={
+                                "model": model_name,
+                                "concept": model_info.concept,
+                                "expected_owner": expected_owner,
+                            },
+                        )
+                    )
+                elif model_info.owner_tag != expected_owner:
+                    self.issues.append(
+                        ValidationIssue(
+                            severity=Severity.WARNING,
+                            code="T005",
+                            message=f"Model '{model_name}' has wrong owner tag: {model_info.owner_tag} (expected: {expected_owner})",
+                            context={
+                                "model": model_name,
+                                "concept": model_info.concept,
+                                "expected_owner": expected_owner,
+                                "actual_owner": model_info.owner_tag,
                             },
                         )
                     )

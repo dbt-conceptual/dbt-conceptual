@@ -17,6 +17,18 @@ class RuleSeverity(Enum):
 
 
 @dataclass
+class TagValidationConfig:
+    """Tag validation configuration.
+
+    Controls validation of domain/owner tags on dbt models.
+    """
+
+    enabled: bool = False
+    domains_allow_multiple: bool = True
+    domains_format: str = "standard"  # "standard" or "databricks"
+
+
+@dataclass
 class ValidationConfig:
     """Validation rule configuration."""
 
@@ -25,6 +37,7 @@ class ValidationConfig:
     unrealized_relationships: RuleSeverity = RuleSeverity.WARN
     missing_definitions: RuleSeverity = RuleSeverity.IGNORE
     domain_mismatch: RuleSeverity = RuleSeverity.WARN
+    tag_validation: TagValidationConfig = field(default_factory=TagValidationConfig)
 
 
 @dataclass
@@ -108,7 +121,7 @@ class Config:
         )
 
     @classmethod
-    def _parse_validation_config(cls, data: dict[str, str]) -> ValidationConfig:
+    def _parse_validation_config(cls, data: dict) -> ValidationConfig:
         """Parse validation config from YAML data."""
         config = ValidationConfig()
 
@@ -126,9 +139,28 @@ class Config:
             "domain_mismatch",
         ]:
             if rule_name in data:
-                severity_str = data[rule_name].lower()
+                severity_str = str(data[rule_name]).lower()
                 if severity_str in severity_map:
                     setattr(config, rule_name, severity_map[severity_str])
+
+        # Parse tag_validation config
+        if "tag_validation" in data:
+            tag_data = data["tag_validation"]
+            if isinstance(tag_data, dict):
+                tag_config = TagValidationConfig(
+                    enabled=tag_data.get("enabled", False),
+                    domains_allow_multiple=(
+                        tag_data.get("domains", {}).get("allow_multiple", True)
+                        if isinstance(tag_data.get("domains"), dict)
+                        else True
+                    ),
+                    domains_format=(
+                        tag_data.get("domains", {}).get("format", "standard")
+                        if isinstance(tag_data.get("domains"), dict)
+                        else "standard"
+                    ),
+                )
+                config.tag_validation = tag_config
 
         return config
 
