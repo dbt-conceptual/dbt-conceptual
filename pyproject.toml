@@ -48,6 +48,7 @@ dependencies = [
 [project.optional-dependencies]
 serve = [
     "flask>=3.0",
+    "waitress>=3.0",
 ]
 dev = [
     "pytest>=7.0",
@@ -107,7 +108,7 @@ warn_unused_ignores = false
 disallow_untyped_defs = true
 
 [[tool.mypy.overrides]]
-module = ["PIL.*", "flask.*"]
+module = ["PIL.*", "flask.*", "waitress.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

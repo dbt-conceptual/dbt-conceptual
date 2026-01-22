@@ -548,7 +548,7 @@ def run_server(
     port: int = 8050,
     demo_mode: bool = False,
 ) -> None:
-    """Run the Flask development server.
+    """Run the web server using Waitress (production-ready WSGI server).
 
     Args:
         project_dir: Path to dbt project directory
@@ -556,5 +556,7 @@ def run_server(
         port: Port to bind to (default: 8050)
         demo_mode: Whether running in demo mode (default: False)
     """
+    from waitress import serve
+
     app = create_app(project_dir, demo_mode=demo_mode)
-    app.run(host=host, port=port, debug=True)
+    serve(app, host=host, port=port)
