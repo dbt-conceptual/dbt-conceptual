@@ -66,7 +66,9 @@ Symbols read **from the entity outward** along the line:
 
 ---
 
-### Many-to-Many (N:M) - Student enrolls in Course
+### Many-to-Many via Bridge Table - Student Enrollment
+
+Many-to-many relationships are modeled using a bridge (link) table. Each entity connects to the bridge with a one-to-many relationship, avoiding direct N:M connections.
 
 ![Many-to-Many](assets/notation/many-to-many.svg)
 
@@ -91,7 +93,7 @@ Symbols read **from the entity outward** along the line:
 | `1:1` | `││` | `││` | Exactly one on both ends |
 | `1:N` | `││` | `○⋔` | One source, zero-or-many targets |
 | `N:1` | `○⋔` | `││` | Zero-or-many sources, one target |
-| `N:M` | `○⋔` | `○⋔` | Zero-or-many on both ends |
+| `N:M` | — | — | Use bridge table (see Many-to-Many section) |
 | (none) | — | `▶` | Keep current arrow, no cardinality symbols |
 
 ---
