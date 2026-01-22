@@ -37,14 +37,14 @@
   <!-- Bridge/Link Table Node (Enrollment) -->
   <g transform="translate(355, 50)">
     <rect x="0" y="0" width="140" height="80" rx="10" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
-    <rect x="0" y="0" width="3" height="80" rx="1.5" fill="#94a3b8"/>
+    <rect x="0" y="0" width="3" height="80" rx="1.5" fill="#4caf50"/>
 
     <text x="70" y="35" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1a1a2e">Enrollment</text>
 
     <g transform="translate(15, 50)">
       <rect x="0" y="0" width="28" height="22" rx="3" fill="#e8f4ff"/>
       <text x="14" y="15" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#4a9eff">12</text>
-      <text x="38" y="14" font-family="Inter, sans-serif" font-size="9" font-weight="500" fill="#666666" letter-spacing="0.3">LINK</text>
+      <text x="38" y="14" font-family="Inter, sans-serif" font-size="9" font-weight="500" fill="#666666" letter-spacing="0.3">ACADEMIC</text>
     </g>
   </g>
 
