@@ -1,26 +1,12 @@
-<svg width="32" height="36" viewBox="0 0 32 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Container -->
-  <rect x="1" y="1" width="30" height="34" rx="6" fill="url(#container-gradient)" stroke="#4a7fb3" stroke-width="2"/>
-
-  <!-- Header bar -->
-  <rect x="5" y="5" width="22" height="10" rx="3" fill="url(#header-gradient)"/>
-
-  <!-- Indicator dot -->
-  <circle cx="9" cy="10" r="2" fill="rgba(255,255,255,0.85)"/>
-
-  <!-- Attribute lines -->
-  <rect x="6" y="19" width="14" height="2" rx="1" fill="#4a7fb3" opacity="0.4"/>
-  <rect x="6" y="24" width="10" height="2" rx="1" fill="#4a7fb3" opacity="0.4"/>
-
-  <!-- Gradients -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
   <defs>
-    <linearGradient id="container-gradient" x1="0" y1="0" x2="16" y2="36" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#1e3a5f"/>
-      <stop offset="100%" stop-color="#112235"/>
-    </linearGradient>
-    <linearGradient id="header-gradient" x1="5" y1="10" x2="27" y2="10" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#5ba3f5"/>
-      <stop offset="100%" stop-color="#3d8ae0"/>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e67e22"/>
+      <stop offset="100%" style="stop-color:#d35400"/>
     </linearGradient>
   </defs>
+  <rect width="80" height="80" rx="16" fill="url(#g)"/>
+  <path d="M14 30 C14 18 24 14 40 30 C24 46 14 42 14 30" stroke="white" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path d="M40 30 C56 46 66 42 66 30 C66 18 56 14 40 30" stroke="white" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.6"/>
+  <path d="M14 54 L66 54" stroke="white" stroke-width="4" stroke-linecap="round"/>
 </svg>

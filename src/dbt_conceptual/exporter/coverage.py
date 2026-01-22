@@ -81,9 +81,9 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: #f5f5f5;
-            color: #333;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #fafaf9;
+            color: #333333;
             line-height: 1.6;
             padding: 2rem;
         }
@@ -117,18 +117,18 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
         }
 
         .stat-card {
-            background: #fafafa;
+            background: #f5f4f2;
             padding: 1.5rem;
             border-radius: 6px;
-            border-left: 4px solid #4CAF50;
+            border-left: 4px solid #4caf50;
         }
 
         .stat-card.warning {
-            border-left-color: #FF9800;
+            border-left-color: #e67e22;
         }
 
         .stat-card.error {
-            border-left-color: #f44336;
+            border-left-color: #dc2626;
         }
 
         .stat-label {
@@ -154,7 +154,7 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
         .progress-bar {
             width: 100%;
             height: 8px;
-            background: #e0e0e0;
+            background: #e8e6e3;
             border-radius: 4px;
             overflow: hidden;
             margin-top: 0.5rem;
@@ -162,16 +162,16 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
 
         .progress-fill {
             height: 100%;
-            background: #4CAF50;
+            background: #4caf50;
             transition: width 0.3s ease;
         }
 
         .progress-fill.warning {
-            background: #FF9800;
+            background: #e67e22;
         }
 
         .progress-fill.error {
-            background: #f44336;
+            background: #dc2626;
         }
 
         section {
@@ -181,8 +181,8 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
         h2 {
             font-size: 1.5rem;
             margin-bottom: 1rem;
-            color: #1a1a1a;
-            border-bottom: 2px solid #f0f0f0;
+            color: #333333;
+            border-bottom: 2px solid #e8e6e3;
             padding-bottom: 0.5rem;
         }
 
@@ -203,7 +203,7 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
         }
 
         .concept-item {
-            background: #fafafa;
+            background: #f5f4f2;
             padding: 1rem;
             border-radius: 4px;
             display: flex;
@@ -253,15 +253,15 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
         }
 
         .attention-item {
-            background: #FFF9E6;
-            border-left: 4px solid #FF9800;
+            background: #fef5eb;
+            border-left: 4px solid #e67e22;
             padding: 1rem;
             border-radius: 4px;
         }
 
         .attention-item.error {
-            background: #FFEBEE;
-            border-left-color: #f44336;
+            background: #fef2f2;
+            border-left-color: #dc2626;
         }
 
         .attention-title {
@@ -276,7 +276,7 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
         }
 
         .orphan-list {
-            background: #fafafa;
+            background: #f5f4f2;
             padding: 1rem;
             border-radius: 4px;
             max-height: 300px;
@@ -285,7 +285,7 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
 
         .orphan-item {
             padding: 0.5rem;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid #e8e6e3;
             font-family: 'Courier New', monospace;
             font-size: 0.875rem;
         }

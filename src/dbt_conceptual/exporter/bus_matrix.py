@@ -55,9 +55,9 @@ def export_bus_matrix(state: ProjectState, output: TextIO) -> None:
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: #f5f5f5;
-            color: #333;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #fafaf9;
+            color: #333333;
             line-height: 1.6;
             padding: 2rem;
         }
@@ -84,8 +84,8 @@ def export_bus_matrix(state: ProjectState, output: TextIO) -> None:
         }
 
         .info {
-            background: #E3F2FD;
-            border-left: 4px solid #2196F3;
+            background: #fef5eb;
+            border-left: 4px solid #e67e22;
             padding: 1rem;
             margin-bottom: 2rem;
             border-radius: 4px;
@@ -94,7 +94,7 @@ def export_bus_matrix(state: ProjectState, output: TextIO) -> None:
         .info h2 {
             font-size: 1rem;
             margin-bottom: 0.5rem;
-            color: #1565C0;
+            color: #d35400;
         }
 
         .info p {
@@ -141,11 +141,11 @@ def export_bus_matrix(state: ProjectState, output: TextIO) -> None:
         }
 
         th {
-            background: #f5f5f5;
+            background: #f5f4f2;
             padding: 1rem 0.75rem;
             text-align: left;
             font-weight: 600;
-            border-bottom: 2px solid #ddd;
+            border-bottom: 2px solid #e8e6e3;
             position: sticky;
             top: 0;
             z-index: 10;
@@ -167,7 +167,7 @@ def export_bus_matrix(state: ProjectState, output: TextIO) -> None:
 
         td {
             padding: 0.75rem;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #f0eeec;
             text-align: center;
         }
 
@@ -176,18 +176,18 @@ def export_bus_matrix(state: ProjectState, output: TextIO) -> None:
             font-weight: 500;
             font-family: 'Courier New', monospace;
             font-size: 0.8rem;
-            background: #fafafa;
+            background: #f5f4f2;
             position: sticky;
             left: 0;
             z-index: 5;
         }
 
         tr:hover td {
-            background: #f9f9f9;
+            background: #fafaf9;
         }
 
         tr:hover td.fact-name {
-            background: #f0f0f0;
+            background: #f0eeec;
         }
 
         .checkmark {
@@ -216,7 +216,7 @@ def export_bus_matrix(state: ProjectState, output: TextIO) -> None:
             display: flex;
             gap: 2rem;
             padding: 1rem;
-            background: #fafafa;
+            background: #f5f4f2;
             border-radius: 4px;
             font-size: 0.875rem;
         }
