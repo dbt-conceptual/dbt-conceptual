@@ -15,57 +15,56 @@
     </g>
   </g>
 
-  <!-- Left Relationship: Student to Bridge -->
+  <!-- Left Relationship: Student → Enrollment -->
   <g>
     <path d="M 170 90 C 220 90, 280 90, 330 90" fill="none" stroke="#94a3b8" stroke-width="1.5"/>
 
-    <!-- Student end: Zero or Many (○⋔) -->
-    <line x1="170" y1="90" x2="190" y2="80" stroke="#94a3b8" stroke-width="1.5"/>
-    <line x1="170" y1="90" x2="190" y2="90" stroke="#94a3b8" stroke-width="1.5"/>
-    <line x1="170" y1="90" x2="190" y2="100" stroke="#94a3b8" stroke-width="1.5"/>
-    <circle cx="196" cy="90" r="4" fill="#f5f6f8" stroke="#94a3b8" stroke-width="1.5"/>
+    <!-- Student end: Exactly One (||) -->
+    <line x1="175" y1="84" x2="175" y2="96" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="181" y1="84" x2="181" y2="96" stroke="#94a3b8" stroke-width="1.5"/>
 
-    <!-- Bridge end: Exactly One (||) -->
-    <line x1="320" y1="84" x2="320" y2="96" stroke="#94a3b8" stroke-width="1.5"/>
-    <line x1="326" y1="84" x2="326" y2="96" stroke="#94a3b8" stroke-width="1.5"/>
+    <!-- Enrollment end: Zero or Many (○⋔) pointing toward enrollment -->
+    <circle cx="318" cy="90" r="4" fill="#f5f6f8" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="324" y1="90" x2="344" y2="80" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="324" y1="90" x2="344" y2="90" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="324" y1="90" x2="344" y2="100" stroke="#94a3b8" stroke-width="1.5"/>
 
     <!-- Verb label -->
-    <rect x="230" y="80" width="50" height="18" fill="#f5f6f8"/>
-    <text x="255" y="94" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="500" fill="#1a1a2e">has</text>
+    <rect x="225" y="80" width="60" height="18" fill="#f5f6f8"/>
+    <text x="255" y="94" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="500" fill="#1a1a2e">enrolls</text>
   </g>
 
-  <!-- Bridge/Link Table Node -->
+  <!-- Bridge/Link Table Node (Enrollment) -->
   <g transform="translate(355, 50)">
     <rect x="0" y="0" width="140" height="80" rx="10" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
     <rect x="0" y="0" width="3" height="80" rx="1.5" fill="#94a3b8"/>
 
-    <text x="70" y="28" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#1a1a2e">Student</text>
-    <text x="70" y="44" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#1a1a2e">Enrollment</text>
+    <text x="70" y="35" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#1a1a2e">Enrollment</text>
 
-    <g transform="translate(15, 52)">
-      <rect x="0" y="0" width="28" height="20" rx="3" fill="#e8f4ff"/>
-      <text x="14" y="14" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#4a9eff">12</text>
-      <text x="38" y="13" font-family="Inter, sans-serif" font-size="9" font-weight="500" fill="#666666" letter-spacing="0.3">LINK</text>
+    <g transform="translate(15, 50)">
+      <rect x="0" y="0" width="28" height="22" rx="3" fill="#e8f4ff"/>
+      <text x="14" y="15" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#4a9eff">12</text>
+      <text x="38" y="14" font-family="Inter, sans-serif" font-size="9" font-weight="500" fill="#666666" letter-spacing="0.3">LINK</text>
     </g>
   </g>
 
-  <!-- Right Relationship: Bridge to Course -->
+  <!-- Right Relationship: Enrollment ← Course -->
   <g>
     <path d="M 495 90 C 545 90, 605 90, 655 90" fill="none" stroke="#94a3b8" stroke-width="1.5"/>
 
-    <!-- Bridge end: Exactly One (||) -->
-    <line x1="500" y1="84" x2="500" y2="96" stroke="#94a3b8" stroke-width="1.5"/>
-    <line x1="506" y1="84" x2="506" y2="96" stroke="#94a3b8" stroke-width="1.5"/>
+    <!-- Enrollment end: Zero or Many (○⋔) pointing toward enrollment -->
+    <line x1="495" y1="90" x2="515" y2="80" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="495" y1="90" x2="515" y2="90" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="495" y1="90" x2="515" y2="100" stroke="#94a3b8" stroke-width="1.5"/>
+    <circle cx="521" cy="90" r="4" fill="#f5f6f8" stroke="#94a3b8" stroke-width="1.5"/>
 
-    <!-- Course end: Zero or Many (○⋔) -->
-    <circle cx="642" cy="90" r="4" fill="#f5f6f8" stroke="#94a3b8" stroke-width="1.5"/>
-    <line x1="648" y1="90" x2="668" y2="80" stroke="#94a3b8" stroke-width="1.5"/>
-    <line x1="648" y1="90" x2="668" y2="90" stroke="#94a3b8" stroke-width="1.5"/>
-    <line x1="648" y1="90" x2="668" y2="100" stroke="#94a3b8" stroke-width="1.5"/>
+    <!-- Course end: Exactly One (||) -->
+    <line x1="658" y1="84" x2="658" y2="96" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="664" y1="84" x2="664" y2="96" stroke="#94a3b8" stroke-width="1.5"/>
 
     <!-- Verb label -->
-    <rect x="550" y="80" width="50" height="18" fill="#f5f6f8"/>
-    <text x="575" y="94" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="500" fill="#1a1a2e">for</text>
+    <rect x="555" y="80" width="60" height="18" fill="#f5f6f8"/>
+    <text x="585" y="94" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="500" fill="#1a1a2e">includes</text>
   </g>
 
   <!-- Course Concept Node -->
@@ -83,6 +82,6 @@
   </g>
 
   <!-- Legend -->
-  <text x="425" y="155" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#888888">Many-to-Many via Bridge Table: Student ○⋔──││ StudentEnrollment ││──○⋔ Course</text>
-  <text x="425" y="170" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#888888">"Each enrollment links exactly one Student to exactly one Course"</text>
+  <text x="425" y="155" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#888888">Many-to-Many via Bridge: Student ││──○⋔ Enrollment ○⋔──││ Course</text>
+  <text x="425" y="170" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#888888">"One Student has many Enrollments; one Course has many Enrollments"</text>
 </svg>
