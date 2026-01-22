@@ -17,21 +17,22 @@
 
   <!-- Relationship Line -->
   <g>
-    <path d="M 200 90 C 280 90, 380 90, 460 90" fill="none" stroke="#4caf50" stroke-width="1.5"/>
+    <path d="M 200 90 C 280 90, 380 90, 460 90" fill="none" stroke="#94a3b8" stroke-width="1.5"/>
 
     <!-- Source end: Zero or Many (○⋔) - reversed direction -->
-    <line x1="200" y1="90" x2="222" y2="80" stroke="#4caf50" stroke-width="1.5"/>
-    <line x1="200" y1="90" x2="222" y2="90" stroke="#4caf50" stroke-width="1.5"/>
-    <line x1="200" y1="90" x2="222" y2="100" stroke="#4caf50" stroke-width="1.5"/>
-    <circle cx="228" cy="90" r="4" fill="#f5f6f8" stroke="#4caf50" stroke-width="1.5"/>
+    <line x1="200" y1="90" x2="222" y2="80" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="200" y1="90" x2="222" y2="90" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="200" y1="90" x2="222" y2="100" stroke="#94a3b8" stroke-width="1.5"/>
+    <circle cx="228" cy="90" r="4" fill="#f5f6f8" stroke="#94a3b8" stroke-width="1.5"/>
 
     <!-- Target end: Zero or Many (○⋔) -->
-    <circle cx="450" cy="90" r="4" fill="#f5f6f8" stroke="#4caf50" stroke-width="1.5"/>
-    <line x1="456" y1="90" x2="478" y2="80" stroke="#4caf50" stroke-width="1.5"/>
-    <line x1="456" y1="90" x2="478" y2="90" stroke="#4caf50" stroke-width="1.5"/>
-    <line x1="456" y1="90" x2="478" y2="100" stroke="#4caf50" stroke-width="1.5"/>
+    <circle cx="450" cy="90" r="4" fill="#f5f6f8" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="456" y1="90" x2="478" y2="80" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="456" y1="90" x2="478" y2="90" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="456" y1="90" x2="478" y2="100" stroke="#94a3b8" stroke-width="1.5"/>
 
-    <!-- Verb label (transparent background, centered on line) -->
+    <!-- Verb label (canvas background, centered on line) -->
+    <rect x="295" y="80" width="70" height="18" fill="#f5f6f8"/>
     <text x="330" y="94" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="500" fill="#1a1a2e">enrolls_in</text>
   </g>
 
