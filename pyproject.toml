@@ -67,6 +67,7 @@ all = [
 
 [project.scripts]
 dbt-conceptual = "dbt_conceptual.cli:main"
+dcm = "dbt_conceptual.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/feriksen-personal/dbt-conceptual"
