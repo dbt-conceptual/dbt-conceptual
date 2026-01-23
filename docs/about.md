@@ -9,34 +9,21 @@ coverY: 0
 
 ![Fridthjof Eriksen](assets/author-photo.jpg)
 
-**dbt-conceptual** is created by **Fridthjof Eriksen**, a pragmatic data architect with three decades of experience across central banking, financial services, and global insurance.
+**dbt-conceptual** is created by **Fridthjof Eriksen**, a pragmatic data architect with three decades in financial services — central banking, Swiss private banking, Nordic institutions, global insurance.
 
-Norwegian by origin, international by career — building data platforms across Scandinavia, Switzerland, and Poland since the late 1990s.
-
-### Background
-
-**Current:** Senior Data Architect at Aon, working within the global Commercial Risk ecosystem.
-
-**Previous:**
-
-- **Bank for International Settlements (BIS)** — 6+ years designing analytical solutions for Risk and Trading, including a Data Vault 2.0 enterprise data warehouse with CI/CD automation that increased annual releases tenfold
-- **BI Concepts** — Co-founded a Swiss data consultancy serving the financial services sector
-- **Volvo IT** — Led Data Vault migration for Volvo Penta's enterprise data warehouse
-- **30 years** across Nordic and European organizations in data architecture and engineering
+Environments where data governance isn't optional and architecture decisions compound over years.
 
 ---
 
 ## Why This Tool Exists
 
-This project emerged from a disconnect I've watched widen over the last decade. Code-first principles — version control, CI/CD, automated testing — transformed how we deliver data. But conceptual modeling stayed stuck in the old world: separate tools, separate processes, separate cadence.
+This project emerged from a disconnect I've watched widen over the last decade.
 
-The opportunity was obvious: bring conceptual modeling into the code-first workflow. Same repo. Same CI. Same lifecycle.
+Code-first principles gave teams autonomy — version control, CI/CD, automated testing, ship when ready. Traditional modeling couldn't keep pace. Not because it failed, but because the cadence diverged.
 
-**The old way:** Conceptual models lived in ERwin or Visio. Beautiful diagrams that drifted the moment they were exported.
+The result: teams move fast, but shared vocabulary erodes. Models proliferate. Naming drifts. Nobody knows what "customer" means anymore.
 
-**The new way:** dbt democratized transformation, but the shared vocabulary got lost in the acceleration. Models proliferate. Naming drifts. Nobody knows what "customer" means anymore.
-
-**This tool bridges the gap:** Conceptual structure that ships with the code, validated in CI, current by definition.
+**The opportunity:** bring conceptual structure into the code-first workflow. Same repo. Same CI. Same lifecycle. Architecture that ships with the code, not despite it.
 
 ---
 
