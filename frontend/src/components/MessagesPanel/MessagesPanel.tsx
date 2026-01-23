@@ -60,6 +60,7 @@ export function MessagesPanel() {
             className="icon-btn"
             onClick={toggleMessagesPanel}
             title="Expand messages panel"
+            aria-label="Expand messages panel"
           >
             {'\u25B6'} {/* ▶ */}
           </button>
@@ -71,6 +72,7 @@ export function MessagesPanel() {
             }}
             disabled={isSyncing}
             title="Sync with dbt project"
+            aria-label={isSyncing ? 'Syncing with dbt project' : 'Sync with dbt project'}
           >
             {isSyncing ? '\u23F3' : '\u21BB'} {/* ⏳ or ↻ */}
           </button>
@@ -101,6 +103,7 @@ export function MessagesPanel() {
             onClick={sync}
             disabled={isSyncing}
             title="Sync with dbt project"
+            aria-label={isSyncing ? 'Syncing with dbt project' : 'Sync with dbt project'}
           >
             {isSyncing ? '\u23F3' : '\u21BB'} {/* ⏳ or ↻ */}
           </button>
@@ -108,32 +111,39 @@ export function MessagesPanel() {
             className="icon-btn"
             onClick={toggleMessagesPanel}
             title="Collapse messages panel"
+            aria-label="Collapse messages panel"
           >
             {'\u25C0'} {/* ◀ */}
           </button>
         </div>
       </div>
 
-      <div className="messages-filters">
+      <div className="messages-filters" role="group" aria-label="Message filters">
         <button
           className={`filter-toggle ${messageFilters.error ? 'selected error' : 'unselected'}`}
           onClick={() => toggleMessageFilter('error')}
+          aria-label={`${messageFilters.error ? 'Hide' : 'Show'} errors (${messageCounts.error})`}
+          aria-pressed={messageFilters.error}
         >
-          <span className="filter-toggle-icon">{severityIcons.error}</span>
+          <span className="filter-toggle-icon" aria-hidden="true">{severityIcons.error}</span>
           <span className="filter-toggle-count">{messageCounts.error}</span>
         </button>
         <button
           className={`filter-toggle ${messageFilters.warning ? 'selected warning' : 'unselected'}`}
           onClick={() => toggleMessageFilter('warning')}
+          aria-label={`${messageFilters.warning ? 'Hide' : 'Show'} warnings (${messageCounts.warning})`}
+          aria-pressed={messageFilters.warning}
         >
-          <span className="filter-toggle-icon">{severityIcons.warning}</span>
+          <span className="filter-toggle-icon" aria-hidden="true">{severityIcons.warning}</span>
           <span className="filter-toggle-count">{messageCounts.warning}</span>
         </button>
         <button
           className={`filter-toggle ${messageFilters.info ? 'selected info' : 'unselected'}`}
           onClick={() => toggleMessageFilter('info')}
+          aria-label={`${messageFilters.info ? 'Hide' : 'Show'} info messages (${messageCounts.info})`}
+          aria-pressed={messageFilters.info}
         >
-          <span className="filter-toggle-icon">{severityIcons.info}</span>
+          <span className="filter-toggle-icon" aria-hidden="true">{severityIcons.info}</span>
           <span className="filter-toggle-count">{messageCounts.info}</span>
         </button>
       </div>

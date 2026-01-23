@@ -168,6 +168,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     className="settings-remove-btn"
                     onClick={() => removeDomain(id)}
                     title="Remove domain"
+                    aria-label={`Remove domain ${domain.name}`}
                   >
                     ×
                   </button>

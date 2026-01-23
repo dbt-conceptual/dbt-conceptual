@@ -8,6 +8,25 @@ interface SearchResult {
   subtitle?: string;
 }
 
+// Highlight matching text in search results
+function highlightMatch(text: string, query: string): React.ReactNode {
+  if (!query.trim()) return text;
+
+  const lowerText = text.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+  const index = lowerText.indexOf(lowerQuery);
+
+  if (index === -1) return text;
+
+  return (
+    <>
+      {text.slice(0, index)}
+      <span className="search-highlight">{text.slice(index, index + query.length)}</span>
+      {text.slice(index + query.length)}
+    </>
+  );
+}
+
 interface SearchBarProps {
   onNavigate?: (id: string, type: 'concept' | 'relationship') => void;
 }
@@ -156,6 +175,20 @@ export function SearchBar({ onNavigate }: SearchBarProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Global keyboard shortcut: Cmd+K / Ctrl+K to focus search
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }
+    };
+
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    return () => document.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
+
   // Handle focus
   const handleFocus = useCallback(() => {
     if (query.trim() && results.length > 0) {
@@ -174,25 +207,32 @@ export function SearchBar({ onNavigate }: SearchBarProps) {
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
         onFocus={handleFocus}
+        aria-label="Search concepts and relationships"
+        aria-autocomplete="list"
+        aria-controls={isOpen && results.length > 0 ? 'search-results' : undefined}
+        aria-expanded={isOpen && results.length > 0}
+        role="combobox"
       />
-      <span className="search-icon">{'\u{1F50D}'}</span>
+      <span className="search-icon" aria-hidden="true">{'\u{1F50D}'}</span>
 
       {isOpen && results.length > 0 && (
-        <div className="search-dropdown">
+        <div id="search-results" className="search-dropdown" role="listbox" aria-label="Search results">
           {results.map((result, index) => (
             <div
               key={`${result.type}-${result.id}`}
               className={`search-result ${index === selectedIndex ? 'selected' : ''}`}
               onClick={() => handleSelect(result)}
               onMouseEnter={() => setSelectedIndex(index)}
+              role="option"
+              aria-selected={index === selectedIndex}
             >
-              <span className="search-result-type">
+              <span className="search-result-type" aria-hidden="true">
                 {result.type === 'concept' ? '\u25C7' : '\u2192'}
               </span>
               <div className="search-result-content">
-                <div className="search-result-name">{result.name}</div>
+                <div className="search-result-name">{highlightMatch(result.name, query)}</div>
                 {result.subtitle && (
-                  <div className="search-result-subtitle">{result.subtitle}</div>
+                  <div className="search-result-subtitle">{highlightMatch(result.subtitle, query)}</div>
                 )}
               </div>
             </div>

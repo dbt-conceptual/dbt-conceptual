@@ -64,7 +64,7 @@ export function PropertyPanel() {
         {/* Header */}
         <div className="property-panel-header">
           <div className="property-panel-title">{panelTitle}</div>
-          <button className="property-panel-close" onClick={handleClose} title="Close panel">
+          <button className="property-panel-close" onClick={handleClose} title="Close panel" aria-label="Close panel">
             {'\u00D7'}
           </button>
         </div>
@@ -116,9 +116,9 @@ export function PropertyPanel() {
       {showUnsavedChangesDialog && (
         <ConfirmDialog
           title="Unsaved Changes"
-          message="You have unsaved changes. Would you like to save them before closing?"
-          confirmLabel="Save"
-          cancelLabel="Discard"
+          message="You have unsaved changes that will be lost if you close this panel."
+          confirmLabel="Save & Close"
+          cancelLabel="Discard Changes"
           onConfirm={handleSaveAndClose}
           onCancel={handleDiscardAndClose}
         />
