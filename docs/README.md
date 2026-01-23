@@ -65,6 +65,28 @@ No logical model. No physical derivation. Just shared vocabulary that lives with
 - The senior engineer everyone asks "what does this table mean?"
 - The data lead who notices drift before it compounds
 
+## Built For
+
+dbt-conceptual is built for a specific stack:
+
+| Layer | Assumption |
+|-------|------------|
+| **Transformation** | dbt |
+| **Architecture** | Medallion (Bronze → Silver → Gold) |
+| **Gold Layer** | Dimensional modeling (dims, facts, bridges) |
+
+If that's your stack, this fits naturally. The tool's opinions align with your patterns.
+
+### What's Flexible
+
+- **Folder paths** are configurable (`models/staging` → silver, `models/marts` → gold)
+- **Schema files** work however you organize them (single or split)
+- **Existing patterns** (groups, tags, teams) integrate without conflict
+
+### Not a Fit?
+
+If you're using a different transformation layer, a different architecture pattern, or a different modeling approach — this tool won't fight you, but it won't help you either. No judgment, just clarity.
+
 ## What This Isn't
 
 - **Not an enterprise data catalog** — feeds Collibra/Purview/Alation, doesn't replace them

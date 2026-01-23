@@ -11,6 +11,7 @@
 ## Core Concepts
 
 * [Why Conceptual Models Matter](concepts/README.md)
+* [Operational Conceptual Modeling](concepts/operational.md)
 * [How It Works](concepts/how-it-works.md)
 * [Layer Model](concepts/layer-model.md)
 
@@ -37,3 +38,8 @@
 * [Configuration](reference/configuration.md)
 * [Export Formats](reference/exports.md)
 * [Canvas Notation](notation.md)
+
+## Resources
+
+* [About](about.md)
+* [Changelog](changelog.md)

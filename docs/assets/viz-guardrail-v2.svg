@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 650 240" width="650" height="240">
+  
+  <!-- Background -->
+  <rect width="650" height="240" fill="#ffffff"/>
+  
+  <!-- Title -->
+  <text x="325" y="28" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#475569" text-anchor="middle">Conceptual modeling becomes operational</text>
+  
+  <!-- ==================== GHOST PATH (without dbt-conceptual) ==================== -->
+  
+  <!-- Ghost arrow going straight through -->
+  <line x1="180" y1="55" x2="520" y2="55" stroke="#fecaca" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <polygon points="520,55 512,50 512,60" fill="#fecaca"/>
+  
+  <!-- Ghost outcome -->
+  <rect x="530" y="40" width="100" height="35" rx="3" fill="#fef2f2" stroke="#fecaca" stroke-width="1" stroke-dasharray="4,2"/>
+  <text x="580" y="55" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#f87171" text-anchor="middle">Drift ships</text>
+  <text x="580" y="66" font-family="system-ui, -apple-system, sans-serif" font-size="6" fill="#fca5a5" text-anchor="middle">discovered 3 months later</text>
+  
+  <text x="350" y="48" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#fca5a5" text-anchor="middle" font-style="italic">without guardrail</text>
+  
+  
+  <!-- ==================== MAIN FLOW ==================== -->
+  
+  <!-- Step 1: PR with code change -->
+  <rect x="40" y="95" width="120" height="60" rx="5" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="100" y="118" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="500" fill="#475569" text-anchor="middle">Pull Request</text>
+  <text x="100" y="133" font-family="system-ui, -apple-system, sans-serif" font-size="8" fill="#94a3b8" text-anchor="middle">adds fct_claims</text>
+  
+  <!-- Arrow to CI -->
+  <line x1="160" y1="125" x2="200" y2="125" stroke="#cbd5e1" stroke-width="2"/>
+  <polygon points="200,125 193,120 193,130" fill="#cbd5e1"/>
+  
+  <!-- Step 2: CI - dbt-conceptual (THE GUARDRAIL) - more prominent -->
+  <rect x="210" y="85" width="170" height="80" rx="6" fill="#fff7ed" stroke="#f97316" stroke-width="2.5"/>
+  <text x="295" y="108" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="600" fill="#ea580c" text-anchor="middle">dbt-conceptual</text>
+  
+  <text x="295" y="128" font-family="system-ui, -apple-system, sans-serif" font-size="8" fill="#57534e" text-anchor="middle">☐ concept mapping exists?</text>
+  <text x="295" y="142" font-family="system-ui, -apple-system, sans-serif" font-size="8" fill="#57534e" text-anchor="middle">☐ coverage threshold met?</text>
+  <text x="295" y="156" font-family="system-ui, -apple-system, sans-serif" font-size="8" fill="#57534e" text-anchor="middle">☐ no orphaned models?</text>
+  
+  <!-- PASS path -->
+  <line x1="380" y1="110" x2="440" y2="110" stroke="#22c55e" stroke-width="2.5"/>
+  <polygon points="440,110 432,105 432,115" fill="#22c55e"/>
+  <text x="410" y="100" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#22c55e" text-anchor="middle">pass</text>
+  
+  <!-- Step 3: Deploy -->
+  <rect x="450" y="90" width="100" height="45" rx="5" fill="#f0fdf4" stroke="#22c55e" stroke-width="2"/>
+  <text x="500" y="112" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#16a34a" text-anchor="middle">Deploy</text>
+  <text x="500" y="126" font-family="system-ui, -apple-system, sans-serif" font-size="8" fill="#22c55e" text-anchor="middle">aligned ✓</text>
+  
+  <!-- FAIL path - more prominent, bolder -->
+  <path d="M 295 165 L 295 195 L 100 195 L 100 155" 
+        fill="none" stroke="#dc2626" stroke-width="2.5"/>
+  <polygon points="100,155 95,163 105,163" fill="#dc2626"/>
+  
+  <!-- Fail label - bigger, bolder -->
+  <rect x="160" y="183" width="110" height="22" rx="3" fill="#fef2f2"/>
+  <text x="215" y="198" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#dc2626" text-anchor="middle">fail → fix first</text>
+  
+  <!-- Guardrail callout -->
+  <text x="295" y="225" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="500" fill="#ea580c" text-anchor="middle">The guardrail: drift caught before merge, not in prod</text>
+  
+</svg>
