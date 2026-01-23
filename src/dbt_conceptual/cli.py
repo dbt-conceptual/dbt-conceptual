@@ -1,5 +1,22 @@
-"""CLI for dbt-conceptual."""
+"""CLI for dbt-conceptual.
 
+Exit Code Conventions
+---------------------
+This CLI uses the following exit code patterns:
+
+- click.Abort(): User errors (missing file, bad config, invalid input)
+  Results in exit code 1 with "Aborted!" message.
+
+- SystemExit(0/1): Validation/check commands where the exit code
+  signals pass/fail to CI systems. Used by `validate` command.
+
+- click.exceptions.Exit(1): Commands that signal changes exist
+  (for CI workflows that need to detect changes). Used by `diff --format github`.
+
+- Normal return: Informational commands that complete successfully.
+"""
+
+import logging
 import sys
 from collections.abc import Generator
 from contextlib import contextmanager
@@ -18,12 +35,66 @@ from dbt_conceptual.validator import Severity, Validator
 
 console = Console()
 
+# Global quiet flag - set by main() based on --quiet option
+_quiet_mode = False
+
+
+def _print(message: str, style: Optional[str] = None) -> None:
+    """Print message unless quiet mode is enabled.
+
+    Args:
+        message: Message to print
+        style: Optional rich style (e.g., "green", "red")
+    """
+    if _quiet_mode:
+        return
+    if style:
+        console.print(f"[{style}]{message}[/{style}]")
+    else:
+        console.print(message)
+
+
+def _configure_logging(verbose: int, quiet: bool) -> None:
+    """Configure logging based on verbosity flags.
+
+    Args:
+        verbose: Verbosity level (0=normal, 1=info, 2+=debug)
+        quiet: If True, suppress all non-error output
+    """
+    if quiet:
+        level = logging.ERROR
+    elif verbose >= 2:
+        level = logging.DEBUG
+    elif verbose == 1:
+        level = logging.INFO
+    else:
+        level = logging.WARNING
+
+    logging.basicConfig(
+        level=level,
+        format=(
+            "%(levelname)s: %(message)s"
+            if verbose < 2
+            else "%(levelname)s: %(name)s: %(message)s"
+        ),
+    )
+
 
 @click.group()
 @click.version_option()
-def main() -> None:
+@click.option(
+    "-v", "--verbose", count=True, help="Increase verbosity (use -vv for debug)"
+)
+@click.option("-q", "--quiet", is_flag=True, help="Suppress non-error output")
+@click.pass_context
+def main(ctx: click.Context, verbose: int, quiet: bool) -> None:
     """dbt-conceptual: Bridge the gap between conceptual models and your lakehouse."""
-    pass
+    global _quiet_mode
+    _quiet_mode = quiet
+    ctx.ensure_object(dict)
+    ctx.obj["verbose"] = verbose
+    ctx.obj["quiet"] = quiet
+    _configure_logging(verbose, quiet)
 
 
 @main.command()

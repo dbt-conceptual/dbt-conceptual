@@ -1,5 +1,7 @@
 """Tag applier for propagating domain/owner tags to dbt model files."""
 
+import logging
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
@@ -8,6 +10,11 @@ import yaml
 
 from dbt_conceptual.config import Config
 from dbt_conceptual.state import ProjectState
+
+logger = logging.getLogger(__name__)
+
+# Pattern to detect YAML anchors (&name) and aliases (*name)
+_YAML_ANCHOR_PATTERN = re.compile(r"[&*]\w+")
 
 
 @dataclass
@@ -253,7 +260,17 @@ class TagApplier:
         """
         # Read the file
         with open(file_path) as f:
-            content = yaml.safe_load(f)
+            raw_content = f.read()
+
+        # Warn if YAML anchors/aliases are detected
+        if _YAML_ANCHOR_PATTERN.search(raw_content):
+            logger.warning(
+                "File %s contains YAML anchors/aliases which will not be preserved. "
+                "Consider using --dry-run first to review changes.",
+                file_path,
+            )
+
+        content = yaml.safe_load(raw_content)
 
         if not content or "models" not in content:
             return
