@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/logo-banner-light.svg?v=5" alt="dbt-conceptual" width="480">
+  <img src="brand/github/github-banner-light.svg" alt="dbt-conceptual" width="480">
 </p>
 
 > *Conceptual modeling without the ceremony. Shared vocabulary for data teams who don't have time for meetings.*

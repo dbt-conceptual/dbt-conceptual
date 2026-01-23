@@ -7,24 +7,24 @@
     </linearGradient>
   </defs>
   <rect width="1200" height="630" fill="url(#bg)"/>
-
+  
   <!-- Logo mark -->
   <g transform="translate(400, 160)">
     <path d="M24 64 C24 32 48 24 80 64 C48 104 24 96 24 64" stroke="#e67e22" stroke-width="12" fill="none" stroke-linecap="round"/>
     <path d="M80 64 C112 104 136 96 136 64 C136 32 112 24 80 64" stroke="#888888" stroke-width="12" fill="none" stroke-linecap="round"/>
     <path d="M24 116 L136 116" stroke="#e67e22" stroke-width="10" stroke-linecap="round"/>
   </g>
-
+  
   <!-- Wordmark -->
   <text x="600" y="380" text-anchor="middle" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="56" font-weight="600" letter-spacing="-0.02em">
     <tspan fill="#888888">dbt</tspan><tspan fill="#cccccc">-</tspan><tspan fill="#e67e22">conceptual</tspan>
   </text>
-
+  
   <!-- Tagline -->
   <text x="600" y="450" text-anchor="middle" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="24" fill="#999999">
     Bridge conceptual data models to dbt
   </text>
-
+  
   <!-- URL -->
   <text x="600" y="560" text-anchor="middle" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="18" fill="#bbbbbb">
     github.com/dbt-conceptual

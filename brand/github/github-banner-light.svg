@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" fill="none">
+  <!-- Light background -->
+  <rect width="1280" height="640" fill="#fafaf9"/>
+  
+  <!-- Subtle pattern/texture - light grid -->
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#f0eeec" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1280" height="640" fill="url(#grid)"/>
+  
+  <!-- Logo mark -->
+  <g transform="translate(440, 200)">
+    <path d="M24 64 C24 32 48 24 80 64 C48 104 24 96 24 64" stroke="#e67e22" stroke-width="12" fill="none" stroke-linecap="round"/>
+    <path d="M80 64 C112 104 136 96 136 64 C136 32 112 24 80 64" stroke="#888888" stroke-width="12" fill="none" stroke-linecap="round"/>
+    <path d="M24 116 L136 116" stroke="#e67e22" stroke-width="10" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Wordmark -->
+  <text x="640" y="420" text-anchor="middle" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="48" font-weight="600" letter-spacing="-0.02em">
+    <tspan fill="#888888">dbt</tspan><tspan fill="#cccccc">-</tspan><tspan fill="#e67e22">conceptual</tspan>
+  </text>
+  
+  <!-- Tagline -->
+  <text x="640" y="480" text-anchor="middle" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="20" fill="#999999">
+    Bridge conceptual data models to dbt
+  </text>
+</svg>
