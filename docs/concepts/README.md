@@ -1,9 +1,3 @@
-# Why Conceptual Models Matter
-
-> *A companion piece to the dbt-conceptual README — context for why this tool exists and where it fits.*
-
----
-
 ## The Whiteboard Moment
 
 Every successful data project has one. Business stakeholders, architects, and engineers crowd around a whiteboard. Someone draws a box labeled "Customer." Another box: "Order." A line between them. Discussion erupts: "Can a customer exist without an order?" "What about returns — is that a separate concept or a type of order?"
