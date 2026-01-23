@@ -9,7 +9,7 @@ coverY: 0
 
 ![Fridthjof Eriksen](assets/author-photo.jpg)
 
-**dbt-conceptual** is created by **Fridthjof Eriksen**, a pragmatic data architect with three decades in telecom, consulting and financial services — central banking, Swiss private banking, Nordic institutions, global insurance.
+**dbt-conceptual** is created by **Fridthjof Eriksen**, a pragmatic data architect with three decades across telecom, consulting, and financial services — from Nordic institutions to Swiss private banking to central banking infrastructure.
 
 Environments where data governance isn't optional and architecture decisions compound over years.
 
