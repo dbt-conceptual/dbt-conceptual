@@ -1,4 +1,4 @@
-"""CLI for dbt-conceptual.
+"""CLI for dcm.
 
 Exit Code Conventions
 ---------------------
@@ -88,7 +88,7 @@ def _configure_logging(verbose: int, quiet: bool) -> None:
 @click.option("-q", "--quiet", is_flag=True, help="Suppress non-error output")
 @click.pass_context
 def main(ctx: click.Context, verbose: int, quiet: bool) -> None:
-    """dbt-conceptual: Bridge the gap between conceptual models and your lakehouse."""
+    """dcm: Bridge the gap between conceptual models and your lakehouse."""
     global _quiet_mode
     _quiet_mode = quiet
     ctx.ensure_object(dict)
@@ -132,7 +132,7 @@ def status(
         console.print(
             f"[red]Error: conceptual.yml not found at {config.conceptual_file}[/red]"
         )
-        console.print("\nRun 'dbt-conceptual init' to create it.")
+        console.print("\nRun 'dcm init' to create it.")
         raise click.Abort()
 
     # Build state
@@ -193,7 +193,7 @@ def status(
         for model in state.orphan_models:
             console.print(f"  - {model}")
         console.print(
-            "\n[dim]Tip: Run 'dbt-conceptual sync --create-stubs' to create stub concepts[/dim]"
+            "\n[dim]Tip: Run 'dcm sync --create-stubs' to create stub concepts[/dim]"
         )
 
     # Summary: Concepts needing attention
@@ -309,7 +309,7 @@ def orphans(
         console.print(
             f"[red]Error: conceptual.yml not found at {config.conceptual_file}[/red]"
         )
-        console.print("\nRun 'dbt-conceptual init' to create it.")
+        console.print("\nRun 'dcm init' to create it.")
         raise click.Abort()
 
     # Build state
@@ -335,7 +335,7 @@ def orphans(
 
     console.print(
         "\n[dim]Next steps:[/dim]"
-        "\n[dim]  1. Run 'dbt-conceptual sync --create-stubs' to create stub concepts[/dim]"
+        "\n[dim]  1. Run 'dcm sync --create-stubs' to create stub concepts[/dim]"
         "\n[dim]  2. Edit models/conceptual/conceptual.yml to enrich the stubs[/dim]"
         "\n[dim]  3. Add meta.concept or meta.realizes tags to model YAML files[/dim]"
     )
@@ -394,7 +394,7 @@ def validate(
             console.print(
                 f"[red]Error: conceptual.yml not found at {config.conceptual_file}[/red]"
             )
-            console.print("\nRun 'dbt-conceptual init' to create it.")
+            console.print("\nRun 'dcm init' to create it.")
         raise click.Abort()
 
     # Build state
@@ -633,13 +633,13 @@ def apply(
     Examples:
 
         # Preview tag changes
-        dbt-conceptual apply --propagate-tags --dry-run
+        dcm apply --propagate-tags --dry-run
 
         # Apply tag changes
-        dbt-conceptual apply --propagate-tags
+        dcm apply --propagate-tags
 
         # Apply to specific models
-        dbt-conceptual apply --propagate-tags --models dim_customer --models fact_orders
+        dcm apply --propagate-tags --models dim_customer --models fact_orders
     """
     if not propagate_tags:
         console.print(
@@ -670,7 +670,7 @@ def apply(
         console.print(
             f"[red]Error: conceptual.yml not found at {config.conceptual_file}[/red]"
         )
-        console.print("\nRun 'dbt-conceptual init' to create it.")
+        console.print("\nRun 'dcm init' to create it.")
         raise click.Abort()
 
     # Build state
@@ -737,7 +737,7 @@ def apply(
     help="Path to dbt project directory (default: current directory)",
 )
 def init(project_dir: Optional[Path]) -> None:
-    """Initialize dbt-conceptual in a dbt project."""
+    """Initialize dcm in a dbt project."""
     if project_dir is None:
         project_dir = Path.cwd()
 
@@ -815,7 +815,7 @@ positions:
     console.print("\nNext steps:")
     console.print("  1. Edit models/conceptual/conceptual.yml to define your concepts")
     console.print("  2. Add meta.concept tags to your dbt models")
-    console.print("  3. Run 'dbt-conceptual status' to see coverage")
+    console.print("  3. Run 'dcm status' to see coverage")
 
 
 @main.command()
@@ -844,7 +844,7 @@ def sync(project_dir: Optional[Path], create_stubs: bool, model: Optional[str]) 
         console.print(
             f"[red]Error: conceptual.yml not found at {config.conceptual_file}[/red]"
         )
-        console.print("\nRun 'dbt-conceptual init' to create it.")
+        console.print("\nRun 'dcm init' to create it.")
         raise click.Abort()
 
     # Build state
@@ -1058,12 +1058,12 @@ def export(
 
     \b
     Examples:
-        dbt-conceptual export --type coverage --format html -o coverage.html
-        dbt-conceptual export --type coverage --format markdown >> $GITHUB_STEP_SUMMARY
-        dbt-conceptual export --type status --format json | jq '.summary'
-        dbt-conceptual export --type validation --format markdown
-        dbt-conceptual export --type diagram --format svg -o diagram.svg
-        dbt-conceptual export --type diff --format markdown --base main
+        dcm export --type coverage --format html -o coverage.html
+        dcm export --type coverage --format markdown >> $GITHUB_STEP_SUMMARY
+        dcm export --type status --format json | jq '.summary'
+        dcm export --type validation --format markdown
+        dcm export --type diagram --format svg -o diagram.svg
+        dcm export --type diff --format markdown --base main
     """
     from dbt_conceptual.exporter import (
         export_bus_matrix,
@@ -1087,7 +1087,7 @@ def export(
     if export_type == "diff" and not base:
         console.print("[red]Error: --base is required when --type diff[/red]")
         console.print(
-            "[yellow]Example: dbt-conceptual export --type diff --format markdown --base main[/yellow]"
+            "[yellow]Example: dcm export --type diff --format markdown --base main[/yellow]"
         )
         raise click.Abort()
 
@@ -1099,7 +1099,7 @@ def export(
             f"[red]Error: conceptual.yml not found at {config.conceptual_file}[/red]"
         )
         console.print(
-            "\n[yellow]Tip:[/yellow] Run 'dbt-conceptual init' to create a new conceptual model"
+            "\n[yellow]Tip:[/yellow] Run 'dcm init' to create a new conceptual model"
         )
         raise click.Abort()
 
@@ -1502,10 +1502,10 @@ def serve(project_dir: Optional[Path], host: str, port: int, demo: bool) -> None
     - Integrated coverage and bus matrix views
 
     Examples:
-        dbt-conceptual serve
-        dbt-conceptual serve --port 8080
-        dbt-conceptual serve --host 0.0.0.0 --port 3000
-        dbt-conceptual serve --demo
+        dcm serve
+        dcm serve --port 8080
+        dcm serve --host 0.0.0.0 --port 3000
+        dcm serve --demo
 
     Note:
         Port 5000 is often occupied by macOS AirPlay Receiver.
@@ -1517,7 +1517,7 @@ def serve(project_dir: Optional[Path], host: str, port: int, demo: bool) -> None
         console.print(
             "[red]Error: Server dependencies not installed.[/red]\n\n"
             "Install with:\n"
-            "  pip install dbt-conceptual[serve]"
+            "  pip install dcm[serve]"
         )
         return
 
@@ -1544,7 +1544,7 @@ def serve(project_dir: Optional[Path], host: str, port: int, demo: bool) -> None
         # Use demo directory instead of project_dir
         project_dir = demo_dir
 
-    console.print("[cyan]Starting dbt-conceptual UI server...[/cyan]")
+    console.print("[cyan]Starting dcm UI server...[/cyan]")
     console.print(f"[cyan]Open your browser to: http://{host}:{port}[/cyan]")
     console.print("[dim]Press Ctrl+C to stop[/dim]\n")
 
@@ -1581,13 +1581,13 @@ def diff(base: str, format: str, project_dir: Optional[Path]) -> None:
     Examples:
 
         # Compare against main branch
-        dbt-conceptual diff --base main
+        dcm diff --base main
 
         # Compare against origin/main
-        dbt-conceptual diff --base origin/main
+        dcm diff --base origin/main
 
         # GitHub Actions format
-        dbt-conceptual diff --base ${{ github.base_ref }} --format github
+        dcm diff --base ${{ github.base_ref }} --format github
     """
     from dbt_conceptual.diff_formatter import (
         format_github,
@@ -1605,7 +1605,7 @@ def diff(base: str, format: str, project_dir: Optional[Path]) -> None:
         console.print(
             f"[red]Error: conceptual.yml not found at {config.conceptual_file}[/red]"
         )
-        console.print("\nRun 'dbt-conceptual init' to create it.")
+        console.print("\nRun 'dcm init' to create it.")
         raise click.Abort()
 
     builder = StateBuilder(config)

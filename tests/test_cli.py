@@ -14,7 +14,7 @@ def test_cli_main() -> None:
     runner = CliRunner()
     result = runner.invoke(main, ["--help"])
     assert result.exit_code == 0
-    assert "dbt-conceptual" in result.output
+    assert "dcm" in result.output
     assert "init" in result.output
     assert "status" in result.output
     assert "validate" in result.output
