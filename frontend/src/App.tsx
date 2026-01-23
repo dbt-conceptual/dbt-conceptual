@@ -2,6 +2,7 @@ import { Canvas } from './components/Canvas';
 import { PropertyPanel } from './components/PropertyPanel';
 import { Toolbar } from './components/Toolbar';
 import { MessagesPanel } from './components/MessagesPanel';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import './tokens.css';
 
 function App() {
@@ -10,8 +11,12 @@ function App() {
       <Toolbar />
       <div style={{ display: 'flex', height: '100%', paddingTop: '48px' }}>
         <MessagesPanel />
-        <Canvas />
-        <PropertyPanel />
+        <ErrorBoundary>
+          <Canvas />
+        </ErrorBoundary>
+        <ErrorBoundary>
+          <PropertyPanel />
+        </ErrorBoundary>
       </div>
     </div>
   );

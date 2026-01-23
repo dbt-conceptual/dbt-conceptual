@@ -7,6 +7,9 @@ import {
   useNodesState,
   useEdgesState,
   useReactFlow,
+  type NodeChange,
+  type Node,
+  type Edge,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -149,20 +152,19 @@ function CanvasInner() {
 
   // Handle node position changes (updates local state during drag)
   const handleNodesChange = useCallback(
-    (changes: any) => {
+    (changes: NodeChange[]) => {
       onNodesChange(changes);
 
       // Extract position changes to keep store in sync
       const positionChanges = changes.filter(
-        (change: any) => change.type === 'position' && change.position
+        (change): change is NodeChange & { type: 'position'; position: { x: number; y: number } } =>
+          change.type === 'position' && 'position' in change && change.position !== undefined
       );
 
       if (positionChanges.length > 0) {
         const newPositions: Record<string, { x: number; y: number }> = {};
-        positionChanges.forEach((change: any) => {
-          if (change.position) {
-            newPositions[change.id] = change.position;
-          }
+        positionChanges.forEach((change) => {
+          newPositions[change.id] = change.position;
         });
         updatePositions(newPositions);
       }
@@ -177,7 +179,7 @@ function CanvasInner() {
 
   // Handle node selection
   const handleNodeClick = useCallback(
-    (_event: any, node: any) => {
+    (_event: React.MouseEvent, node: Node) => {
       selectConcept(node.id);
     },
     [selectConcept]
@@ -185,7 +187,7 @@ function CanvasInner() {
 
   // Handle edge selection
   const handleEdgeClick = useCallback(
-    (_event: any, edge: any) => {
+    (_event: React.MouseEvent, edge: Edge) => {
       selectRelationship(edge.id);
     },
     [selectRelationship]

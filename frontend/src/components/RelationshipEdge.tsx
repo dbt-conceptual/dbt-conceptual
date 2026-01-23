@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { getBezierPath } from '@xyflow/react';
+import { getBezierPath, type EdgeProps } from '@xyflow/react';
 import type { Relationship, RelationshipStatus } from '../types';
 
 export type RelationshipEdgeData = {
@@ -7,18 +7,26 @@ export type RelationshipEdgeData = {
   relationshipId: string;
 };
 
-export const RelationshipEdge = memo((props: any) => {
-  const relationship: Relationship | undefined = props.data?.relationship;
+export const RelationshipEdge = memo(({
+  data,
+  sourceX,
+  sourceY,
+  sourcePosition,
+  targetX,
+  targetY,
+  targetPosition,
+}: EdgeProps<RelationshipEdgeData>) => {
+  const relationship: Relationship | undefined = data?.relationship;
 
   if (!relationship) return null;
 
   const [edgePath, labelX, labelY] = getBezierPath({
-    sourceX: props.sourceX,
-    sourceY: props.sourceY,
-    sourcePosition: props.sourcePosition,
-    targetX: props.targetX,
-    targetY: props.targetY,
-    targetPosition: props.targetPosition,
+    sourceX,
+    sourceY,
+    sourcePosition,
+    targetX,
+    targetY,
+    targetPosition,
   });
 
   // Check validation status

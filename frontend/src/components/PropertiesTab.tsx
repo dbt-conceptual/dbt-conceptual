@@ -1,4 +1,4 @@
-import { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
+import { useState, useEffect, useImperativeHandle, forwardRef, useCallback } from 'react';
 import { useStore } from '../store';
 import { MarkdownField } from './MarkdownField';
 import type { Concept, Relationship } from '../types';
@@ -122,29 +122,17 @@ const ConceptProperties = forwardRef<PropertiesTabHandle, ConceptPropertiesProps
     onDirtyChange?.(hasChanges);
   }, [hasChanges, onDirtyChange]);
 
-  // Expose methods to parent via ref
-  useImperativeHandle(ref, () => ({
-    isDirty: () => hasChanges,
-    save: async () => {
-      await handleSave();
-    },
-    discard: () => {
-      // Reload state from server to discard changes
-      fetchState();
-    },
-  }), [hasChanges]);
-
   const handleChange = (field: string, value: string) => {
     updateConcept(conceptId, { [field]: value });
   };
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!canSave || isSaving) return;
 
     setIsSaving(true);
     try {
       // When saving a ghost concept with a domain, it becomes a real concept
-      if (isGhost && concept.domain) {
+      if (isGhost && concept?.domain) {
         updateConcept(conceptId, { isGhost: false, validationStatus: 'valid', validationMessages: [] });
       }
       await saveState();
@@ -155,7 +143,14 @@ const ConceptProperties = forwardRef<PropertiesTabHandle, ConceptPropertiesProps
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [canSave, isSaving, isGhost, concept?.domain, conceptId, updateConcept, saveState, concepts]);
+
+  // Expose methods to parent via ref
+  useImperativeHandle(ref, () => ({
+    isDirty: () => hasChanges,
+    save: handleSave,
+    discard: fetchState,
+  }), [hasChanges, handleSave, fetchState]);
 
   // Get domain info for color picker
   const domain = concept.domain ? domains[concept.domain] : null;
@@ -445,23 +440,11 @@ const RelationshipProperties = forwardRef<PropertiesTabHandle, RelationshipPrope
     onDirtyChange?.(hasChanges);
   }, [hasChanges, onDirtyChange]);
 
-  // Expose methods to parent via ref
-  useImperativeHandle(ref, () => ({
-    isDirty: () => hasChanges,
-    save: async () => {
-      await handleSave();
-    },
-    discard: () => {
-      // Reload state from server to discard changes
-      fetchState();
-    },
-  }), [hasChanges]);
-
   const handleChange = (field: string, value: string | string[]) => {
     updateRelationship(relationshipId, { [field]: value });
   };
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!hasChanges || isSaving) return;
 
     setIsSaving(true);
@@ -474,7 +457,14 @@ const RelationshipProperties = forwardRef<PropertiesTabHandle, RelationshipPrope
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [hasChanges, isSaving, saveState, relationships, relationshipId]);
+
+  // Expose methods to parent via ref
+  useImperativeHandle(ref, () => ({
+    isDirty: () => hasChanges,
+    save: handleSave,
+    discard: fetchState,
+  }), [hasChanges, handleSave, fetchState]);
 
   return (
     <div className="properties-tab">

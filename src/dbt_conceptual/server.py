@@ -1,8 +1,10 @@
 """Flask web server for conceptual model UI."""
 
+import json
 from pathlib import Path
 from typing import Any, Union
 
+import yaml
 from flask import Flask, Response, jsonify, request, send_from_directory
 
 from dbt_conceptual.config import Config
@@ -94,8 +96,6 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
             layout_file = config.layout_file
             positions = {}
             if layout_file.exists():
-                import json
-
                 with open(layout_file) as f:
                     layout_data = json.load(f) or {}
                     positions = layout_data.get("positions", {})
@@ -235,8 +235,6 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
                     yaml_data["relationships"].append(rel_dict)
 
             # Write to file
-            import yaml
-
             with open(conceptual_file, "w") as f:
                 yaml.dump(yaml_data, f, sort_keys=False, default_flow_style=False)
 
@@ -285,8 +283,6 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
             if not layout_file.exists():
                 return jsonify({"positions": {}})
 
-            import json
-
             with open(layout_file) as f:
                 layout_data = json.load(f) or {}
 
@@ -308,8 +304,6 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
             layout_data = {"version": 1, "positions": data.get("positions", {})}
 
             # Write to file
-            import json
-
             with open(layout_file, "w") as f:
                 json.dump(layout_data, f, indent=2)
 
@@ -347,10 +341,8 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
             layout_file = config.layout_file
             positions: dict[str, Any] = {}
             if layout_file.exists():
-                import json as json_lib
-
                 with open(layout_file) as f:
-                    layout_data = json_lib.load(f) or {}
+                    layout_data = json.load(f) or {}
                     positions = layout_data.get("positions", {})
 
             # Identify ghost concepts
@@ -439,8 +431,6 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
             domains_data = {}
 
             if conceptual_file.exists():
-                import yaml
-
                 with open(conceptual_file) as f:
                     data = yaml.safe_load(f) or {}
                     if "domains" in data:
@@ -480,8 +470,6 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
             if "domains" in data:
                 conceptual_file = config.conceptual_file
                 if conceptual_file.exists():
-                    import yaml
-
                     with open(conceptual_file) as f:
                         conceptual_data = yaml.safe_load(f) or {}
 
@@ -499,8 +487,6 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
             if "paths" in data:
                 dbt_project_file = config.project_dir / "dbt_project.yml"
                 if dbt_project_file.exists():
-                    import yaml
-
                     with open(dbt_project_file) as f:
                         project_data = yaml.safe_load(f) or {}
 
