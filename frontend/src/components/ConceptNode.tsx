@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position } from '@xyflow/react';
 import type { Concept, Domain } from '../types';
 import { useStore } from '../store';
 
@@ -8,7 +8,11 @@ export type ConceptNodeData = {
   conceptId: string;
 };
 
-export const ConceptNode = memo(({ data }: NodeProps<ConceptNodeData>) => {
+interface ConceptNodeProps {
+  data: ConceptNodeData;
+}
+
+export const ConceptNode = memo(({ data }: ConceptNodeProps) => {
   const concept: Concept = data.concept;
   const domains = useStore((state) => state.domains);
 

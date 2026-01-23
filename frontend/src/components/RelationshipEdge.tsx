@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { getBezierPath, type EdgeProps } from '@xyflow/react';
+import { getBezierPath, type Position } from '@xyflow/react';
 import type { Relationship, RelationshipStatus } from '../types';
 
 export type RelationshipEdgeData = {
@@ -7,7 +7,20 @@ export type RelationshipEdgeData = {
   relationshipId: string;
 };
 
+interface RelationshipEdgeProps {
+  id: string;
+  data?: RelationshipEdgeData;
+  sourceX: number;
+  sourceY: number;
+  sourcePosition: Position;
+  targetX: number;
+  targetY: number;
+  targetPosition: Position;
+  markerEnd?: string;
+}
+
 export const RelationshipEdge = memo(({
+  id,
   data,
   sourceX,
   sourceY,
@@ -15,7 +28,8 @@ export const RelationshipEdge = memo(({
   targetX,
   targetY,
   targetPosition,
-}: EdgeProps<RelationshipEdgeData>) => {
+  markerEnd,
+}: RelationshipEdgeProps) => {
   const relationship: Relationship | undefined = data?.relationship;
 
   if (!relationship) return null;
@@ -58,14 +72,14 @@ export const RelationshipEdge = memo(({
     <>
       {/* Edge path */}
       <path
-        id={props.id}
+        id={id}
         className={`react-flow__edge-path ${isError ? 'invalid' : ''} ${isWarning ? 'warning' : ''}`}
         d={edgePath}
         stroke={statusColor}
         strokeWidth={2}
         strokeDasharray={strokeDasharray}
         fill="none"
-        markerEnd={props.markerEnd}
+        markerEnd={markerEnd}
       />
 
       {/* Label */}
