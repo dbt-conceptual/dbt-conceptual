@@ -183,6 +183,12 @@ concepts:
     owner: catalog_team
     definition: "An item available for purchase"
 
+  order_line:
+    name: "Order Line"
+    domain: transaction
+    owner: orders_team
+    definition: "A line item linking an order to a product"
+
 relationships:
   - name: places
     from: customer
@@ -191,13 +197,18 @@ relationships:
 
   - name: contains
     from: order
+    to: order_line
+    cardinality: "1:N"
+
+  - name: includes
+    from: order_line
     to: product
-    cardinality: "N:M"
+    cardinality: "1:1"
 ```
 
 ### 2. Tag dbt Models
 
-Add `meta.concept` to dimensions:
+Add `meta.concept` to your models:
 
 ```yaml
 # models/gold/dim_customer.yml
@@ -205,18 +216,12 @@ models:
   - name: dim_customer
     meta:
       concept: customer
-```
 
-Add `meta.realizes` to facts and bridges:
-
-```yaml
 # models/gold/fact_order_lines.yml
 models:
   - name: fact_order_lines
     meta:
-      realizes:
-        - customer:places:order
-        - order:contains:product
+      concept: order_line
 ```
 
 ### 3. Validate & Visualize
@@ -445,7 +450,7 @@ vars:
 | ------- | ----------- |
 | `dcm init` | Initialize conceptual.yml |
 | `dcm status` | Show coverage by domain |
-| `dcm orphans` | List untagged models (no meta.concept or meta.realizes) |
+| `dcm orphans` | List untagged models (no meta.concept) |
 | `dcm validate` | Validate model integrity |
 | `dcm validate --no-drafts` | Fail CI if drafts/stubs exist |
 | `dcm sync` | Sync from dbt project |

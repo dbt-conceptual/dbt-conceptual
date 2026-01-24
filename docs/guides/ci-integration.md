@@ -27,7 +27,7 @@ Fail if any concepts or relationships are incomplete:
 
 The `--no-drafts` flag fails on:
 - Concepts without implementing models
-- Relationships without realization (for N:M)
+- Relationships without domain assignment
 - Concepts missing domain assignment
 
 ## Job Summaries

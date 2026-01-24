@@ -85,7 +85,7 @@ vars:
 |------|-------------|
 | `orphan_models` | Models in silver/gold without concept tags |
 | `unimplemented_concepts` | Concepts without implementing models |
-| `unrealized_relationships` | N:M relationships without realization |
+| `unrealized_relationships` | Relationships not traced by any model |
 | `missing_definitions` | Concepts without definition text |
 | `domain_mismatch` | Concepts with unknown domain references |
 

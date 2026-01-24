@@ -2,9 +2,6 @@ version: 2
 
 models:
   - name: fact_orders
-    description: "Order transaction fact"
+    description: "Order line items - links orders to products"
     meta:
-      concept: order
-      realizes:
-        - customer:places:order
-        - order:contains:product
+      concept: order_line

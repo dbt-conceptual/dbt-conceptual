@@ -6,9 +6,9 @@ This directory contains example dbt projects demonstrating dbt-conceptual usage.
 
 A minimal e-commerce example showing:
 
-- **Conceptual model** with 3 concepts across 3 domains
-- **dbt models** linked via `meta.concept` and `meta.realizes`
-- **Relationships** between concepts
+- **Conceptual model** with 4 concepts across 3 domains
+- **dbt models** linked via `meta.concept`
+- **Relationships** between concepts (including bridge pattern for many-to-many)
 
 ### Try it out
 
@@ -43,7 +43,7 @@ sample-dbt-project/
 
 **Status command:**
 - Shows coverage for each concept (silver and gold models)
-- Lists relationships and their realization status
+- Lists relationships between concepts
 - Flags stub concepts needing enrichment
 
 **Validate command:**

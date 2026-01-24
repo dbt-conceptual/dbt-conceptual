@@ -136,7 +136,7 @@ relationships:
 | `name` | Yes | Verb describing the relationship |
 | `from` | Yes | Source concept (key) |
 | `to` | Yes | Target concept (key) |
-| `cardinality` | No | `1:1`, `1:N`, or `N:M` |
+| `cardinality` | No | `1:1` or `1:N` (use bridge concepts for many-to-many) |
 | `definition` | No | Markdown text |
 | `domains` | No | List of domain references |
 | `owner` | No | Responsible team |
@@ -151,8 +151,8 @@ Auto-generated as `{from}:{name}:{to}`, e.g., `customer:places:order`.
 | Status | Condition |
 |--------|-----------|
 | `stub` | Missing `name` |
-| `draft` | No `domains` OR (N:M without realization) |
-| `complete` | Has `domains` AND (not N:M OR realized) |
+| `draft` | No `domains` |
+| `complete` | Has `domains` |
 
 ## Groups
 
@@ -209,6 +209,12 @@ concepts:
     definition: |
       An item available for purchase.
 
+  order_line:
+    name: "Order Line"
+    domain: transaction
+    definition: |
+      A line item linking an order to a product.
+
 relationships:
   - name: places
     from: customer
@@ -219,8 +225,15 @@ relationships:
 
   - name: contains
     from: order
+    to: order_line
+    cardinality: "1:N"
+    domains:
+      - transaction
+
+  - name: includes
+    from: order_line
     to: product
-    cardinality: "N:M"
+    cardinality: "1:1"
     domains:
       - transaction
 ```

@@ -94,9 +94,9 @@ Concepts inherit color from their domain. Override with the color property.
 
 | Style | Meaning |
 |-------|---------|
-| Solid | 1:1 or 1:N cardinality |
-| Dashed | N:M (needs realization) |
-| Gray | Draft status |
+| Solid | Complete relationship |
+| Dashed | Draft status (missing domain) |
+| Gray | Stub status |
 
 ## Property Panel
 

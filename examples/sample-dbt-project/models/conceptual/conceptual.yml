@@ -36,6 +36,13 @@ concepts:
     definition: "An item available for purchase"
     status: stub
 
+  order_line:
+    name: "Order Line"
+    domain: transaction
+    owner: orders_team
+    definition: "A line item in an order, linking an order to a product"
+    status: complete
+
 relationships:
   - name: places
     from: customer
@@ -44,5 +51,10 @@ relationships:
 
   - name: contains
     from: order
+    to: order_line
+    cardinality: "1:N"
+
+  - name: includes
+    from: order_line
     to: product
-    cardinality: "N:M"
+    cardinality: "1:1"

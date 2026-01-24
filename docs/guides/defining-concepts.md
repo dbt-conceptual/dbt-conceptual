@@ -120,7 +120,30 @@ Use active verbs that read naturally: `customer places order`, `order contains p
 |-------|---------|
 | `1:1` | Exactly one on each side |
 | `1:N` | One-to-many |
-| `N:M` | Many-to-many (requires realization) |
+
+### Many-to-Many Relationships
+
+For many-to-many relationships, create a bridge concept:
+
+```yaml
+concepts:
+  order_line:
+    name: "Order Line"
+    domain: transaction
+    definition: "Line item linking orders to products"
+
+relationships:
+  - name: contains
+    from: order
+    to: order_line
+    cardinality: "1:N"
+  - name: includes
+    from: order_line
+    to: product
+    cardinality: "1:1"
+```
+
+This surfaces the bridge as a first-class concept with its own definition and tagging.
 
 ## Domains
 
