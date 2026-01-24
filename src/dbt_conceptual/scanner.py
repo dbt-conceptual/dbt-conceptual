@@ -30,8 +30,10 @@ class DbtProjectScanner:
         """
         project_dir = self.config.project_dir
 
-        # Search in configured silver and gold paths
-        search_paths = self.config.silver_paths + self.config.gold_paths
+        # Search in configured bronze, silver, and gold paths
+        search_paths = (
+            self.config.bronze_paths + self.config.silver_paths + self.config.gold_paths
+        )
 
         for search_path in search_paths:
             full_path = project_dir / search_path
@@ -139,20 +141,28 @@ class DbtProjectScanner:
         return all_models
 
     def find_model_files(self) -> dict[str, list[str]]:
-        """Find all .sql model files in silver and gold paths.
+        """Find all .sql model files in bronze, silver, and gold paths.
 
         Returns:
-            Dictionary with 'silver' and 'gold' keys containing lists of model names
+            Dictionary with 'bronze', 'silver', and 'gold' keys containing lists of model names
         """
         project_dir = self.config.project_dir
-        models: dict[str, list[str]] = {"silver": [], "gold": []}
+        models: dict[str, list[str]] = {"bronze": [], "silver": [], "gold": []}
+
+        # Scan bronze paths
+        for search_path in self.config.bronze_paths:
+            full_path = project_dir / search_path
+            if full_path.exists():
+                for sql_file in full_path.rglob("*.sql"):
+                    model_name = sql_file.stem
+                    if model_name not in models["bronze"]:
+                        models["bronze"].append(model_name)
 
         # Scan silver paths
         for search_path in self.config.silver_paths:
             full_path = project_dir / search_path
             if full_path.exists():
                 for sql_file in full_path.rglob("*.sql"):
-                    # Get model name without .sql extension
                     model_name = sql_file.stem
                     if model_name not in models["silver"]:
                         models["silver"].append(model_name)
@@ -162,12 +172,12 @@ class DbtProjectScanner:
             full_path = project_dir / search_path
             if full_path.exists():
                 for sql_file in full_path.rglob("*.sql"):
-                    # Get model name without .sql extension
                     model_name = sql_file.stem
                     if model_name not in models["gold"]:
                         models["gold"].append(model_name)
 
         # Sort for consistency
+        models["bronze"].sort()
         models["silver"].sort()
         models["gold"].sort()
 

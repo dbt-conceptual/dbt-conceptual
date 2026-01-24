@@ -256,62 +256,165 @@ class StateBuilder:
                     path=model.get("path"),
                 )
 
-        # Parse bronze dependencies from manifest.json if available
-        self._parse_bronze_dependencies(state)
+        # Infer model associations via lineage traversal
+        self._infer_lineage(state)
 
         return state
 
-    def _parse_bronze_dependencies(self, state: ProjectState) -> None:
-        """Parse bronze layer dependencies from manifest.json.
+    def _infer_lineage(self, state: ProjectState) -> None:
+        """Infer model associations via lineage traversal.
 
-        Finds source tables that silver models depend on and adds them as bronze_models.
+        For each model with explicit meta.concept:
+        - Traverse upstream (refs) through bronze/silver to find related models
+        - Traverse downstream (dependents) through gold to find related models
+        - Mark inferred models as such (they can't be edited)
         """
         import json
 
         manifest_path = self.config.project_dir / "target" / "manifest.json"
         if not manifest_path.exists():
-            return  # No manifest available, skip bronze parsing
+            return  # No manifest available, skip lineage inference
 
         try:
             with open(manifest_path) as f:
                 manifest = json.load(f)
 
-            # Get all silver models that belong to concepts
-            silver_to_concept = {}
-            for concept_id, concept in state.concepts.items():
-                for silver_model in concept.silver_models:
-                    silver_to_concept[silver_model] = concept_id
-
-            # Parse dependencies for each silver model
             nodes = manifest.get("nodes", {})
+
+            # Build lookup: model_name -> node_id
+            model_to_node: dict[str, str] = {}
+            for node_id, node_data in nodes.items():
+                if node_id.startswith("model."):
+                    model_to_node[node_data.get("name", "")] = node_id
+
+            # Build dependency graph: model_name -> [upstream_names]
+            upstream_graph: dict[str, list[str]] = {}
+            # Build reverse graph: model_name -> [downstream_names]
+            downstream_graph: dict[str, list[str]] = {}
 
             for node_id, node_data in nodes.items():
                 if not node_id.startswith("model."):
                     continue
 
-                model_name = node_data.get("name")
-                if not model_name or model_name not in silver_to_concept:
+                model_name = node_data.get("name", "")
+                if not model_name:
                     continue
 
-                concept_id = silver_to_concept[model_name]
-                concept = state.concepts[concept_id]
-
-                # Get all source dependencies
+                upstream_graph[model_name] = []
                 depends_on = node_data.get("depends_on", {})
-                for source_id in depends_on.get("nodes", []):
-                    if source_id.startswith("source."):
-                        # Extract source name from ID (e.g., "source.project.schema.table")
-                        parts = source_id.split(".")
+
+                for dep_id in depends_on.get("nodes", []):
+                    if dep_id.startswith("model."):
+                        # Model dependency
+                        dep_data = nodes.get(dep_id, {})
+                        dep_name = dep_data.get("name", "")
+                        if dep_name:
+                            upstream_graph[model_name].append(dep_name)
+                            # Add to downstream graph
+                            if dep_name not in downstream_graph:
+                                downstream_graph[dep_name] = []
+                            downstream_graph[dep_name].append(model_name)
+                    elif dep_id.startswith("source."):
+                        # Source dependency - treat as bronze
+                        parts = dep_id.split(".")
                         if len(parts) >= 4:
                             source_name = f"{parts[2]}.{parts[3]}"
-                            if source_name not in concept.bronze_models:
-                                concept.bronze_models.append(source_name)
+                            upstream_graph[model_name].append(source_name)
+
+            # Get model path info for layer detection
+            def get_layer(model_name: str) -> Optional[str]:
+                node_id = model_to_node.get(model_name)
+                if not node_id:
+                    return None
+                node_data = nodes.get(node_id, {})
+                original_path = node_data.get("original_file_path", "")
+                return self.config.get_layer(original_path)
+
+            # Find all models with explicit meta.concept
+            explicit_models: dict[str, str] = {}  # model_name -> concept_id
+            for concept_id, concept in state.concepts.items():
+                for model_name in concept.silver_models + concept.gold_models:
+                    explicit_models[model_name] = concept_id
+
+            # For each explicitly tagged model, traverse lineage
+            for anchor_model, concept_id in explicit_models.items():
+                concept = state.concepts[concept_id]
+
+                # Traverse upstream (bronze/silver)
+                visited: set[str] = set()
+                queue = [anchor_model]
+                while queue:
+                    current = queue.pop(0)
+                    if current in visited:
+                        continue
+                    visited.add(current)
+
+                    for upstream in upstream_graph.get(current, []):
+                        if upstream in visited:
+                            continue
+                        if upstream in explicit_models:
+                            # Stop at explicitly tagged models
+                            continue
+
+                        layer = get_layer(upstream)
+                        # Sources (format: schema.table) are bronze
+                        if "." in upstream:
+                            layer = "bronze"
+
+                        if layer == "bronze":
+                            if upstream not in concept.bronze_models:
+                                concept.bronze_models.append(upstream)
+                                concept.inferred_models.append(upstream)
+                            # Update ModelInfo (append to list for multi-concept)
+                            if upstream in state.models:
+                                if concept_id not in state.models[upstream].inferred_concepts:
+                                    state.models[upstream].inferred_concepts.append(concept_id)
+                        elif layer == "silver":
+                            if upstream not in concept.silver_models:
+                                concept.silver_models.append(upstream)
+                                concept.inferred_models.append(upstream)
+                            if upstream in state.models:
+                                if concept_id not in state.models[upstream].inferred_concepts:
+                                    state.models[upstream].inferred_concepts.append(concept_id)
+                            # Continue traversing upstream
+                            queue.append(upstream)
+
+                # Traverse downstream (gold)
+                visited = set()
+                queue = [anchor_model]
+                while queue:
+                    current = queue.pop(0)
+                    if current in visited:
+                        continue
+                    visited.add(current)
+
+                    for downstream in downstream_graph.get(current, []):
+                        if downstream in visited:
+                            continue
+                        if downstream in explicit_models:
+                            # Stop if this model has explicit tag
+                            # (it belongs to that concept, not inferred)
+                            continue
+
+                        layer = get_layer(downstream)
+                        if layer == "gold":
+                            if downstream not in concept.gold_models:
+                                concept.gold_models.append(downstream)
+                                concept.inferred_models.append(downstream)
+                            if downstream in state.models:
+                                if concept_id not in state.models[downstream].inferred_concepts:
+                                    state.models[downstream].inferred_concepts.append(concept_id)
+                            # Continue traversing downstream gold
+                            queue.append(downstream)
+                        elif layer == "silver":
+                            # Don't infer silver downstream (unusual pattern)
+                            pass
 
         except Exception as e:
             # Don't fail if manifest parsing fails
-            print(
-                f"Warning: Failed to parse manifest.json for bronze dependencies: {e}"
-            )
+            import logging
+
+            logging.warning(f"Failed to parse manifest.json for lineage: {e}")
 
     def validate_and_sync(self, state: ProjectState) -> ValidationState:
         """Run validation checks and create ghost concepts for missing references.

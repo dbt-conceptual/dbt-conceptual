@@ -49,15 +49,14 @@ class ConceptState:
     replaced_by: Optional[str] = None  # Deprecation tracking
 
     # Derived fields (populated at runtime, not stored in YAML)
-    bronze_models: list[str] = field(
-        default_factory=list
-    )  # Inferred from manifest.json
-    silver_models: list[str] = field(
-        default_factory=list
-    )  # From meta.concept in silver paths
-    gold_models: list[str] = field(
-        default_factory=list
-    )  # From meta.concept in gold paths
+    # Explicit models have meta.concept tag directly
+    # Inferred models are discovered via lineage traversal
+    bronze_models: list[str] = field(default_factory=list)
+    silver_models: list[str] = field(default_factory=list)
+    gold_models: list[str] = field(default_factory=list)
+
+    # Track which models are inferred (not explicitly tagged)
+    inferred_models: list[str] = field(default_factory=list)
 
     # Validation fields (populated during sync)
     is_ghost: bool = False  # True if referenced but not defined in YAML
@@ -153,14 +152,27 @@ class ModelInfo:
     """Represents metadata about a dbt model for tag validation."""
 
     name: str
-    concept: Optional[str] = None  # From meta.concept
+    concept: Optional[str] = None  # From meta.concept (explicit)
+    inferred_concepts: list[str] = field(default_factory=list)  # From lineage inference
     realizes: list[str] = field(default_factory=list)  # From meta.realizes
     domain_tags: list[str] = field(
         default_factory=list
     )  # domain:X tags or databricks domain
     owner_tag: Optional[str] = None  # owner:X tag or databricks owner
-    layer: Optional[str] = None  # silver or gold
+    layer: Optional[str] = None  # bronze, silver, or gold
     path: Optional[str] = None
+
+    @property
+    def effective_concepts(self) -> list[str]:
+        """Get concepts (explicit takes precedence over inferred)."""
+        if self.concept:
+            return [self.concept]
+        return self.inferred_concepts
+
+    @property
+    def is_inferred(self) -> bool:
+        """Whether this model's concept association is inferred from lineage."""
+        return self.concept is None and len(self.inferred_concepts) > 0
 
 
 @dataclass

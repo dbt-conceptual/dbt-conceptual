@@ -44,6 +44,7 @@ export interface Concept {
   bronze_models: string[];
   silver_models: string[];
   gold_models: string[];
+  inferred_models: string[]; // Models discovered via lineage (not explicitly tagged)
   // Validation fields
   isGhost: boolean;
   validationStatus: ValidationStatus;

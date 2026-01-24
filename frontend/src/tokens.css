@@ -2120,3 +2120,35 @@ code, pre {
   border-radius: var(--radius-sm);
   pointer-events: none;
 }
+
+/* === Inferred Model Styling === */
+.model-item-inferred {
+  opacity: 0.75;
+  position: relative;
+}
+
+.model-item-lock {
+  font-size: var(--font-size-xs);
+  margin-right: var(--space-2);
+  opacity: 0.8;
+}
+
+.model-legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  background: var(--bg-surface-alt);
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--border);
+}
+
+.model-legend-icon {
+  font-size: var(--font-size-sm);
+}
+
+.model-legend-text {
+  font-style: italic;
+}

@@ -122,6 +122,7 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
                         "bronze_models": concept.bronze_models or [],
                         "silver_models": concept.silver_models or [],
                         "gold_models": concept.gold_models or [],
+                        "inferred_models": concept.inferred_models or [],
                         # Validation fields
                         "isGhost": concept.is_ghost,
                         "validationStatus": concept.validation_status,
@@ -370,6 +371,7 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
                         "bronze_models": concept.bronze_models or [],
                         "silver_models": concept.silver_models or [],
                         "gold_models": concept.gold_models or [],
+                        "inferred_models": concept.inferred_models or [],
                         "isGhost": concept.is_ghost,
                         "validationStatus": concept.validation_status,
                         "validationMessages": concept.validation_messages,
