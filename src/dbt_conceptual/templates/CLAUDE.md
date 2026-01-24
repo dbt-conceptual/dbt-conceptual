@@ -324,6 +324,11 @@ Start with `dcm serve`:
 | Coverage | `/coverage` | Implementation progress by domain |
 | Bus Matrix | `/bus-matrix` | Concept × Model grid view |
 
+**Keyboard shortcuts:**
+- `Cmd/Ctrl+S` — Save changes
+- `Cmd/Ctrl+K` — Focus search
+- `Escape` — Close panel
+
 ---
 
 ## Key Constraints
