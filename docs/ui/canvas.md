@@ -133,8 +133,10 @@ To resolve:
 
 | Key | Action |
 |-----|--------|
+| `Cmd/Ctrl+S` | Save changes |
+| `Cmd/Ctrl+K` | Focus search |
 | `Delete` | Delete selected element |
-| `Escape` | Clear selection |
+| `Escape` | Close panel / clear selection |
 | `Shift+Click` | Create relationship from selected concept |
 
 ## Tips

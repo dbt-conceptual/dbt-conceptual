@@ -1989,6 +1989,17 @@ code, pre {
   border-color: var(--text-secondary);
 }
 
+.confirm-dialog-btn.tertiary {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-tertiary);
+}
+
+.confirm-dialog-btn.tertiary:hover {
+  background: var(--bg-surface-alt);
+  color: var(--text-secondary);
+}
+
 .confirm-dialog-btn.primary {
   background: var(--color-primary);
   border: 1px solid var(--color-primary);

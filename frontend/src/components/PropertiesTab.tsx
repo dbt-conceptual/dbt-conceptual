@@ -193,6 +193,7 @@ const ConceptProperties = forwardRef<PropertiesTabHandle, ConceptPropertiesProps
                     className="domain-tag-remove"
                     onClick={() => handleChange('domain', '')}
                     title="Remove domain"
+                    aria-label="Remove domain"
                     style={{ color: textColor }}
                   >
                     {'\u00D7'}
@@ -566,6 +567,7 @@ const RelationshipProperties = forwardRef<PropertiesTabHandle, RelationshipPrope
                       handleChange('domains', newDomains);
                     }}
                     title="Remove domain"
+                    aria-label={`Remove ${domainData.display_name} domain`}
                     style={{ color: textColor }}
                   >
                     {'\u00D7'}
