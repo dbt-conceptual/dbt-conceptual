@@ -597,3 +597,176 @@ def test_validate_and_sync_marks_relationship_invalid() -> None:
         rel = state.relationships["customer:places:order"]
         assert rel.validation_status == "error"
         assert len(rel.validation_messages) >= 2  # Both source and target missing
+
+
+def test_lineage_inference_from_manifest() -> None:
+    """Test that lineage inference discovers upstream/downstream models."""
+    import json
+
+    with TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        # Create dbt_project.yml
+        with open(tmppath / "dbt_project.yml", "w") as f:
+            yaml.dump({"name": "test"}, f)
+
+        # Create conceptual.yml
+        conceptual_dir = tmppath / "models" / "conceptual"
+        conceptual_dir.mkdir(parents=True)
+
+        conceptual_data = {
+            "version": 1,
+            "concepts": {"customer": {"name": "Customer", "domain": "party"}},
+        }
+
+        with open(conceptual_dir / "conceptual.yml", "w") as f:
+            yaml.dump(conceptual_data, f)
+
+        # Create silver model with meta.concept (anchor)
+        silver_dir = tmppath / "models" / "silver"
+        silver_dir.mkdir(parents=True)
+
+        schema_data = {
+            "version": 2,
+            "models": [{"name": "stg_customer", "meta": {"concept": "customer"}}],
+        }
+
+        with open(silver_dir / "schema.yml", "w") as f:
+            yaml.dump(schema_data, f)
+
+        # Create gold model without meta.concept (should be inferred)
+        gold_dir = tmppath / "models" / "gold"
+        gold_dir.mkdir(parents=True)
+
+        schema_data_gold = {
+            "version": 2,
+            "models": [{"name": "dim_customer"}],  # No meta.concept
+        }
+
+        with open(gold_dir / "schema.yml", "w") as f:
+            yaml.dump(schema_data_gold, f)
+
+        # Create manifest.json with lineage
+        target_dir = tmppath / "target"
+        target_dir.mkdir()
+
+        manifest = {
+            "nodes": {
+                "model.test.stg_customer": {
+                    "name": "stg_customer",
+                    "original_file_path": "models/silver/stg_customer.sql",
+                    "depends_on": {"nodes": ["source.test.raw.customers"]},
+                },
+                "model.test.dim_customer": {
+                    "name": "dim_customer",
+                    "original_file_path": "models/gold/dim_customer.sql",
+                    "depends_on": {"nodes": ["model.test.stg_customer"]},
+                },
+            }
+        }
+
+        with open(target_dir / "manifest.json", "w") as f:
+            json.dump(manifest, f)
+
+        config = Config.load(project_dir=tmppath)
+        builder = StateBuilder(config)
+        state = builder.build()
+
+        # Check that dim_customer was inferred as gold model
+        assert "customer" in state.concepts
+        customer = state.concepts["customer"]
+
+        # stg_customer should be explicit (has meta.concept)
+        assert "stg_customer" in customer.silver_models
+
+        # dim_customer should be inferred from downstream lineage
+        assert "dim_customer" in customer.gold_models
+        assert "dim_customer" in customer.inferred_models
+
+        # stg_customer should NOT be in inferred (it's explicit)
+        assert "stg_customer" not in customer.inferred_models
+
+
+def test_lineage_inference_respects_explicit_tags() -> None:
+    """Test that explicit meta.concept tags take precedence over inference."""
+    import json
+
+    with TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        # Create dbt_project.yml
+        with open(tmppath / "dbt_project.yml", "w") as f:
+            yaml.dump({"name": "test"}, f)
+
+        # Create conceptual.yml with two concepts
+        conceptual_dir = tmppath / "models" / "conceptual"
+        conceptual_dir.mkdir(parents=True)
+
+        conceptual_data = {
+            "version": 1,
+            "concepts": {
+                "customer": {"name": "Customer"},
+                "order": {"name": "Order"},
+            },
+        }
+
+        with open(conceptual_dir / "conceptual.yml", "w") as f:
+            yaml.dump(conceptual_data, f)
+
+        # Create silver model for customer
+        silver_dir = tmppath / "models" / "silver"
+        silver_dir.mkdir(parents=True)
+
+        schema_data = {
+            "version": 2,
+            "models": [{"name": "stg_customer", "meta": {"concept": "customer"}}],
+        }
+
+        with open(silver_dir / "schema.yml", "w") as f:
+            yaml.dump(schema_data, f)
+
+        # Create gold model explicitly tagged with 'order' concept
+        # This should NOT be inferred as 'customer' even though it depends on stg_customer
+        gold_dir = tmppath / "models" / "gold"
+        gold_dir.mkdir(parents=True)
+
+        schema_data_gold = {
+            "version": 2,
+            "models": [
+                {"name": "fact_orders", "meta": {"concept": "order"}}
+            ],  # Explicitly tagged
+        }
+
+        with open(gold_dir / "schema.yml", "w") as f:
+            yaml.dump(schema_data_gold, f)
+
+        # Create manifest.json with lineage
+        target_dir = tmppath / "target"
+        target_dir.mkdir()
+
+        manifest = {
+            "nodes": {
+                "model.test.stg_customer": {
+                    "name": "stg_customer",
+                    "original_file_path": "models/silver/stg_customer.sql",
+                    "depends_on": {"nodes": []},
+                },
+                "model.test.fact_orders": {
+                    "name": "fact_orders",
+                    "original_file_path": "models/gold/fact_orders.sql",
+                    "depends_on": {"nodes": ["model.test.stg_customer"]},
+                },
+            }
+        }
+
+        with open(target_dir / "manifest.json", "w") as f:
+            json.dump(manifest, f)
+
+        config = Config.load(project_dir=tmppath)
+        builder = StateBuilder(config)
+        state = builder.build()
+
+        # fact_orders should belong to 'order' concept (explicit), not 'customer' (inferred)
+        assert "fact_orders" in state.concepts["order"].gold_models
+        assert "fact_orders" not in state.concepts["customer"].gold_models
+        assert "fact_orders" not in state.concepts["customer"].inferred_models

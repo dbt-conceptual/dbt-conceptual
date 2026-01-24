@@ -30,6 +30,18 @@ vars:
 
 The tool looks for `conceptual.yml` in this directory.
 
+### bronze_paths
+
+Paths to bronze/raw layer models. Models here are inferred via lineage.
+
+```yaml
+vars:
+  dbt_conceptual:
+    bronze_paths:
+      - models/bronze   # default
+      - models/raw
+```
+
 ### silver_paths
 
 Paths to silver layer models. Models here can use `meta.concept`.
@@ -55,6 +67,31 @@ vars:
       - models/marts
       - models/presentation
 ```
+
+## Lineage Inference
+
+Models are associated with concepts through two mechanisms:
+
+1. **Explicit tagging**: Add `meta.concept: <concept_id>` to a model
+2. **Lineage inference**: Models upstream/downstream of tagged models are automatically associated
+
+When a model has `meta.concept`:
+- **Upstream models** (bronze/silver) are inferred via refs
+- **Downstream models** (gold) are inferred via dependents
+- Inferred models appear with a lock icon in the UI
+
+Explicit tags always take precedence over inference. If a downstream model has its own `meta.concept`, it belongs to that concept rather than being inferred.
+
+```
+hub_customer (silver, meta.concept: customer)  <- explicit
+  |
+  +-- stg_orders (bronze)                      <- inferred upstream
+  +-- dim_customer (gold)                      <- inferred downstream
+```
+
+This enables flexible architectures:
+- **Gold-centric**: Tag dims/facts, infer silver/bronze
+- **Silver-centric**: Tag hubs/satellites (Data Vault), infer gold
 
 ## Validation Configuration
 
@@ -145,6 +182,10 @@ vars:
   dbt_conceptual:
     conceptual_path: models/conceptual
 
+    bronze_paths:
+      - models/raw
+      - models/landing
+
     silver_paths:
       - models/staging
       - models/intermediate
@@ -173,6 +214,7 @@ If no configuration is provided:
 | Setting | Default |
 |---------|---------|
 | `conceptual_path` | `models/conceptual` |
+| `bronze_paths` | `["models/bronze", "models/raw"]` |
 | `silver_paths` | `["models/silver"]` |
 | `gold_paths` | `["models/gold"]` |
 | All validation rules | `warn` (except `missing_definitions`: `ignore`) |

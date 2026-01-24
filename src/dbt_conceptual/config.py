@@ -46,6 +46,9 @@ class Config:
 
     project_dir: Path
     conceptual_path: str = "models/conceptual"
+    bronze_paths: list[str] = field(
+        default_factory=lambda: ["models/bronze", "models/raw"]
+    )
     silver_paths: list[str] = field(default_factory=lambda: ["models/silver"])
     gold_paths: list[str] = field(default_factory=lambda: ["models/gold"])
     validation: ValidationConfig = field(default_factory=ValidationConfig)
@@ -65,6 +68,7 @@ class Config:
         cls,
         project_dir: Optional[Path] = None,
         conceptual_path: Optional[str] = None,
+        bronze_paths: Optional[list[str]] = None,
         silver_paths: Optional[list[str]] = None,
         gold_paths: Optional[list[str]] = None,
     ) -> "Config":
@@ -80,6 +84,7 @@ class Config:
         # Start with defaults
         config_data: dict[str, object] = {
             "conceptual_path": "models/conceptual",
+            "bronze_paths": ["models/bronze", "models/raw"],
             "silver_paths": ["models/silver"],
             "gold_paths": ["models/gold"],
         }
@@ -100,6 +105,8 @@ class Config:
         # Apply CLI overrides
         if conceptual_path is not None:
             config_data["conceptual_path"] = conceptual_path
+        if bronze_paths is not None:
+            config_data["bronze_paths"] = bronze_paths
         if silver_paths is not None:
             config_data["silver_paths"] = silver_paths
         if gold_paths is not None:
@@ -109,12 +116,14 @@ class Config:
         validation_config = cls._parse_validation_config(validation_data)
 
         # Cast to expected types
+        bronze = config_data["bronze_paths"]
         silver = config_data["silver_paths"]
         gold = config_data["gold_paths"]
 
         return cls(
             project_dir=project_dir,
             conceptual_path=str(config_data["conceptual_path"]),
+            bronze_paths=bronze if isinstance(bronze, list) else [str(bronze)],
             silver_paths=silver if isinstance(silver, list) else [str(silver)],
             gold_paths=gold if isinstance(gold, list) else [str(gold)],
             validation=validation_config,
@@ -165,12 +174,16 @@ class Config:
         return config
 
     def get_layer(self, model_path: str) -> Optional[str]:
-        """Detect layer from path. Returns 'silver', 'gold', or None."""
-        # First check silver paths
+        """Detect layer from path. Returns 'bronze', 'silver', 'gold', or None."""
+        # Check bronze paths first
+        for path in self.bronze_paths:
+            if model_path.startswith(path):
+                return "bronze"
+        # Then silver paths
         for path in self.silver_paths:
             if model_path.startswith(path):
                 return "silver"
-        # Then check gold paths
+        # Then gold paths
         for path in self.gold_paths:
             if model_path.startswith(path):
                 return "gold"
