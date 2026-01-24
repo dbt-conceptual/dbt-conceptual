@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" fill="none">
+  <defs>
+    <linearGradient id="orangeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e67e22"/>
+      <stop offset="100%" stop-color="#d35400"/>
+    </linearGradient>
+    <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3498db"/>
+      <stop offset="100%" stop-color="#2980b9"/>
+    </linearGradient>
+    <linearGradient id="greenGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#27ae60"/>
+      <stop offset="100%" stop-color="#1e8449"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="800" height="520" fill="#fafaf9"/>
+  
+  <!-- Title -->
+  <text x="400" y="40" font-family="Inter, -apple-system, sans-serif" font-size="24" font-weight="600" fill="#333333" text-anchor="middle">
+    Working with Governance
+  </text>
+  <text x="400" y="62" font-family="Inter, -apple-system, sans-serif" font-size="14" fill="#888888" text-anchor="middle">
+    The collaboration handshake
+  </text>
+  
+  <!-- Left column: Data Team -->
+  <g transform="translate(50, 90)">
+    <rect width="200" height="36" rx="8" fill="url(#orangeGradient)"/>
+    <text x="100" y="24" font-family="Inter, -apple-system, sans-serif" font-size="14" font-weight="600" fill="white" text-anchor="middle">Data Team</text>
+  </g>
+  
+  <!-- Right column: Governance Office -->
+  <g transform="translate(550, 90)">
+    <rect width="200" height="36" rx="8" fill="url(#blueGradient)"/>
+    <text x="100" y="24" font-family="Inter, -apple-system, sans-serif" font-size="14" font-weight="600" fill="white" text-anchor="middle">Governance Office</text>
+  </g>
+  
+  <!-- Step 1: Data team creates -->
+  <g transform="translate(50, 145)">
+    <rect width="200" height="65" rx="6" fill="white" stroke="#e67e22" stroke-width="1"/>
+    <circle cx="20" cy="20" r="12" fill="url(#orangeGradient)"/>
+    <text x="20" y="24" font-family="Inter, -apple-system, sans-serif" font-size="10" font-weight="600" fill="white" text-anchor="middle">1</text>
+    <text x="42" y="22" font-family="Inter, -apple-system, sans-serif" font-size="11" font-weight="600" fill="#333333">Create conceptual.yml</text>
+    <text x="15" y="42" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#888888">• Best-guess domains/owners</text>
+    <text x="15" y="56" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#888888">• Or use UNKNOWN placeholders</text>
+  </g>
+  
+  <!-- Arrow 1 → Governance -->
+  <g transform="translate(260, 165)">
+    <line x1="0" y1="15" x2="280" y2="15" stroke="#e67e22" stroke-width="2" stroke-dasharray="6"/>
+    <polygon points="275,10 290,15 275,20" fill="#e67e22"/>
+    <text x="140" y="8" font-family="Inter, -apple-system, sans-serif" font-size="9" fill="#e67e22" text-anchor="middle">Share Git link</text>
+  </g>
+  
+  <!-- Step 2: Governance reviews -->
+  <g transform="translate(550, 145)">
+    <rect width="200" height="65" rx="6" fill="white" stroke="#3498db" stroke-width="1"/>
+    <circle cx="20" cy="20" r="12" fill="url(#blueGradient)"/>
+    <text x="20" y="24" font-family="Inter, -apple-system, sans-serif" font-size="10" font-weight="600" fill="white" text-anchor="middle">2</text>
+    <text x="42" y="22" font-family="Inter, -apple-system, sans-serif" font-size="11" font-weight="600" fill="#333333">Review concepts</text>
+    <text x="15" y="42" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#888888">• Validate domains</text>
+    <text x="15" y="56" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#888888">• Confirm owners</text>
+  </g>
+  
+  <!-- Arrow 2 ← Feedback -->
+  <g transform="translate(260, 235)">
+    <line x1="280" y1="15" x2="0" y2="15" stroke="#3498db" stroke-width="2" stroke-dasharray="6"/>
+    <polygon points="5,10 -10,15 5,20" fill="#3498db"/>
+    <text x="140" y="8" font-family="Inter, -apple-system, sans-serif" font-size="9" fill="#3498db" text-anchor="middle">Feedback / PR comments</text>
+  </g>
+  
+  <!-- Step 3: Data team updates -->
+  <g transform="translate(50, 225)">
+    <rect width="200" height="50" rx="6" fill="white" stroke="#e67e22" stroke-width="1"/>
+    <circle cx="20" cy="17" r="12" fill="url(#orangeGradient)"/>
+    <text x="20" y="21" font-family="Inter, -apple-system, sans-serif" font-size="10" font-weight="600" fill="white" text-anchor="middle">3</text>
+    <text x="42" y="20" font-family="Inter, -apple-system, sans-serif" font-size="11" font-weight="600" fill="#333333">Iterate &amp; update</text>
+    <text x="15" y="40" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#888888">Refine based on feedback</text>
+  </g>
+  
+  <!-- Step 4: Share taxonomy -->
+  <g transform="translate(50, 295)">
+    <rect width="200" height="50" rx="6" fill="white" stroke="#e67e22" stroke-width="1"/>
+    <circle cx="20" cy="17" r="12" fill="url(#orangeGradient)"/>
+    <text x="20" y="21" font-family="Inter, -apple-system, sans-serif" font-size="10" font-weight="600" fill="white" text-anchor="middle">4</text>
+    <text x="42" y="20" font-family="Inter, -apple-system, sans-serif" font-size="11" font-weight="600" fill="#333333">Share taxonomy.yml</text>
+    <text x="15" y="40" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#888888">Align vocabulary</text>
+  </g>
+  
+  <!-- Arrow 4 → Governance -->
+  <g transform="translate(260, 310)">
+    <line x1="0" y1="12" x2="280" y2="12" stroke="#e67e22" stroke-width="2" stroke-dasharray="6"/>
+    <polygon points="275,7 290,12 275,17" fill="#e67e22"/>
+    <text x="140" y="5" font-family="Inter, -apple-system, sans-serif" font-size="9" fill="#e67e22" text-anchor="middle">Validate with catalog</text>
+  </g>
+  
+  <!-- Step 5: Governance approves -->
+  <g transform="translate(550, 295)">
+    <rect width="200" height="50" rx="6" fill="white" stroke="#3498db" stroke-width="1"/>
+    <circle cx="20" cy="17" r="12" fill="url(#blueGradient)"/>
+    <text x="20" y="21" font-family="Inter, -apple-system, sans-serif" font-size="10" font-weight="600" fill="white" text-anchor="middle">5</text>
+    <text x="42" y="20" font-family="Inter, -apple-system, sans-serif" font-size="11" font-weight="600" fill="#333333">Approve taxonomy</text>
+    <text x="15" y="40" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#27ae60">✓ Matches enterprise vocab</text>
+  </g>
+  
+  <!-- Arrow approval -->
+  <g transform="translate(260, 365)">
+    <line x1="280" y1="12" x2="0" y2="12" stroke="#27ae60" stroke-width="2"/>
+    <polygon points="5,7 -10,12 5,17" fill="#27ae60"/>
+    <text x="140" y="5" font-family="Inter, -apple-system, sans-serif" font-size="9" fill="#27ae60" text-anchor="middle">Approved ✓</text>
+  </g>
+  
+  <!-- Step 6: Ongoing -->
+  <g transform="translate(50, 365)">
+    <rect width="200" height="50" rx="6" fill="white" stroke="#27ae60" stroke-width="2"/>
+    <circle cx="20" cy="17" r="12" fill="url(#greenGradient)"/>
+    <text x="20" y="21" font-family="Inter, -apple-system, sans-serif" font-size="10" font-weight="600" fill="white" text-anchor="middle">6</text>
+    <text x="42" y="20" font-family="Inter, -apple-system, sans-serif" font-size="11" font-weight="600" fill="#333333">CI validates ongoing</text>
+    <text x="15" y="40" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#27ae60">Tags flow to UC automatically</text>
+  </g>
+  
+  <!-- Step 6 (governance side) -->
+  <g transform="translate(550, 365)">
+    <rect width="200" height="50" rx="6" fill="white" stroke="#27ae60" stroke-width="2"/>
+    <circle cx="20" cy="17" r="12" fill="url(#greenGradient)"/>
+    <text x="20" y="21" font-family="Inter, -apple-system, sans-serif" font-size="10" font-weight="600" fill="white" text-anchor="middle">6</text>
+    <text x="42" y="20" font-family="Inter, -apple-system, sans-serif" font-size="11" font-weight="600" fill="#333333">Visibility without burden</text>
+    <text x="15" y="40" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#27ae60">Coverage reports, no spreadsheets</text>
+  </g>
+  
+  <!-- Result box -->
+  <g transform="translate(150, 450)">
+    <rect width="500" height="50" rx="10" fill="white" stroke="#27ae60" stroke-width="2"/>
+    <text x="250" y="22" font-family="Inter, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#27ae60" text-anchor="middle">
+      Shared vocabulary, clear ownership, async collaboration
+    </text>
+    <text x="250" y="40" font-family="Inter, -apple-system, sans-serif" font-size="11" fill="#888888" text-anchor="middle">
+      Governance embedded in the development workflow
+    </text>
+  </g>
+</svg>

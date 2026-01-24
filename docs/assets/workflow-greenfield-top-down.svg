@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" fill="none">
+  <defs>
+    <linearGradient id="orangeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e67e22"/>
+      <stop offset="100%" stop-color="#d35400"/>
+    </linearGradient>
+    <linearGradient id="greenGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#27ae60"/>
+      <stop offset="100%" stop-color="#1e8449"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="900" height="520" fill="#fafaf9"/>
+  
+  <!-- Title -->
+  <text x="450" y="40" font-family="Inter, -apple-system, sans-serif" font-size="24" font-weight="600" fill="#333333" text-anchor="middle">
+    Greenfield: Top-Down Workflow
+  </text>
+  <text x="450" y="62" font-family="Inter, -apple-system, sans-serif" font-size="14" fill="#888888" text-anchor="middle">
+    "We know what we're building"
+  </text>
+  
+  <!-- Step 1 -->
+  <g transform="translate(50, 100)">
+    <circle cx="24" cy="24" r="20" fill="url(#orangeGradient)"/>
+    <text x="24" y="30" font-family="Inter, -apple-system, sans-serif" font-size="14" font-weight="600" fill="white" text-anchor="middle">1</text>
+    
+    <text x="60" y="20" font-family="Inter, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#333333">Define Taxonomy</text>
+    <text x="60" y="38" font-family="Inter, -apple-system, sans-serif" font-size="11" fill="#888888">(optional — for validation)</text>
+    
+    <rect x="60" y="50" width="180" height="75" rx="6" fill="white" stroke="#e8e6e3" stroke-width="1"/>
+    <text x="72" y="70" font-family="monospace" font-size="10" fill="#e67e22">taxonomy.yml</text>
+    <text x="72" y="87" font-family="monospace" font-size="9" fill="#888888">confidentiality:</text>
+    <text x="72" y="100" font-family="monospace" font-size="9" fill="#888888">  - key: internal</text>
+    <text x="72" y="113" font-family="monospace" font-size="9" fill="#888888">regulatory: [GDPR, SOX]</text>
+  </g>
+  
+  <!-- Arrow 1→2 -->
+  <path d="M270 145 L310 145" stroke="#e67e22" stroke-width="2" stroke-linecap="round"/>
+  <polygon points="308,140 318,145 308,150" fill="#e67e22"/>
+  
+  <!-- Step 2 -->
+  <g transform="translate(330, 100)">
+    <circle cx="24" cy="24" r="20" fill="url(#orangeGradient)"/>
+    <text x="24" y="30" font-family="Inter, -apple-system, sans-serif" font-size="14" font-weight="600" fill="white" text-anchor="middle">2</text>
+    
+    <text x="60" y="20" font-family="Inter, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#333333">Define Concepts</text>
+    <text x="60" y="38" font-family="Inter, -apple-system, sans-serif" font-size="11" fill="#888888">Entities, domains, owners</text>
+    
+    <rect x="60" y="50" width="180" height="75" rx="6" fill="white" stroke="#e8e6e3" stroke-width="1"/>
+    <text x="72" y="70" font-family="monospace" font-size="10" fill="#e67e22">conceptual.yml</text>
+    <text x="72" y="87" font-family="monospace" font-size="9" fill="#888888">concepts:</text>
+    <text x="72" y="100" font-family="monospace" font-size="9" fill="#888888">  customer:</text>
+    <text x="72" y="113" font-family="monospace" font-size="9" fill="#888888">    domain: party</text>
+  </g>
+  
+  <!-- Arrow 2→3 -->
+  <path d="M550 145 L590 145" stroke="#e67e22" stroke-width="2" stroke-linecap="round"/>
+  <polygon points="588,140 598,145 588,150" fill="#e67e22"/>
+  
+  <!-- Step 3 -->
+  <g transform="translate(610, 100)">
+    <circle cx="24" cy="24" r="20" fill="url(#orangeGradient)"/>
+    <text x="24" y="30" font-family="Inter, -apple-system, sans-serif" font-size="14" font-weight="600" fill="white" text-anchor="middle">3</text>
+    
+    <text x="60" y="20" font-family="Inter, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#333333">Review with Governance</text>
+    <text x="60" y="38" font-family="Inter, -apple-system, sans-serif" font-size="11" fill="#888888">Share link, async approval</text>
+    
+    <rect x="60" y="50" width="180" height="75" rx="6" fill="white" stroke="#e8e6e3" stroke-width="1"/>
+    <text x="72" y="72" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#888888">📎 Share Git link</text>
+    <text x="72" y="90" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#888888">📤 Export to HTML/PDF</text>
+    <text x="72" y="108" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#27ae60">✓ Governance approves</text>
+  </g>
+  
+  <!-- Arrow down to row 2 -->
+  <path d="M450 200 L450 240" stroke="#e67e22" stroke-width="2" stroke-linecap="round"/>
+  <polygon points="445,238 450,248 455,238" fill="#e67e22"/>
+  
+  <!-- Step 4 -->
+  <g transform="translate(190, 270)">
+    <circle cx="24" cy="24" r="20" fill="#888888"/>
+    <text x="24" y="30" font-family="Inter, -apple-system, sans-serif" font-size="14" font-weight="600" fill="white" text-anchor="middle">4</text>
+    
+    <text x="60" y="20" font-family="Inter, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#333333">Build dbt Models</text>
+    <text x="60" y="38" font-family="Inter, -apple-system, sans-serif" font-size="11" fill="#888888">Tag with meta.concept</text>
+    
+    <rect x="60" y="50" width="220" height="85" rx="6" fill="white" stroke="#e8e6e3" stroke-width="1"/>
+    <text x="72" y="70" font-family="monospace" font-size="10" fill="#888888">schema.yml</text>
+    <text x="72" y="87" font-family="monospace" font-size="9" fill="#888888">models:</text>
+    <text x="72" y="100" font-family="monospace" font-size="9" fill="#888888">  - name: dim_customer</text>
+    <text x="72" y="113" font-family="monospace" font-size="9" fill="#888888">    meta:</text>
+    <text x="72" y="126" font-family="monospace" font-size="9" fill="#e67e22">      concept: customer</text>
+  </g>
+  
+  <!-- Arrow 4→5 -->
+  <path d="M490 320 L530 320" stroke="#888888" stroke-width="2" stroke-linecap="round"/>
+  <polygon points="528,315 538,320 528,325" fill="#888888"/>
+  
+  <!-- Step 5 -->
+  <g transform="translate(550, 270)">
+    <circle cx="24" cy="24" r="20" fill="url(#greenGradient)"/>
+    <text x="24" y="30" font-family="Inter, -apple-system, sans-serif" font-size="14" font-weight="600" fill="white" text-anchor="middle">5</text>
+    
+    <text x="60" y="20" font-family="Inter, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#333333">Validate in CI</text>
+    <text x="60" y="38" font-family="Inter, -apple-system, sans-serif" font-size="11" fill="#888888">Coverage enforced</text>
+    
+    <rect x="60" y="50" width="180" height="85" rx="6" fill="white" stroke="#27ae60" stroke-width="1"/>
+    <text x="72" y="72" font-family="monospace" font-size="10" fill="#888888">$ dcm validate</text>
+    <text x="72" y="95" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#27ae60">✓ All concepts covered</text>
+    <text x="72" y="113" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#27ae60">✓ Taxonomy validated</text>
+    <text x="72" y="131" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#27ae60">✓ Tags propagate to UC</text>
+  </g>
+  
+  <!-- Result box -->
+  <g transform="translate(200, 430)">
+    <rect width="500" height="55" rx="10" fill="white" stroke="#27ae60" stroke-width="2"/>
+    <text x="250" y="25" font-family="Inter, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#27ae60" text-anchor="middle">
+      ✓ Governance aligned from day one
+    </text>
+    <text x="250" y="44" font-family="Inter, -apple-system, sans-serif" font-size="12" fill="#888888" text-anchor="middle">
+      No rework. Shared vocabulary lives in code.
+    </text>
+  </g>
+</svg>

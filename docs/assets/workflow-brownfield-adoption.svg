@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" fill="none">
+  <defs>
+    <linearGradient id="orangeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e67e22"/>
+      <stop offset="100%" stop-color="#d35400"/>
+    </linearGradient>
+    <linearGradient id="greenGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#27ae60"/>
+      <stop offset="100%" stop-color="#1e8449"/>
+    </linearGradient>
+    <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#e67e22"/>
+      <stop offset="50%" stop-color="#f39c12"/>
+      <stop offset="100%" stop-color="#27ae60"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="900" height="500" fill="#fafaf9"/>
+  
+  <!-- Title -->
+  <text x="450" y="40" font-family="Inter, -apple-system, sans-serif" font-size="24" font-weight="600" fill="#333333" text-anchor="middle">
+    Brownfield: Progressive Adoption
+  </text>
+  <text x="450" y="62" font-family="Inter, -apple-system, sans-serif" font-size="14" fill="#888888" text-anchor="middle">
+    "We have 200 models and no governance"
+  </text>
+  
+  <!-- Timeline -->
+  <line x1="80" y1="420" x2="820" y2="420" stroke="#e8e6e3" stroke-width="4" stroke-linecap="round"/>
+  <line x1="80" y1="420" x2="820" y2="420" stroke="url(#progressGradient)" stroke-width="4" stroke-linecap="round"/>
+  
+  <!-- Day 0 -->
+  <g transform="translate(60, 95)">
+    <rect width="175" height="145" rx="8" fill="white" stroke="#e67e22" stroke-width="2"/>
+    <rect width="175" height="32" rx="8" fill="url(#orangeGradient)"/>
+    <rect y="24" width="175" height="8" fill="url(#orangeGradient)"/>
+    <text x="88" y="22" font-family="Inter, -apple-system, sans-serif" font-size="12" font-weight="600" fill="white" text-anchor="middle">Day 0: Sync</text>
+    
+    <text x="12" y="52" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#333333">Click Sync/Refresh or:</text>
+    <rect x="12" y="60" width="150" height="22" rx="4" fill="#f5f5f5"/>
+    <text x="20" y="75" font-family="monospace" font-size="9" fill="#888888">dcm sync --create-stubs</text>
+    
+    <text x="12" y="100" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#27ae60">✓ 12 concept stubs created</text>
+    <text x="12" y="115" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#27ae60">✓ 8 relationship stubs</text>
+    <text x="12" y="130" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#888888">→ See what you have</text>
+    
+    <!-- Timeline marker -->
+    <circle cx="88" cy="325" r="10" fill="#e67e22" stroke="white" stroke-width="2"/>
+    <line x1="88" y1="145" x2="88" y2="315" stroke="#e67e22" stroke-width="1" stroke-dasharray="4"/>
+    <text x="88" y="355" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#e67e22" text-anchor="middle" font-weight="600">Day 0</text>
+  </g>
+  
+  <!-- Day 1 -->
+  <g transform="translate(255, 95)">
+    <rect width="175" height="145" rx="8" fill="white" stroke="#f39c12" stroke-width="2"/>
+    <rect width="175" height="32" rx="8" fill="#f39c12"/>
+    <rect y="24" width="175" height="8" fill="#f39c12"/>
+    <text x="88" y="22" font-family="Inter, -apple-system, sans-serif" font-size="12" font-weight="600" fill="white" text-anchor="middle">Day 1: Assess</text>
+    
+    <text x="12" y="52" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#333333">Check status:</text>
+    <rect x="12" y="60" width="150" height="22" rx="4" fill="#f5f5f5"/>
+    <text x="20" y="75" font-family="monospace" font-size="9" fill="#888888">dcm status</text>
+    
+    <text x="12" y="100" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#888888">Concepts: 12 (0 enriched)</text>
+    <text x="12" y="115" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#e67e22">Coverage: 22%</text>
+    <text x="12" y="130" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#888888">→ Prioritize by risk</text>
+    
+    <!-- Timeline marker -->
+    <circle cx="88" cy="325" r="10" fill="#f39c12" stroke="white" stroke-width="2"/>
+    <line x1="88" y1="145" x2="88" y2="315" stroke="#f39c12" stroke-width="1" stroke-dasharray="4"/>
+    <text x="88" y="355" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#f39c12" text-anchor="middle" font-weight="600">Day 1</text>
+  </g>
+  
+  <!-- Week 1 -->
+  <g transform="translate(450, 95)">
+    <rect width="175" height="145" rx="8" fill="white" stroke="#f39c12" stroke-width="2"/>
+    <rect width="175" height="32" rx="8" fill="#f39c12"/>
+    <rect y="24" width="175" height="8" fill="#f39c12"/>
+    <text x="88" y="22" font-family="Inter, -apple-system, sans-serif" font-size="12" font-weight="600" fill="white" text-anchor="middle">Week 1: Enrich</text>
+    
+    <text x="12" y="52" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#333333">Priority domain first:</text>
+    <text x="12" y="70" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#888888">• Add domain, owner</text>
+    <text x="12" y="85" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#888888">• Add confidentiality</text>
+    <text x="12" y="100" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#888888">• Share with governance</text>
+    
+    <text x="12" y="120" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#f39c12">Coverage: 45%</text>
+    <text x="12" y="135" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#27ae60">✓ Finance domain done</text>
+    
+    <!-- Timeline marker -->
+    <circle cx="88" cy="325" r="10" fill="#f39c12" stroke="white" stroke-width="2"/>
+    <line x1="88" y1="145" x2="88" y2="315" stroke="#f39c12" stroke-width="1" stroke-dasharray="4"/>
+    <text x="88" y="355" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#f39c12" text-anchor="middle" font-weight="600">Week 1</text>
+  </g>
+  
+  <!-- Month 1 -->
+  <g transform="translate(645, 95)">
+    <rect width="175" height="145" rx="8" fill="white" stroke="#27ae60" stroke-width="2"/>
+    <rect width="175" height="32" rx="8" fill="url(#greenGradient)"/>
+    <rect y="24" width="175" height="8" fill="url(#greenGradient)"/>
+    <text x="88" y="22" font-family="Inter, -apple-system, sans-serif" font-size="12" font-weight="600" fill="white" text-anchor="middle">Month 1: Governed</text>
+    
+    <text x="12" y="52" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#333333">Gold layer complete:</text>
+    <text x="12" y="70" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#27ae60">✓ All dims/facts mapped</text>
+    <text x="12" y="85" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#27ae60">✓ CI enforcing coverage</text>
+    <text x="12" y="100" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#27ae60">✓ Tags flowing to UC</text>
+    
+    <text x="12" y="120" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#27ae60" font-weight="600">Coverage: 85%</text>
+    <text x="12" y="135" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#888888">Governance in code ✓</text>
+    
+    <!-- Timeline marker -->
+    <circle cx="88" cy="325" r="10" fill="#27ae60" stroke="white" stroke-width="2"/>
+    <line x1="88" y1="145" x2="88" y2="315" stroke="#27ae60" stroke-width="1" stroke-dasharray="4"/>
+    <text x="88" y="355" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#27ae60" text-anchor="middle" font-weight="600">Month 1</text>
+  </g>
+  
+  <!-- Bottom note -->
+  <g transform="translate(200, 450)">
+    <rect width="500" height="40" rx="8" fill="white" stroke="#e8e6e3" stroke-width="1"/>
+    <text x="250" y="26" font-family="Inter, -apple-system, sans-serif" font-size="12" fill="#888888" text-anchor="middle">
+      Progressive strictness: Start with warnings → Enable enforcement when ready
+    </text>
+  </g>
+</svg>
