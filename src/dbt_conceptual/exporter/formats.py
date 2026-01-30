@@ -1,6 +1,8 @@
 """Export format implementations for dbt-conceptual.
 
 Provides JSON and markdown exporters for various report types.
+
+v1.0: Simplified model - single models[] array, no realized_by.
 """
 
 import json
@@ -19,12 +21,13 @@ def _calculate_coverage_stats(state: ProjectState) -> dict[str, Any]:
     stub_concepts = sum(1 for c in state.concepts.values() if c.status == "stub")
     draft_concepts = sum(1 for c in state.concepts.values() if c.status == "draft")
 
-    concepts_with_silver = sum(1 for c in state.concepts.values() if c.silver_models)
-    concepts_with_gold = sum(1 for c in state.concepts.values() if c.gold_models)
+    concepts_with_models = sum(1 for c in state.concepts.values() if c.models)
 
     total_relationships = len(state.relationships)
-    realized_relationships = sum(
-        1 for r in state.relationships.values() if r.realized_by
+    complete_relationships = sum(
+        1
+        for r in state.relationships.values()
+        if r.get_status(state.concepts) == "complete"
     )
 
     return {
@@ -40,18 +43,10 @@ def _calculate_coverage_stats(state: ProjectState) -> dict[str, Any]:
             ),
         },
         "coverage": {
-            "silver": {
-                "count": concepts_with_silver,
+            "models": {
+                "count": concepts_with_models,
                 "percent": (
-                    int((concepts_with_silver / total_concepts) * 100)
-                    if total_concepts > 0
-                    else 0
-                ),
-            },
-            "gold": {
-                "count": concepts_with_gold,
-                "percent": (
-                    int((concepts_with_gold / total_concepts) * 100)
+                    int((concepts_with_models / total_concepts) * 100)
                     if total_concepts > 0
                     else 0
                 ),
@@ -59,9 +54,9 @@ def _calculate_coverage_stats(state: ProjectState) -> dict[str, Any]:
         },
         "relationships": {
             "total": total_relationships,
-            "realized": realized_relationships,
+            "complete": complete_relationships,
             "percent": (
-                int((realized_relationships / total_relationships) * 100)
+                int((complete_relationships / total_relationships) * 100)
                 if total_relationships > 0
                 else 0
             ),
@@ -91,8 +86,7 @@ def export_coverage_json(state: ProjectState, output: TextIO) -> None:
                 "name": concept.name,
                 "status": concept.status,
                 "owner": concept.owner,
-                "silver_models": concept.silver_models,
-                "gold_models": concept.gold_models,
+                "models": concept.models,
             }
         )
 
@@ -125,16 +119,12 @@ def export_coverage_markdown(state: ProjectState, output: TextIO) -> None:
         f"({stats['concepts']['complete']}/{stats['concepts']['total']}) |\n"
     )
     output.write(
-        f"| Silver Coverage | {stats['coverage']['silver']['percent']}% "
-        f"({stats['coverage']['silver']['count']} concepts) |\n"
+        f"| Model Coverage | {stats['coverage']['models']['percent']}% "
+        f"({stats['coverage']['models']['count']} concepts) |\n"
     )
     output.write(
-        f"| Gold Coverage | {stats['coverage']['gold']['percent']}% "
-        f"({stats['coverage']['gold']['count']} concepts) |\n"
-    )
-    output.write(
-        f"| Relationships Realized | {stats['relationships']['percent']}% "
-        f"({stats['relationships']['realized']}/{stats['relationships']['total']}) |\n"
+        f"| Relationships Complete | {stats['relationships']['percent']}% "
+        f"({stats['relationships']['complete']}/{stats['relationships']['total']}) |\n"
     )
     if stats["orphans"] > 0:
         output.write(f"| Orphan Models | {stats['orphans']} |\n")
@@ -158,14 +148,11 @@ def export_coverage_markdown(state: ProjectState, output: TextIO) -> None:
 
 
 def export_bus_matrix_json(state: ProjectState, output: TextIO) -> None:
-    """Export bus matrix as JSON."""
-    # Collect all fact tables
-    fact_tables: set[str] = set()
-    for rel in state.relationships.values():
-        if rel.realized_by:
-            fact_tables.update(rel.realized_by)
+    """Export bus matrix as JSON.
 
-    fact_tables_list = sorted(fact_tables)
+    Note: v1.0 removed realized_by from relationships, so this returns
+    minimal data. Bus matrix will be enhanced in future versions.
+    """
     relationships_list = [
         {
             "id": rel_id,
@@ -180,23 +167,12 @@ def export_bus_matrix_json(state: ProjectState, output: TextIO) -> None:
         )
     ]
 
-    # Build matrix
-    matrix: dict[str, list[str]] = {}
-    for fact in fact_tables_list:
-        matrix[fact] = []
-        for rel_id, rel in state.relationships.items():
-            if fact in (rel.realized_by or []):
-                matrix[fact].append(rel_id)
-
     data = {
-        "facts": fact_tables_list,
         "relationships": relationships_list,
-        "matrix": matrix,
         "summary": {
-            "total_facts": len(fact_tables_list),
             "total_relationships": len(relationships_list),
-            "total_realizations": sum(len(rels) for rels in matrix.values()),
         },
+        "note": "Bus matrix realization tracking coming in future version",
     }
 
     json.dump(data, output, indent=2)
@@ -204,48 +180,33 @@ def export_bus_matrix_json(state: ProjectState, output: TextIO) -> None:
 
 
 def export_bus_matrix_markdown(state: ProjectState, output: TextIO) -> None:
-    """Export bus matrix as markdown table."""
-    # Collect all fact tables
-    fact_tables: set[str] = set()
-    for rel in state.relationships.values():
-        if rel.realized_by:
-            fact_tables.update(rel.realized_by)
+    """Export bus matrix as markdown table.
 
-    fact_tables_list = sorted(fact_tables)
+    Note: v1.0 removed realized_by, so this shows relationships without
+    realization info.
+    """
     relationships_list = sorted(
         state.relationships.items(), key=lambda x: (x[1].from_concept, x[1].name)
     )
 
-    if not fact_tables_list:
-        output.write("### Bus Matrix\n\n")
-        output.write("*No fact tables found with `meta.realizes` tags.*\n\n")
-        return
-
     output.write("### Bus Matrix\n\n")
 
-    # Header row
-    output.write("| Fact Table |")
+    if not relationships_list:
+        output.write("*No relationships defined.*\n\n")
+        return
+
+    output.write("| Relationship | From | To | Cardinality |\n")
+    output.write("|-------------|------|-----|-------------|\n")
+
     for _rel_id, rel in relationships_list:
-        output.write(f" {rel.verb} |")
-    output.write("\n")
-
-    # Separator
-    output.write("|------------|")
-    for _ in relationships_list:
-        output.write("-----|")
-    output.write("\n")
-
-    # Data rows
-    for fact in fact_tables_list:
-        output.write(f"| `{fact}` |")
-        for _rel_id, rel in relationships_list:
-            if fact in (rel.realized_by or []):
-                output.write(" ✓ |")
-            else:
-                output.write("   |")
-        output.write("\n")
+        output.write(
+            f"| {rel.verb} | {rel.from_concept} | {rel.to_concept} | {rel.cardinality} |\n"
+        )
 
     output.write("\n")
+    output.write(
+        "*Note: Relationship realization tracking will be added in a future version.*\n\n"
+    )
 
 
 # ============================================================================
@@ -266,8 +227,7 @@ def export_status_json(state: ProjectState, output: TextIO) -> None:
                 "domain": concept.domain,
                 "status": concept.status,
                 "owner": concept.owner,
-                "silver_count": len(concept.silver_models),
-                "gold_count": len(concept.gold_models),
+                "model_count": len(concept.models),
             }
         )
 
@@ -279,8 +239,7 @@ def export_status_json(state: ProjectState, output: TextIO) -> None:
                 "name": rel.name,
                 "from": rel.from_concept,
                 "to": rel.to_concept,
-                "status": rel.status,
-                "realized_by": rel.realized_by,
+                "status": rel.get_status(state.concepts),
             }
         )
 
@@ -305,7 +264,7 @@ def export_status_markdown(state: ProjectState, output: TextIO) -> None:
     output.write(f"{stats['concepts']['stub']} stub)\n\n")
 
     output.write(f"**Relationships:** {stats['relationships']['total']} total ")
-    output.write(f"({stats['relationships']['realized']} realized)\n\n")
+    output.write(f"({stats['relationships']['complete']} complete)\n\n")
 
     # Group by domain
     domain_groups: dict[str, list[tuple[str, Any]]] = {}
@@ -325,16 +284,15 @@ def export_status_markdown(state: ProjectState, output: TextIO) -> None:
             )
 
         output.write(f"**{domain_name}** ({len(concepts)} concepts)\n\n")
-        output.write("| Concept | Status | Silver | Gold |\n")
-        output.write("|---------|--------|--------|------|\n")
+        output.write("| Concept | Status | Models |\n")
+        output.write("|---------|--------|--------|\n")
 
         for _cid, c in sorted(concepts, key=lambda x: x[1].name):
             status_icon = {"complete": "✅", "draft": "📝", "stub": "⚠️"}.get(
                 c.status, "❓"
             )
             output.write(
-                f"| {c.name} | {status_icon} {c.status} | "
-                f"{len(c.silver_models)} | {len(c.gold_models)} |\n"
+                f"| {c.name} | {status_icon} {c.status} | {len(c.models)} |\n"
             )
         output.write("\n")
 
@@ -349,7 +307,6 @@ def export_orphans_json(state: ProjectState, output: TextIO) -> None:
     orphans_data = [
         {
             "name": orphan.name,
-            "layer": orphan.layer,
             "path": orphan.path,
             "description": orphan.description,
         }
@@ -373,16 +330,16 @@ def export_orphans_markdown(state: ProjectState, output: TextIO) -> None:
 
     if not orphans:
         output.write("✅ **No orphan models found!**\n\n")
-        output.write("All models have `meta.concept` or `meta.realizes` tags.\n\n")
+        output.write("All models have `meta.concept` tags.\n\n")
         return
 
     output.write(f"Found **{len(orphans)} models** without conceptual tags:\n\n")
-    output.write("| Model | Layer |\n")
-    output.write("|-------|-------|\n")
+    output.write("| Model | Path |\n")
+    output.write("|-------|------|\n")
 
     for orphan in orphans:
-        layer = orphan.layer or "unknown"
-        output.write(f"| `{orphan.name}` | {layer} |\n")
+        path = orphan.path or "-"
+        output.write(f"| `{orphan.name}` | {path} |\n")
 
     output.write("\n")
 

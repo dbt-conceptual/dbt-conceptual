@@ -1,5 +1,9 @@
-"""Scanner for finding dbt model files in a project."""
+"""Scanner for finding dbt model files in a project.
 
+v1.0: Only scans gold layer paths for models.
+"""
+
+import fnmatch
 import logging
 from collections.abc import Iterator
 from pathlib import Path
@@ -12,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class DbtProjectScanner:
-    """Scans a dbt project for model files."""
+    """Scans a dbt project for model files in gold layer paths."""
 
     def __init__(self, config: Config):
         """Initialize the scanner.
@@ -23,24 +27,27 @@ class DbtProjectScanner:
         self.config = config
 
     def find_schema_files(self) -> Iterator[Path]:
-        """Find all schema.yml files in the project.
+        """Find all schema.yml files matching gold layer paths.
 
         Yields:
             Path objects for each found schema YAML file
         """
         project_dir = self.config.project_dir
 
-        # Search in configured bronze, silver, and gold paths
-        search_paths = (
-            self.config.bronze_paths + self.config.silver_paths + self.config.gold_paths
-        )
-
-        for search_path in search_paths:
-            full_path = project_dir / search_path
-            if full_path.exists():
-                # Find all .yml and .yaml files
-                yield from full_path.rglob("*.yml")
-                yield from full_path.rglob("*.yaml")
+        for pattern in self.config.gold_paths:
+            # Handle glob patterns
+            if "*" in pattern:
+                # Use glob to find matching files
+                yield from project_dir.glob(pattern)
+            else:
+                # Direct path
+                full_path = project_dir / pattern
+                if full_path.is_file():
+                    yield full_path
+                elif full_path.is_dir():
+                    # Find all .yml and .yaml files in directory
+                    yield from full_path.rglob("*.yml")
+                    yield from full_path.rglob("*.yaml")
 
     def load_schema_file(self, schema_file: Path) -> dict:
         """Load and parse a schema YAML file.
@@ -72,7 +79,10 @@ class DbtProjectScanner:
             return models
 
         # Calculate relative path from project root
-        rel_path = file_path.relative_to(self.config.project_dir).parent
+        try:
+            rel_path = file_path.relative_to(self.config.project_dir)
+        except ValueError:
+            rel_path = file_path
 
         for model in schema_data.get("models", []):
             if not isinstance(model, dict):
@@ -85,13 +95,7 @@ class DbtProjectScanner:
             meta = model.get("meta", {})
             description = model.get("description")
 
-            # Determine layer
-            layer = self.config.get_layer(str(rel_path))
-
-            # Determine model type
-            model_type = self.config.get_model_type(model_name)
-
-            # Extract tags for tag validation
+            # Extract tags for databricks support
             config = model.get("config", {})
             tags = model.get("tags", []) or config.get("tags", [])
             if not isinstance(tags, list):
@@ -108,8 +112,6 @@ class DbtProjectScanner:
                     "description": description,
                     "meta": meta,
                     "path": str(rel_path),
-                    "layer": layer,
-                    "type": model_type,
                     "file": str(file_path),
                     "tags": tags,
                     "databricks_tags": databricks_tags,
@@ -119,66 +121,46 @@ class DbtProjectScanner:
         return models
 
     def scan(self) -> list[dict]:
-        """Scan the entire dbt project for models with meta tags.
+        """Scan the dbt project for models in gold layer paths.
 
         Returns:
             List of all models found with their metadata
         """
         all_models = []
+        seen_files: set[Path] = set()
 
         for schema_file in self.find_schema_files():
+            # Avoid processing the same file twice (glob patterns may overlap)
+            resolved = schema_file.resolve()
+            if resolved in seen_files:
+                continue
+            seen_files.add(resolved)
+
             try:
                 schema_data = self.load_schema_file(schema_file)
                 models = self.extract_models_from_schema(schema_data, schema_file)
                 all_models.extend(models)
             except yaml.YAMLError as e:
-                # Log warning but continue scanning
                 logger.warning("Failed to parse %s: %s", schema_file, e)
             except Exception as e:
-                # Log warning but continue scanning
                 logger.warning("Error processing %s: %s", schema_file, e)
 
         return all_models
 
-    def find_model_files(self) -> dict[str, list[str]]:
-        """Find all .sql model files in bronze, silver, and gold paths.
+    def _matches_gold_paths(self, path: str) -> bool:
+        """Check if a path matches any gold layer pattern.
+
+        Args:
+            path: Path to check
 
         Returns:
-            Dictionary with 'bronze', 'silver', and 'gold' keys containing lists of model names
+            True if path matches a gold pattern
         """
-        project_dir = self.config.project_dir
-        models: dict[str, list[str]] = {"bronze": [], "silver": [], "gold": []}
-
-        # Scan bronze paths
-        for search_path in self.config.bronze_paths:
-            full_path = project_dir / search_path
-            if full_path.exists():
-                for sql_file in full_path.rglob("*.sql"):
-                    model_name = sql_file.stem
-                    if model_name not in models["bronze"]:
-                        models["bronze"].append(model_name)
-
-        # Scan silver paths
-        for search_path in self.config.silver_paths:
-            full_path = project_dir / search_path
-            if full_path.exists():
-                for sql_file in full_path.rglob("*.sql"):
-                    model_name = sql_file.stem
-                    if model_name not in models["silver"]:
-                        models["silver"].append(model_name)
-
-        # Scan gold paths
-        for search_path in self.config.gold_paths:
-            full_path = project_dir / search_path
-            if full_path.exists():
-                for sql_file in full_path.rglob("*.sql"):
-                    model_name = sql_file.stem
-                    if model_name not in models["gold"]:
-                        models["gold"].append(model_name)
-
-        # Sort for consistency
-        models["bronze"].sort()
-        models["silver"].sort()
-        models["gold"].sort()
-
-        return models
+        for pattern in self.config.gold_paths:
+            if fnmatch.fnmatch(path, pattern):
+                return True
+            # Also check prefix match for non-glob portions
+            base_pattern = pattern.split("*")[0].rstrip("/")
+            if base_pattern and path.startswith(base_pattern):
+                return True
+        return False

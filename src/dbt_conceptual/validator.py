@@ -1,4 +1,13 @@
-"""Validation logic for conceptual models and their dbt implementations."""
+"""Validation logic for conceptual models and their dbt implementations.
+
+v1.0 Validation Rules:
+- E002: Relationship references undefined concept (always error, creates ghost)
+- W101: Orphan model not linked to any concept (configurable)
+- W102: Unimplemented concept - no models tagged (configurable)
+- W104: Missing definition on concept/relationship (configurable)
+- I001: Stub concept needs domain (info)
+- I002: Stub relationship needs verb (info)
+"""
 
 from dataclasses import dataclass
 from enum import Enum
@@ -38,21 +47,13 @@ class ValidationIssue:
 class Validator:
     """Validates conceptual model and dbt implementation correspondence."""
 
-    # Required fields by concept status
-    REQUIRED_FIELDS = {
-        "stub": ["name"],
-        "draft": ["name", "domain"],
-        "complete": ["name", "domain", "owner", "definition"],
-        "deprecated": ["name", "domain", "owner", "definition"],
-    }
-
     def __init__(self, config: Config, state: ProjectState, no_drafts: bool = False):
         """Initialize the validator.
 
         Args:
             config: Configuration object
             state: Project state to validate
-            no_drafts: If True, treat stub/draft concepts and relationships as errors
+            no_drafts: If True, treat stub/draft concepts as errors
         """
         self.config = config
         self.state = state
@@ -73,154 +74,21 @@ class Validator:
         # Configurable rules
         self._validate_orphan_models()
         self._validate_unimplemented_concepts()
-        self._validate_unrealized_relationships()
         self._validate_missing_definitions()
-        self._validate_domain_mismatch()
 
-        # Tag validation (opt-in)
-        if self.config.validation.tag_validation.enabled:
-            self._validate_tag_drift()
-
-        # Other validations (always run)
-        self._validate_concept_required_fields()
+        # Always run - domain references
         self._validate_domain_references()
-        self._validate_relationship_endpoint_implementation()
-        self._validate_group_name_collisions()
-        self._validate_deprecated_references()
-        self._check_gold_only_concepts()
+
+        # Info/stub checks
         self._check_stub_concepts()
 
         return self.issues
 
-    def _validate_orphan_models(self) -> None:
-        """Check for models not linked to any concept."""
-        severity = _rule_to_severity(self.config.validation.orphan_models)
-        if severity is None:
-            return
-
-        if self.state.orphan_models:
-            for orphan in self.state.orphan_models:
-                self.issues.append(
-                    ValidationIssue(
-                        severity=severity,
-                        code="W101",
-                        message=f"Model '{orphan.name}' is not linked to any concept",
-                        context={"model": orphan.name, "layer": orphan.layer},
-                    )
-                )
-
-    def _validate_unimplemented_concepts(self) -> None:
-        """Check for concepts with no implementing models."""
-        severity = _rule_to_severity(self.config.validation.unimplemented_concepts)
-        if severity is None:
-            return
-
-        for concept_id, concept in self.state.concepts.items():
-            if concept.status == "deprecated":
-                continue
-            if not concept.silver_models and not concept.gold_models:
-                self.issues.append(
-                    ValidationIssue(
-                        severity=severity,
-                        code="W102",
-                        message=f"Concept '{concept_id}' has no implementing models",
-                        context={"concept": concept_id, "status": concept.status},
-                    )
-                )
-
-    def _validate_unrealized_relationships(self) -> None:
-        """Check for relationships with no realizing models."""
-        severity = _rule_to_severity(self.config.validation.unrealized_relationships)
-        if severity is None:
-            return
-
-        for rel_id, rel in self.state.relationships.items():
-            if not rel.realized_by:
-                self.issues.append(
-                    ValidationIssue(
-                        severity=severity,
-                        code="W103",
-                        message=f"Relationship '{rel_id}' ({rel.from_concept} -> {rel.to_concept}) is not realized by any model",
-                        context={
-                            "relationship": rel_id,
-                            "from": rel.from_concept,
-                            "to": rel.to_concept,
-                        },
-                    )
-                )
-
-    def _validate_missing_definitions(self) -> None:
-        """Check for non-stub concepts missing definitions."""
-        severity = _rule_to_severity(self.config.validation.missing_definitions)
-        if severity is None:
-            return
-
-        for concept_id, concept in self.state.concepts.items():
-            if concept.status in ["stub", "deprecated"]:
-                continue
-            if not concept.definition:
-                self.issues.append(
-                    ValidationIssue(
-                        severity=severity,
-                        code="W104",
-                        message=f"Concept '{concept_id}' is missing a definition",
-                        context={"concept": concept_id, "status": concept.status},
-                    )
-                )
-
-    def _validate_domain_mismatch(self) -> None:
-        """Check for models with meta.domain that doesn't match concept domain."""
-        severity = _rule_to_severity(self.config.validation.domain_mismatch)
-        if severity is None:
-            return
-
-        # This would require tracking model domains in state
-        # For now, skip - would need to enhance state to track this
-        pass
-
-    def _validate_concept_required_fields(self) -> None:
-        """Validate that concepts have required fields based on their status."""
-        for concept_id, concept in self.state.concepts.items():
-            status = concept.status
-            required = self.REQUIRED_FIELDS.get(status, [])
-
-            missing = []
-            for field in required:
-                value = getattr(concept, field, None)
-                if value is None:
-                    missing.append(field)
-
-            if missing and status != "stub":
-                self.issues.append(
-                    ValidationIssue(
-                        severity=(
-                            Severity.ERROR if status == "complete" else Severity.WARNING
-                        ),
-                        code="E001",
-                        message=f"Concept '{concept_id}' is missing required fields for status '{status}': {', '.join(missing)}",
-                        context={
-                            "concept": concept_id,
-                            "status": status,
-                            "missing": missing,
-                        },
-                    )
-                )
-
-    def _validate_domain_references(self) -> None:
-        """Validate that concept domain references exist."""
-        for concept_id, concept in self.state.concepts.items():
-            if concept.domain and concept.domain not in self.state.domains:
-                self.issues.append(
-                    ValidationIssue(
-                        severity=Severity.WARNING,
-                        code="W001",
-                        message=f"Concept '{concept_id}' references unknown domain '{concept.domain}'",
-                        context={"concept": concept_id, "domain": concept.domain},
-                    )
-                )
-
     def _validate_relationship_endpoints(self) -> None:
-        """Validate that relationship endpoints reference existing concepts."""
+        """Validate that relationship endpoints reference existing concepts.
+
+        E002: Always an error - creates ghost concepts.
+        """
         for rel_id, rel in self.state.relationships.items():
             if rel.from_concept not in self.state.concepts:
                 self.issues.append(
@@ -248,109 +116,127 @@ class Validator:
                     )
                 )
 
-    def _validate_relationship_endpoint_implementation(self) -> None:
-        """Validate that realized relationships have implemented endpoint concepts."""
-        for rel_id, rel in self.state.relationships.items():
-            # Only check if the relationship is realized
-            if not rel.realized_by:
-                continue
+    def _validate_orphan_models(self) -> None:
+        """Check for models not linked to any concept.
 
-            # Check if both endpoint concepts have models
-            from_concept = self.state.concepts.get(rel.from_concept)
-            to_concept = self.state.concepts.get(rel.to_concept)
+        W101: Configurable severity.
+        """
+        severity = _rule_to_severity(
+            self.config.validation.get_severity("orphan_models", "gold")
+        )
+        if severity is None:
+            return
 
-            if from_concept:
-                if not from_concept.silver_models and not from_concept.gold_models:
-                    self.issues.append(
-                        ValidationIssue(
-                            severity=Severity.ERROR,
-                            code="E003",
-                            message=f"Relationship '{rel_id}' is realized but '{rel.from_concept}' has no implementing models",
-                            context={
-                                "relationship": rel_id,
-                                "concept": rel.from_concept,
-                                "realized_by": rel.realized_by,
-                            },
-                        )
-                    )
-
-            if to_concept:
-                if not to_concept.silver_models and not to_concept.gold_models:
-                    self.issues.append(
-                        ValidationIssue(
-                            severity=Severity.ERROR,
-                            code="E003",
-                            message=f"Relationship '{rel_id}' is realized but '{rel.to_concept}' has no implementing models",
-                            context={
-                                "relationship": rel_id,
-                                "concept": rel.to_concept,
-                                "realized_by": rel.realized_by,
-                            },
-                        )
-                    )
-
-    def _validate_group_name_collisions(self) -> None:
-        """Validate that group names don't collide with relationship names."""
-        # Build set of relationship names
-        rel_names = {rel.name for rel in self.state.relationships.values()}
-
-        for group_name in self.state.groups:
-            if group_name in rel_names:
+        if self.state.orphan_models:
+            for orphan in self.state.orphan_models:
                 self.issues.append(
                     ValidationIssue(
-                        severity=Severity.ERROR,
-                        code="E004",
-                        message=f"Group name '{group_name}' collides with relationship name",
-                        context={"group": group_name},
+                        severity=severity,
+                        code="W101",
+                        message=f"Model '{orphan.name}' is not linked to any concept",
+                        context={"model": orphan.name, "path": orphan.path},
                     )
                 )
 
-    def _validate_deprecated_references(self) -> None:
-        """Warn when models reference deprecated concepts."""
-        for concept_id, concept in self.state.concepts.items():
-            if concept.status == "deprecated":
-                if concept.silver_models or concept.gold_models:
-                    all_models = concept.silver_models + concept.gold_models
-                    self.issues.append(
-                        ValidationIssue(
-                            severity=Severity.WARNING,
-                            code="W002",
-                            message=f"Deprecated concept '{concept_id}' is still referenced by models: {', '.join(all_models)}",
-                            context={
-                                "concept": concept_id,
-                                "models": all_models,
-                                "replaced_by": concept.replaced_by,
-                            },
-                        )
-                    )
+    def _validate_unimplemented_concepts(self) -> None:
+        """Check for concepts with no implementing models.
 
-    def _check_gold_only_concepts(self) -> None:
-        """Warn about concepts that only have gold models (unusual pattern)."""
+        W102: Configurable severity.
+        """
+        severity = _rule_to_severity(
+            self.config.validation.get_severity("unimplemented_concepts", "gold")
+        )
+        if severity is None:
+            return
+
         for concept_id, concept in self.state.concepts.items():
-            if concept.gold_models and not concept.silver_models:
+            if concept.is_ghost:
+                continue  # Ghosts are already errors
+
+            if not concept.models:
+                self.issues.append(
+                    ValidationIssue(
+                        severity=severity,
+                        code="W102",
+                        message=f"Concept '{concept_id}' has no implementing models",
+                        context={"concept": concept_id, "status": concept.status},
+                    )
+                )
+
+    def _validate_missing_definitions(self) -> None:
+        """Check for non-stub concepts/relationships missing definitions.
+
+        W104: Configurable severity.
+        """
+        severity = _rule_to_severity(
+            self.config.validation.get_severity("missing_definitions", "gold")
+        )
+        if severity is None:
+            return
+
+        # Check concepts
+        for concept_id, concept in self.state.concepts.items():
+            if concept.status == "stub" or concept.is_ghost:
+                continue
+            if not concept.definition:
+                self.issues.append(
+                    ValidationIssue(
+                        severity=severity,
+                        code="W104",
+                        message=f"Concept '{concept_id}' is missing a definition",
+                        context={"concept": concept_id, "status": concept.status},
+                    )
+                )
+
+        # Check relationships
+        for rel_id, rel in self.state.relationships.items():
+            if not rel.definition:
+                self.issues.append(
+                    ValidationIssue(
+                        severity=severity,
+                        code="W104",
+                        message=f"Relationship '{rel_id}' is missing a definition",
+                        context={"relationship": rel_id},
+                    )
+                )
+
+    def _validate_domain_references(self) -> None:
+        """Validate that concept domain references exist.
+
+        W001: Warning when domain not found.
+        """
+        for concept_id, concept in self.state.concepts.items():
+            if concept.domain and concept.domain not in self.state.domains:
                 self.issues.append(
                     ValidationIssue(
                         severity=Severity.WARNING,
-                        code="W003",
-                        message=f"Concept '{concept_id}' has gold models but no silver models (unusual)",
-                        context={
-                            "concept": concept_id,
-                            "gold_models": concept.gold_models,
-                        },
+                        code="W001",
+                        message=f"Concept '{concept_id}' references unknown domain '{concept.domain}'",
+                        context={"concept": concept_id, "domain": concept.domain},
                     )
                 )
 
     def _check_stub_concepts(self) -> None:
-        """Info messages for stub concepts that need attention (or errors if --no-drafts)."""
+        """Info messages for stub concepts/relationships (or errors if --no-drafts).
+
+        I001: Stub concept needs enrichment
+        I002: Stub relationship needs enrichment
+        """
+        # Check concepts
         for concept_id, concept in self.state.concepts.items():
+            if concept.is_ghost:
+                continue  # Ghosts have their own errors
+
             if concept.status in ("stub", "draft"):
                 missing = []
-                for field in ["domain", "owner", "definition"]:
-                    if getattr(concept, field, None) is None:
-                        missing.append(field)
+                if not concept.domain:
+                    missing.append("domain")
+                if not concept.owner:
+                    missing.append("owner")
+                if not concept.definition:
+                    missing.append("definition")
 
                 if missing:
-                    # If --no-drafts is set, treat as error; otherwise info
                     severity = Severity.ERROR if self.no_drafts else Severity.INFO
                     code = "E201" if self.no_drafts else "I001"
                     status_label = concept.status.capitalize()
@@ -368,148 +254,34 @@ class Validator:
                         )
                     )
 
-        # Also check relationships
-        for _rel_id, rel in self.state.relationships.items():
-            if rel.status in ("stub", "draft"):
+        # Check relationships
+        for rel_id, rel in self.state.relationships.items():
+            status = rel.get_status(self.state.concepts)
+            if status == "stub":
                 missing = []
-                if not rel.domains:
-                    missing.append("domain")
-                if rel.cardinality == "N:M" and not rel.realized_by:
-                    missing.append("realization")
                 if not rel.definition:
                     missing.append("definition")
 
-                if missing or rel.status in ("stub", "draft"):
-                    # If --no-drafts is set, treat as error; otherwise info
-                    severity = Severity.ERROR if self.no_drafts else Severity.INFO
-                    code = "E202" if self.no_drafts else "I002"
-                    status_label = rel.status.capitalize()
+                severity = Severity.ERROR if self.no_drafts else Severity.INFO
+                code = "E202" if self.no_drafts else "I002"
 
-                    if missing:
-                        msg = f"{status_label} relationship '{rel.name}' needs enrichment: missing {', '.join(missing)}"
-                    else:
-                        msg = f"{status_label} relationship '{rel.name}' is incomplete"
+                if missing:
+                    msg = f"Stub relationship '{rel.name}' needs enrichment: missing {', '.join(missing)}"
+                else:
+                    msg = f"Stub relationship '{rel.name}' has stub/ghost endpoint concepts"
 
-                    self.issues.append(
-                        ValidationIssue(
-                            severity=severity,
-                            code=code,
-                            message=msg,
-                            context={
-                                "relationship": rel.name,
-                                "missing": missing,
-                                "status": rel.status,
-                            },
-                        )
-                    )
-
-    def _validate_tag_drift(self) -> None:
-        """Validate model tags match their concept metadata.
-
-        This detects drift between dbt model tags and conceptual model metadata.
-        Checks:
-        - Missing domain tags on models
-        - Wrong domain tags (tag doesn't match concept domain)
-        - Missing owner tags on models
-        - Conflicting owner tags (multiple concepts with different owners)
-        """
-        tag_config = self.config.validation.tag_validation
-
-        for model_name, model_info in self.state.models.items():
-            # Skip models without concept linkage
-            if not model_info.concept:
-                continue
-
-            concept = self.state.concepts.get(model_info.concept)
-            if not concept or concept.is_ghost:
-                continue
-
-            # Get expected domain from concept
-            expected_domain = concept.domain
-            if not expected_domain:
-                continue  # Concept has no domain, skip
-
-            # Check domain tag
-            if not model_info.domain_tags:
                 self.issues.append(
                     ValidationIssue(
-                        severity=Severity.WARNING,
-                        code="T001",
-                        message=f"Model '{model_name}' is missing domain tag (expected: {expected_domain})",
+                        severity=severity,
+                        code=code,
+                        message=msg,
                         context={
-                            "model": model_name,
-                            "concept": model_info.concept,
-                            "expected_domain": expected_domain,
+                            "relationship": rel.name,
+                            "missing": missing,
+                            "status": status,
                         },
                     )
                 )
-            elif expected_domain not in model_info.domain_tags:
-                self.issues.append(
-                    ValidationIssue(
-                        severity=Severity.WARNING,
-                        code="T002",
-                        message=f"Model '{model_name}' has wrong domain tag: {model_info.domain_tags} (expected: {expected_domain})",
-                        context={
-                            "model": model_name,
-                            "concept": model_info.concept,
-                            "expected_domain": expected_domain,
-                            "actual_tags": model_info.domain_tags,
-                        },
-                    )
-                )
-
-            # Check if multiple domains allowed
-            if (
-                not tag_config.domains_allow_multiple
-                and len(model_info.domain_tags) > 1
-            ):
-                self.issues.append(
-                    ValidationIssue(
-                        severity=Severity.WARNING,
-                        code="T003",
-                        message=f"Model '{model_name}' has multiple domain tags but only one is allowed: {model_info.domain_tags}",
-                        context={
-                            "model": model_name,
-                            "domain_tags": model_info.domain_tags,
-                        },
-                    )
-                )
-
-            # Get expected owner (from concept or domain)
-            expected_owner = concept.owner
-            if not expected_owner:
-                domain_state = self.state.domains.get(expected_domain)
-                if domain_state:
-                    expected_owner = domain_state.owner
-
-            if expected_owner:
-                if not model_info.owner_tag:
-                    self.issues.append(
-                        ValidationIssue(
-                            severity=Severity.WARNING,
-                            code="T004",
-                            message=f"Model '{model_name}' is missing owner tag (expected: {expected_owner})",
-                            context={
-                                "model": model_name,
-                                "concept": model_info.concept,
-                                "expected_owner": expected_owner,
-                            },
-                        )
-                    )
-                elif model_info.owner_tag != expected_owner:
-                    self.issues.append(
-                        ValidationIssue(
-                            severity=Severity.WARNING,
-                            code="T005",
-                            message=f"Model '{model_name}' has wrong owner tag: {model_info.owner_tag} (expected: {expected_owner})",
-                            context={
-                                "model": model_name,
-                                "concept": model_info.concept,
-                                "expected_owner": expected_owner,
-                                "actual_owner": model_info.owner_tag,
-                            },
-                        )
-                    )
 
     def has_errors(self) -> bool:
         """Check if there are any error-level issues.

@@ -11,8 +11,7 @@ def test_concept_state_creation() -> None:
         domain="party",
         owner="data_team",
         definition="A person who buys products",
-        silver_models=["stg_customer"],
-        gold_models=["dim_customer"],
+        models=["dim_customer", "stg_customer"],
     )
 
     assert concept.name == "Customer"
@@ -20,8 +19,7 @@ def test_concept_state_creation() -> None:
     assert concept.owner == "data_team"
     assert concept.definition == "A person who buys products"
     assert concept.status == "complete"  # Derived: has domain and models
-    assert concept.silver_models == ["stg_customer"]
-    assert concept.gold_models == ["dim_customer"]
+    assert concept.models == ["dim_customer", "stg_customer"]
 
 
 def test_concept_status_derivation() -> None:
@@ -35,16 +33,8 @@ def test_concept_status_derivation() -> None:
     assert draft.status == "draft"
 
     # Complete: has domain and at least one model
-    complete = ConceptState(
-        name="Complete", domain="party", gold_models=["dim_complete"]
-    )
+    complete = ConceptState(name="Complete", domain="party", models=["dim_complete"])
     assert complete.status == "complete"
-
-    # Deprecated: replaced_by is set
-    deprecated = ConceptState(
-        name="Old", domain="party", replaced_by="new", gold_models=["dim_old"]
-    )
-    assert deprecated.status == "deprecated"
 
 
 def test_relationship_state_creation() -> None:
@@ -54,7 +44,6 @@ def test_relationship_state_creation() -> None:
         from_concept="customer",
         to_concept="order",
         cardinality="1:N",
-        domains=["transaction"],
     )
 
     assert rel.verb == "places"
@@ -62,66 +51,35 @@ def test_relationship_state_creation() -> None:
     assert rel.from_concept == "customer"
     assert rel.to_concept == "order"
     assert rel.cardinality == "1:N"
-    assert rel.domains == ["transaction"]
-    assert rel.realized_by == []
 
 
 def test_relationship_status_derivation() -> None:
-    """Test that relationship status is correctly derived."""
-    # Stub: no verb (shouldn't happen in practice)
-    stub = RelationshipState(verb="", from_concept="a", to_concept="b")
-    assert stub.status == "stub"
+    """Test that relationship status is correctly derived based on concepts."""
+    # Create concepts for testing
+    concepts = {
+        "complete": ConceptState(name="Complete", domain="test", models=["model1"]),
+        "draft": ConceptState(name="Draft", domain="test"),
+        "stub": ConceptState(name="Stub"),  # No domain = stub
+        "ghost": ConceptState(name="Ghost", is_ghost=True),
+    }
 
-    # Draft: no domains
-    draft = RelationshipState(verb="relates", from_concept="a", to_concept="b")
-    assert draft.status == "draft"
-
-    # Draft: N:M without realization
-    nm_draft = RelationshipState(
-        verb="relates",
-        from_concept="a",
-        to_concept="b",
-        cardinality="N:M",
-        domains=["test"],
+    # Complete: both endpoints are draft or complete
+    rel_complete = RelationshipState(
+        verb="relates", from_concept="complete", to_concept="draft"
     )
-    assert nm_draft.status == "draft"
+    assert rel_complete.get_status(concepts) == "complete"
 
-    # Complete: has domain and not N:M
-    complete = RelationshipState(
-        verb="relates",
-        from_concept="a",
-        to_concept="b",
-        cardinality="1:N",
-        domains=["test"],
+    # Stub: one endpoint is stub
+    rel_stub_from = RelationshipState(
+        verb="relates", from_concept="stub", to_concept="complete"
     )
-    assert complete.status == "complete"
+    assert rel_stub_from.get_status(concepts) == "stub"
 
-    # Complete: N:M with realization
-    nm_complete = RelationshipState(
-        verb="relates",
-        from_concept="a",
-        to_concept="b",
-        cardinality="N:M",
-        domains=["test"],
-        realized_by=["bridge_table"],
+    # Stub: one endpoint is ghost
+    rel_ghost = RelationshipState(
+        verb="relates", from_concept="complete", to_concept="ghost"
     )
-    assert nm_complete.status == "complete"
-
-
-def test_relationship_custom_name() -> None:
-    """Test relationship custom name override."""
-    # Without custom_name: derived format
-    rel = RelationshipState(verb="places", from_concept="customer", to_concept="order")
-    assert rel.name == "customer:places:order"
-
-    # With custom_name: use override
-    custom_rel = RelationshipState(
-        verb="places",
-        from_concept="customer",
-        to_concept="order",
-        custom_name="customer_order_placement",
-    )
-    assert custom_rel.name == "customer_order_placement"
+    assert rel_ghost.get_status(concepts) == "stub"
 
 
 def test_project_state_creation() -> None:
@@ -130,7 +88,6 @@ def test_project_state_creation() -> None:
 
     assert state.concepts == {}
     assert state.relationships == {}
-    assert state.groups == {}
     assert state.domains == {}
     assert state.orphan_models == []
     assert state.metadata == {}

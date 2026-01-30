@@ -1,4 +1,7 @@
-"""Coverage report exporter for conceptual models."""
+"""Coverage report exporter for conceptual models.
+
+v1.0: Simplified model - single models[] array.
+"""
 
 from typing import TextIO
 
@@ -20,12 +23,13 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
     stub_concepts = sum(1 for c in state.concepts.values() if c.status == "stub")
     draft_concepts = sum(1 for c in state.concepts.values() if c.status == "draft")
 
-    concepts_with_silver = sum(1 for c in state.concepts.values() if c.silver_models)
-    concepts_with_gold = sum(1 for c in state.concepts.values() if c.gold_models)
+    concepts_with_models = sum(1 for c in state.concepts.values() if c.models)
 
     total_relationships = len(state.relationships)
-    realized_relationships = sum(
-        1 for r in state.relationships.values() if r.realized_by
+    complete_relationships = sum(
+        1
+        for r in state.relationships.values()
+        if r.get_status(state.concepts) == "complete"
     )
 
     orphan_count = len(state.orphan_models)
@@ -34,14 +38,11 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
     completion_pct = (
         int((complete_concepts / total_concepts) * 100) if total_concepts > 0 else 0
     )
-    silver_pct = (
-        int((concepts_with_silver / total_concepts) * 100) if total_concepts > 0 else 0
-    )
-    gold_pct = (
-        int((concepts_with_gold / total_concepts) * 100) if total_concepts > 0 else 0
+    model_coverage_pct = (
+        int((concepts_with_models / total_concepts) * 100) if total_concepts > 0 else 0
     )
     relationship_pct = (
-        int((realized_relationships / total_relationships) * 100)
+        int((complete_relationships / total_relationships) * 100)
         if total_relationships > 0
         else 0
     )
@@ -58,12 +59,8 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
     incomplete_concepts = [
         (cid, c)
         for cid, c in state.concepts.items()
-        if c.status not in ["complete", "deprecated"]
+        if c.status != "complete"
         and (not c.domain or not c.owner or not c.definition)
-    ]
-
-    unrealized_relationships = [
-        (rid, r) for rid, r in state.relationships.items() if not r.realized_by
     ]
 
     # Write HTML
@@ -328,42 +325,27 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
             </div>
 
             <div class="stat-card">
-                <div class="stat-label">Silver Coverage</div>
+                <div class="stat-label">Model Coverage</div>
                 <div class="stat-value">""")
-    output.write(f"{silver_pct}%")
+    output.write(f"{model_coverage_pct}%")
     output.write("""</div>
                 <div class="stat-secondary">""")
-    output.write(f"{concepts_with_silver} concepts implemented")
+    output.write(f"{concepts_with_models} concepts have models")
     output.write("""</div>
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: """)
-    output.write(f"{silver_pct}%")
+    output.write(f"{model_coverage_pct}%")
     output.write(""""></div>
                 </div>
             </div>
 
             <div class="stat-card">
-                <div class="stat-label">Gold Coverage</div>
-                <div class="stat-value">""")
-    output.write(f"{gold_pct}%")
-    output.write("""</div>
-                <div class="stat-secondary">""")
-    output.write(f"{concepts_with_gold} concepts implemented")
-    output.write("""</div>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: """)
-    output.write(f"{gold_pct}%")
-    output.write(""""></div>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-label">Relationships Realized</div>
+                <div class="stat-label">Relationships Complete</div>
                 <div class="stat-value">""")
     output.write(f"{relationship_pct}%")
     output.write("""</div>
                 <div class="stat-secondary">""")
-    output.write(f"{realized_relationships} of {total_relationships} have facts")
+    output.write(f"{complete_relationships} of {total_relationships} complete")
     output.write("""</div>
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: """)
@@ -375,7 +357,7 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
 """)
 
     # Attention items
-    if incomplete_concepts or unrealized_relationships or orphan_count > 0:
+    if incomplete_concepts or orphan_count > 0:
         output.write("""
         <section>
             <h2>Needs Attention</h2>
@@ -402,7 +384,7 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
                 f"{draft_concepts} Draft Concept{'s' if draft_concepts != 1 else ''}"
             )
             output.write("""</div>
-                    <div class="attention-detail">These concepts are in progress but not yet complete.</div>
+                    <div class="attention-detail">These concepts have no implementing models yet.</div>
                 </div>
 """)
 
@@ -430,18 +412,6 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
                 </div>
 """)
 
-        if unrealized_relationships:
-            output.write("""
-                <div class="attention-item warning">
-                    <div class="attention-title">🔗 """)
-            output.write(
-                f"{len(unrealized_relationships)} Unrealized Relationship{'s' if len(unrealized_relationships) != 1 else ''}"
-            )
-            output.write("""</div>
-                    <div class="attention-detail">These relationships have no fact tables implementing them yet.</div>
-                </div>
-""")
-
         if orphan_count > 0:
             output.write("""
                 <div class="attention-item">
@@ -450,7 +420,7 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
                 f"{orphan_count} Orphan Model{'s' if orphan_count != 1 else ''}"
             )
             output.write("""</div>
-                    <div class="attention-detail">dbt models without concept or realizes tags. Run <code>dbt-conceptual sync</code> to discover them.</div>
+                    <div class="attention-detail">dbt models without concept tags. Run <code>dbt-conceptual sync</code> to discover them.</div>
                 </div>
 """)
 
@@ -491,11 +461,10 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
             output.write("""</div>
                             <div class="concept-meta">""")
 
-            # Show model counts
-            silver_count = len(concept.silver_models)
-            gold_count = len(concept.gold_models)
-            if silver_count > 0 or gold_count > 0:
-                output.write(f"Silver: {silver_count} | Gold: {gold_count}")
+            # Show model count
+            model_count = len(concept.models)
+            if model_count > 0:
+                output.write(f"Models: {model_count}")
                 if concept.owner:
                     output.write(f" | Owner: {concept.owner}")
             elif concept.owner:
@@ -528,7 +497,7 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
         <section>
             <h2>Orphan Models</h2>
             <p style="color: #666; margin-bottom: 1rem; font-size: 0.875rem;">
-                These models are in silver or gold layers but lack concept/realizes tags.
+                These models lack meta.concept tags.
             </p>
             <div class="orphan-list">
 """)
