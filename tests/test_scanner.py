@@ -10,7 +10,7 @@ from dbt_conceptual.scanner import DbtProjectScanner
 
 
 def test_scanner_finds_schema_files() -> None:
-    """Test that scanner finds schema files in silver and gold."""
+    """Test that scanner finds schema files in gold paths."""
     with TemporaryDirectory() as tmpdir:
         tmppath = Path(tmpdir)
 
@@ -18,14 +18,12 @@ def test_scanner_finds_schema_files() -> None:
         with open(tmppath / "dbt_project.yml", "w") as f:
             yaml.dump({"name": "test"}, f)
 
-        # Create schema files
-        silver_dir = tmppath / "models" / "silver"
-        silver_dir.mkdir(parents=True)
-        with open(silver_dir / "schema.yml", "w") as f:
+        # Create schema files in gold (marts) directory
+        gold_dir = tmppath / "models" / "marts"
+        gold_dir.mkdir(parents=True)
+        with open(gold_dir / "schema.yml", "w") as f:
             yaml.dump({"version": 2}, f)
 
-        gold_dir = tmppath / "models" / "gold"
-        gold_dir.mkdir(parents=True)
         with open(gold_dir / "models.yml", "w") as f:
             yaml.dump({"version": 2}, f)
 
@@ -48,7 +46,7 @@ def test_scanner_extracts_models() -> None:
             yaml.dump({"name": "test"}, f)
 
         # Create schema file with models
-        gold_dir = tmppath / "models" / "gold"
+        gold_dir = tmppath / "models" / "marts"
         gold_dir.mkdir(parents=True)
 
         schema_data = {
@@ -60,7 +58,7 @@ def test_scanner_extracts_models() -> None:
                 },
                 {
                     "name": "fact_orders",
-                    "meta": {"realizes": ["customer:places:order"]},
+                    "meta": {"concept": "order"},
                 },
             ],
         }
@@ -77,11 +75,9 @@ def test_scanner_extracts_models() -> None:
         assert len(models) == 2
         assert models[0]["name"] == "dim_customer"
         assert models[0]["meta"]["concept"] == "customer"
-        assert models[0]["layer"] == "gold"
-        assert models[0]["type"] == "dimension"
 
         assert models[1]["name"] == "fact_orders"
-        assert models[1]["type"] == "fact"
+        assert models[1]["meta"]["concept"] == "order"
 
 
 def test_scanner_scan_all() -> None:
@@ -93,22 +89,8 @@ def test_scanner_scan_all() -> None:
         with open(tmppath / "dbt_project.yml", "w") as f:
             yaml.dump({"name": "test"}, f)
 
-        # Create multiple schema files
-        silver_dir = tmppath / "models" / "silver"
-        silver_dir.mkdir(parents=True)
-
-        with open(silver_dir / "schema.yml", "w") as f:
-            yaml.dump(
-                {
-                    "version": 2,
-                    "models": [
-                        {"name": "stg_customers", "meta": {"concept": "customer"}}
-                    ],
-                },
-                f,
-            )
-
-        gold_dir = tmppath / "models" / "gold"
+        # Create schema file
+        gold_dir = tmppath / "models" / "marts"
         gold_dir.mkdir(parents=True)
 
         with open(gold_dir / "schema.yml", "w") as f:
@@ -127,9 +109,8 @@ def test_scanner_scan_all() -> None:
         scanner = DbtProjectScanner(config)
         all_models = scanner.scan()
 
-        assert len(all_models) == 3
+        assert len(all_models) == 2
         model_names = [m["name"] for m in all_models]
-        assert "stg_customers" in model_names
         assert "dim_customer" in model_names
         assert "fact_orders" in model_names
 
@@ -144,7 +125,7 @@ def test_scanner_handles_invalid_yaml() -> None:
             yaml.dump({"name": "test"}, f)
 
         # Create invalid YAML
-        gold_dir = tmppath / "models" / "gold"
+        gold_dir = tmppath / "models" / "marts"
         gold_dir.mkdir(parents=True)
 
         with open(gold_dir / "bad.yml", "w") as f:
@@ -179,7 +160,7 @@ def test_scanner_handles_empty_models_list() -> None:
             yaml.dump({"name": "test"}, f)
 
         # Create schema file with sources but no models
-        gold_dir = tmppath / "models" / "gold"
+        gold_dir = tmppath / "models" / "marts"
         gold_dir.mkdir(parents=True)
 
         schema_data = {

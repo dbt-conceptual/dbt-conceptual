@@ -1,4 +1,7 @@
-"""Flask web server for conceptual model UI."""
+"""Flask web server for conceptual model UI.
+
+v1.0: Simplified API with flat models[], no realized_by.
+"""
 
 import json
 from pathlib import Path
@@ -92,7 +95,7 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
                     missing_refs.append(rel.to_concept)
             has_integrity_errors = len(missing_refs) > 0
 
-            # Load positions from conceptual.layout.json
+            # Load positions from conceptual_layout.json
             layout_file = config.layout_file
             positions = {}
             if layout_file.exists():
@@ -100,7 +103,7 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
                     layout_data = json.load(f) or {}
                     positions = layout_data.get("positions", {})
 
-            # Convert state to JSON-serializable format
+            # Convert state to JSON-serializable format (v1.0 simplified)
             response = {
                 "domains": {
                     domain_id: {
@@ -118,11 +121,7 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
                         "owner": concept.owner,
                         "status": concept.status,  # Derived at runtime
                         "color": concept.color,
-                        "replaced_by": concept.replaced_by,
-                        "bronze_models": concept.bronze_models or [],
-                        "silver_models": concept.silver_models or [],
-                        "gold_models": concept.gold_models or [],
-                        "inferred_models": concept.inferred_models or [],
+                        "models": concept.models,  # Flat list
                         # Validation fields
                         "isGhost": concept.is_ghost,
                         "validationStatus": concept.validation_status,
@@ -132,17 +131,14 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
                 },
                 "relationships": {
                     rel_id: {
-                        "name": rel.name,  # Derived or custom
+                        "name": rel.name,  # Derived
                         "verb": rel.verb,
-                        "custom_name": rel.custom_name,
                         "from_concept": rel.from_concept,
                         "to_concept": rel.to_concept,
                         "cardinality": rel.cardinality,
-                        "domains": rel.domains,
                         "owner": rel.owner,
                         "definition": rel.definition,
-                        "status": rel.status,  # Derived at runtime
-                        "realized_by": rel.realized_by or [],
+                        "status": rel.get_status(state.concepts),  # Derived
                         # Validation fields
                         "validationStatus": rel.validation_status,
                         "validationMessages": rel.validation_messages,
@@ -170,8 +166,14 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
             if not conceptual_file.exists():
                 return jsonify({"error": "conceptual.yml not found"}), 404
 
-            # Convert from API format to YAML format
-            yaml_data: dict[str, Any] = {"version": 1}
+            # Read existing file to preserve config section
+            with open(conceptual_file) as f:
+                existing_data = yaml.safe_load(f) or {}
+
+            # Start with config section preserved
+            yaml_data: dict[str, Any] = {}
+            if "config" in existing_data:
+                yaml_data["config"] = existing_data["config"]
 
             # Domains
             if data.get("domains"):
@@ -179,7 +181,7 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
                     domain_id: {
                         k: v
                         for k, v in domain.items()
-                        if v is not None and k != "display_name"
+                        if v is not None and k not in ("display_name",)
                     }
                     for domain_id, domain in data["domains"].items()
                 }
@@ -199,9 +201,7 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
                         and k
                         not in (
                             "status",  # Derived
-                            "bronze_models",  # Derived from manifest
-                            "silver_models",  # Derived from meta.concept
-                            "gold_models",  # Derived from meta.concept
+                            "models",  # Derived from meta.concept
                             "isGhost",  # Validation field
                             "validationStatus",  # Validation field
                             "validationMessages",  # Validation field
@@ -221,7 +221,6 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
                         if k in (
                             "name",
                             "status",
-                            "realized_by",
                             "validationStatus",
                             "validationMessages",
                         ):
@@ -278,7 +277,7 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
 
     @app.route("/api/layout", methods=["GET"])
     def get_layout() -> Any:
-        """Get layout positions from conceptual.layout.json."""
+        """Get layout positions from conceptual_layout.json."""
         try:
             layout_file = config.layout_file
             if not layout_file.exists():
@@ -293,7 +292,7 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
 
     @app.route("/api/layout", methods=["POST"])
     def save_layout() -> Any:
-        """Save layout positions to conceptual.layout.json."""
+        """Save layout positions to conceptual_layout.json."""
         try:
             data = request.json
             if not data:
@@ -314,10 +313,10 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
 
     @app.route("/api/models", methods=["GET"])
     def get_models() -> Any:
-        """Get available dbt models from silver and gold layers."""
+        """Get available dbt models from gold layer."""
         try:
             scanner = DbtProjectScanner(config)
-            models = scanner.find_model_files()
+            models = scanner.scan()
             return jsonify(models)
         except Exception as e:
             return jsonify({"error": str(e)}), 500
@@ -326,7 +325,7 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
     def sync_from_dbt() -> Any:
         """Trigger sync from dbt project.
 
-        Scans dbt models for meta.concept and meta.realizes tags,
+        Scans dbt models for meta.concept tags,
         creates ghost concepts for undefined references,
         runs validation, and returns messages.
         """
@@ -338,7 +337,7 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
             # Run validation and create ghosts
             validation = builder.validate_and_sync(state)
 
-            # Load positions from conceptual.layout.json
+            # Load positions from conceptual_layout.json
             layout_file = config.layout_file
             positions: dict[str, Any] = {}
             if layout_file.exists():
@@ -367,11 +366,7 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
                         "owner": concept.owner,
                         "status": concept.status,
                         "color": concept.color,
-                        "replaced_by": concept.replaced_by,
-                        "bronze_models": concept.bronze_models or [],
-                        "silver_models": concept.silver_models or [],
-                        "gold_models": concept.gold_models or [],
-                        "inferred_models": concept.inferred_models or [],
+                        "models": concept.models,
                         "isGhost": concept.is_ghost,
                         "validationStatus": concept.validation_status,
                         "validationMessages": concept.validation_messages,
@@ -382,15 +377,12 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
                     rel_id: {
                         "name": rel.name,
                         "verb": rel.verb,
-                        "custom_name": rel.custom_name,
                         "from_concept": rel.from_concept,
                         "to_concept": rel.to_concept,
                         "cardinality": rel.cardinality,
-                        "domains": rel.domains,
                         "owner": rel.owner,
                         "definition": rel.definition,
-                        "status": rel.status,
-                        "realized_by": rel.realized_by or [],
+                        "status": rel.get_status(state.concepts),
                         "validationStatus": rel.validation_status,
                         "validationMessages": rel.validation_messages,
                     }
@@ -426,32 +418,26 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
 
     @app.route("/api/settings", methods=["GET"])
     def get_settings() -> Any:
-        """Get configuration (domains, layer paths)."""
+        """Get configuration (domains, scan paths, validation)."""
         try:
-            # Read domains from conceptual.yml
+            # Read full config from conceptual.yml
             conceptual_file = config.conceptual_file
-            domains_data = {}
+            config_data: dict[str, Any] = {}
+            domains_data: dict[str, Any] = {}
 
             if conceptual_file.exists():
                 with open(conceptual_file) as f:
                     data = yaml.safe_load(f) or {}
+                    if "config" in data:
+                        config_data = data["config"]
                     if "domains" in data:
                         domains_data = data["domains"]
-
-            # Get paths from config
-            paths = {
-                "gold_paths": config.gold_paths,
-                "silver_paths": config.silver_paths,
-                "bronze_paths": getattr(config, "bronze_paths", []),
-            }
 
             return jsonify(
                 {
                     "domains": domains_data,
-                    "paths": paths,
-                    "conceptual_path": str(
-                        config.conceptual_file.relative_to(config.project_dir)
-                    ),
+                    "scan": config_data.get("scan", {"gold": config.gold_paths}),
+                    "validation": config_data.get("validation", {}),
                 }
             )
         except Exception as e:
@@ -459,66 +445,88 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
 
     @app.route("/api/settings", methods=["POST"])
     def save_settings() -> Any:
-        """Update configuration (domains, layer paths).
-
-        Note: This saves domains to conceptual.yml and paths to dbt_project.yml.
-        """
+        """Update configuration in conceptual.yml."""
         try:
             data = request.json
             if not data:
                 return jsonify({"error": "No data provided"}), 400
 
-            # Update domains in conceptual.yml
+            conceptual_file = config.conceptual_file
+            if not conceptual_file.exists():
+                return jsonify({"error": "conceptual.yml not found"}), 404
+
+            # Read existing file
+            with open(conceptual_file) as f:
+                conceptual_data = yaml.safe_load(f) or {}
+
+            # Update domains
             if "domains" in data:
-                conceptual_file = config.conceptual_file
-                if conceptual_file.exists():
-                    with open(conceptual_file) as f:
-                        conceptual_data = yaml.safe_load(f) or {}
+                conceptual_data["domains"] = data["domains"]
 
-                    conceptual_data["domains"] = data["domains"]
+            # Update config section
+            if "config" not in conceptual_data:
+                conceptual_data["config"] = {}
 
-                    with open(conceptual_file, "w") as f:
-                        yaml.dump(
-                            conceptual_data,
-                            f,
-                            sort_keys=False,
-                            default_flow_style=False,
-                        )
+            if "scan" in data:
+                conceptual_data["config"]["scan"] = data["scan"]
 
-            # Update paths in dbt_project.yml (under vars.dbt_conceptual)
-            if "paths" in data:
-                dbt_project_file = config.project_dir / "dbt_project.yml"
-                if dbt_project_file.exists():
-                    with open(dbt_project_file) as f:
-                        project_data = yaml.safe_load(f) or {}
+            if "validation" in data:
+                conceptual_data["config"]["validation"] = data["validation"]
 
-                    # Ensure vars.dbt_conceptual exists
-                    if "vars" not in project_data:
-                        project_data["vars"] = {}
-                    if "dbt_conceptual" not in project_data["vars"]:
-                        project_data["vars"]["dbt_conceptual"] = {}
-
-                    # Update paths
-                    paths = data["paths"]
-                    if "gold_paths" in paths:
-                        project_data["vars"]["dbt_conceptual"]["gold_paths"] = paths[
-                            "gold_paths"
-                        ]
-                    if "silver_paths" in paths:
-                        project_data["vars"]["dbt_conceptual"]["silver_paths"] = paths[
-                            "silver_paths"
-                        ]
-                    if "bronze_paths" in paths:
-                        project_data["vars"]["dbt_conceptual"]["bronze_paths"] = paths[
-                            "bronze_paths"
-                        ]
-
-                    with open(dbt_project_file, "w") as f:
-                        yaml.dump(
-                            project_data, f, sort_keys=False, default_flow_style=False
-                        )
+            # Write back
+            with open(conceptual_file, "w") as f:
+                yaml.dump(
+                    conceptual_data,
+                    f,
+                    sort_keys=False,
+                    default_flow_style=False,
+                )
 
             return jsonify({"success": True, "message": "Settings saved"})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/api/config", methods=["GET"])
+    def get_config() -> Any:
+        """Get current configuration."""
+        try:
+            conceptual_file = config.conceptual_file
+            if not conceptual_file.exists():
+                return jsonify({"error": "conceptual.yml not found"}), 404
+
+            with open(conceptual_file) as f:
+                data = yaml.safe_load(f) or {}
+
+            return jsonify(data.get("config", {}))
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/api/config", methods=["POST"])
+    def save_config() -> Any:
+        """Save configuration to conceptual.yml."""
+        try:
+            data = request.json
+            if not data:
+                return jsonify({"error": "No data provided"}), 400
+
+            conceptual_file = config.conceptual_file
+            if not conceptual_file.exists():
+                return jsonify({"error": "conceptual.yml not found"}), 404
+
+            with open(conceptual_file) as f:
+                conceptual_data = yaml.safe_load(f) or {}
+
+            conceptual_data["config"] = data
+
+            with open(conceptual_file, "w") as f:
+                yaml.dump(
+                    conceptual_data,
+                    f,
+                    sort_keys=False,
+                    default_flow_style=False,
+                )
+
+            return jsonify({"success": True, "message": "Config saved"})
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 

@@ -40,7 +40,6 @@ from dbt_conceptual.git import (
 )
 from dbt_conceptual.parser import StateBuilder
 from dbt_conceptual.state import ConceptState, ProjectState
-from dbt_conceptual.tag_applier import TagApplier
 from dbt_conceptual.validator import Severity, Validator
 
 console = Console()
@@ -111,14 +110,12 @@ def main(ctx: click.Context, verbose: int, quiet: bool) -> None:
 @project_options
 def status(
     project_dir: Optional[Path],
-    silver_paths: tuple[str, ...],
     gold_paths: tuple[str, ...],
 ) -> None:
     """Show status of conceptual model coverage."""
     try:
         state, _config = load_project_state(
             project_dir=project_dir,
-            silver_paths=list(silver_paths) if silver_paths else None,
             gold_paths=list(gold_paths) if gold_paths else None,
         )
     except ConceptualFileNotFound as e:
@@ -161,24 +158,22 @@ def status(
         console.print("[yellow]No relationships defined[/yellow]")
     else:
         for _rel_id, rel in state.relationships.items():
-            status_icon = "✓" if rel.realized_by else "○"
-            status_color = "green" if rel.realized_by else "yellow"
+            status = rel.get_status(state.concepts)
+            status_icon = "✓" if status == "complete" else "○"
+            status_color = "green" if status == "complete" else "yellow"
 
             console.print(
                 f"  [{status_color}]{status_icon}[/{status_color}] "
                 f"{rel.name} ({rel.from_concept} → {rel.to_concept})"
             )
 
-            if rel.realized_by:
-                console.print(f"     realized by: {', '.join(rel.realized_by)}")
-
     # Display orphan models
     if state.orphan_models:
         console.print("\n[bold]Orphan Models[/bold]")
         console.print("=" * 50)
-        console.print("[yellow]These models have no concept or realizes tags:[/yellow]")
+        console.print("[yellow]These models have no concept tags:[/yellow]")
         for model in state.orphan_models:
-            console.print(f"  - {model}")
+            console.print(f"  - {model.name}")
         console.print(
             "\n[dim]Tip: Run 'dbt-conceptual sync --create-stubs' to create stub concepts[/dim]"
         )
@@ -187,8 +182,7 @@ def status(
     incomplete_concepts = [
         (cid, c)
         for cid, c in state.concepts.items()
-        if c.status not in ["complete", "deprecated"]
-        and (not c.domain or not c.owner or not c.definition)
+        if c.status != "complete" and (not c.domain or not c.owner or not c.definition)
     ]
 
     if incomplete_concepts:
@@ -209,9 +203,7 @@ def status(
             console.print(
                 f"  • {concept_id} [{concept.status}] - missing: {', '.join(missing)}"
             )
-        console.print(
-            "\n[dim]Edit models/conceptual/conceptual.yml to add missing attributes[/dim]"
-        )
+        console.print("\n[dim]Edit conceptual.yml to add missing attributes[/dim]")
 
     console.print()
 
@@ -226,26 +218,21 @@ def _print_concept_status(concept_id: str, concept: ConceptState) -> None:
     elif concept.status == "stub":
         status_icon = "⚠"
         status_color = "yellow"
-    elif concept.status == "deprecated":
-        status_icon = "✗"
-        status_color = "red"
     else:
         status_icon = "◐"
         status_color = "blue"
 
-    # Coverage badges
-    s_count = len(concept.silver_models)
-    g_count = len(concept.gold_models)
-    s_badge = f"[S:{'●' * min(s_count, 3)}{'○' * (3 - min(s_count, 3))}]"
-    g_badge = f"[G:{'●' * min(g_count, 3)}{'○' * (3 - min(g_count, 3))}]"
+    # Model count badge
+    model_count = len(concept.models)
+    model_badge = f"[{model_count} model{'s' if model_count != 1 else ''}]"
 
     console.print(
         f"  [{status_color}]{status_icon}[/{status_color}] "
-        f"{concept_id} [{concept.status}]  {s_badge} {g_badge}"
+        f"{concept_id} [{concept.status}]  {model_badge}"
     )
 
-    # Show missing attributes for any non-complete, non-deprecated concept
-    if concept.status not in ["complete", "deprecated"]:
+    # Show missing attributes for any non-complete concept
+    if concept.status != "complete":
         missing = []
         if not concept.domain:
             missing.append("domain")
@@ -261,10 +248,9 @@ def _print_concept_status(concept_id: str, concept: ConceptState) -> None:
 @project_options
 def orphans(
     project_dir: Optional[Path],
-    silver_paths: tuple[str, ...],
     gold_paths: tuple[str, ...],
 ) -> None:
-    """List models with no meta.concept or meta.realizes tags.
+    """List models with no meta.concept tag.
 
     Shows models that need conceptual tagging. Useful for tracking
     adoption and identifying where to focus next.
@@ -272,7 +258,6 @@ def orphans(
     try:
         state, _config = load_project_state(
             project_dir=project_dir,
-            silver_paths=list(silver_paths) if silver_paths else None,
             gold_paths=list(gold_paths) if gold_paths else None,
         )
     except ConceptualFileNotFound as e:
@@ -283,16 +268,12 @@ def orphans(
     # Display orphan models
     if not state.orphan_models:
         console.print("[green]✓ No orphan models found![/green]")
-        console.print(
-            "\nAll models have conceptual tags (meta.concept or meta.realizes)."
-        )
+        console.print("\nAll models have conceptual tags (meta.concept).")
         return
 
     console.print(f"[bold]Orphan Models ({len(state.orphan_models)})[/bold]")
     console.print("=" * 70)
-    console.print(
-        "[yellow]These models have no meta.concept or meta.realizes tags:[/yellow]\n"
-    )
+    console.print("[yellow]These models have no meta.concept tag:[/yellow]\n")
 
     for model in sorted(state.orphan_models, key=lambda m: m.name):
         console.print(f"  • {model.name}")
@@ -300,8 +281,8 @@ def orphans(
     console.print(
         "\n[dim]Next steps:[/dim]"
         "\n[dim]  1. Run 'dbt-conceptual sync --create-stubs' to create stub concepts[/dim]"
-        "\n[dim]  2. Edit models/conceptual/conceptual.yml to enrich the stubs[/dim]"
-        "\n[dim]  3. Add meta.concept or meta.realizes tags to model YAML files[/dim]"
+        "\n[dim]  2. Edit conceptual.yml to enrich the stubs[/dim]"
+        "\n[dim]  3. Add meta.concept tags to model YAML files[/dim]"
     )
 
 
@@ -322,7 +303,6 @@ def orphans(
 )
 def validate(
     project_dir: Optional[Path],
-    silver_paths: tuple[str, ...],
     gold_paths: tuple[str, ...],
     output_format: str,
     no_drafts: bool,
@@ -331,7 +311,6 @@ def validate(
     try:
         state, config = load_project_state(
             project_dir=project_dir,
-            silver_paths=list(silver_paths) if silver_paths else None,
             gold_paths=list(gold_paths) if gold_paths else None,
         )
     except ConceptualFileNotFound as e:
@@ -459,15 +438,10 @@ def _output_human_format(
     for concept_id, concept in state.concepts.items():
         console.print(f"\n[cyan]{concept_id}[/cyan] ({concept.domain or 'no domain'})")
 
-        if concept.silver_models:
-            console.print(f"  silver: {', '.join(concept.silver_models)}")
+        if concept.models:
+            console.print(f"  models: {', '.join(concept.models)}")
         else:
-            console.print("  silver: [dim]-[/dim]")
-
-        if concept.gold_models:
-            console.print(f"  gold: {', '.join(concept.gold_models)}")
-        else:
-            console.print("  gold: [dim]-[/dim]")
+            console.print("  models: [dim]-[/dim]")
 
         # Status indicator
         if concept.status == "complete":
@@ -476,17 +450,9 @@ def _output_human_format(
         elif concept.status == "stub":
             status = "◐ stub"
             color = "yellow"
-        elif concept.status == "deprecated":
-            status = "✗ deprecated"
-            color = "red"
         else:
             status = f"◐ {concept.status}"
             color = "blue"
-
-        # Special status for gold-only
-        if concept.gold_models and not concept.silver_models:
-            status = "◑ gold only"
-            color = "yellow"
 
         console.print(f"  status: [{color}]{status}[/{color}]")
 
@@ -496,13 +462,11 @@ def _output_human_format(
 
     for rel_id, rel in state.relationships.items():
         console.print(f"\n{rel_id}")
-
-        if rel.realized_by:
-            console.print(
-                f"  [green]✓[/green] realized by: {', '.join(rel.realized_by)}"
-            )
+        rel_status = rel.get_status(state.concepts)
+        if rel_status == "complete":
+            console.print(f"  [green]✓[/green] {rel.cardinality}")
         else:
-            console.print("  [red]✗ NOT REALIZED[/red]")
+            console.print("  [yellow]○ stub[/yellow]")
 
     # Display validation issues
     if issues:
@@ -546,137 +510,6 @@ def _output_human_format(
     default=None,
     help="Path to dbt project directory (default: current directory)",
 )
-@click.option(
-    "--propagate-tags",
-    is_flag=True,
-    help="Propagate domain and owner tags from concepts to dbt model files",
-)
-@click.option(
-    "--dry-run",
-    is_flag=True,
-    help="Preview changes without writing files",
-)
-@click.option(
-    "--models",
-    multiple=True,
-    help="Apply only to specific models (can be specified multiple times)",
-)
-def apply(
-    project_dir: Optional[Path],
-    propagate_tags: bool,
-    dry_run: bool,
-    models: tuple[str, ...],
-) -> None:
-    """Apply changes to dbt model files.
-
-    Currently supports tag propagation from conceptual model to dbt model YAML files.
-
-    Examples:
-
-        # Preview tag changes
-        dbt-conceptual apply --propagate-tags --dry-run
-
-        # Apply tag changes
-        dbt-conceptual apply --propagate-tags
-
-        # Apply to specific models
-        dbt-conceptual apply --propagate-tags --models dim_customer --models fact_orders
-    """
-    if not propagate_tags:
-        console.print(
-            "[yellow]No action specified. Use --propagate-tags to apply tags.[/yellow]"
-        )
-        console.print("\nAvailable actions:")
-        console.print("  --propagate-tags    Propagate domain/owner tags from concepts")
-        return
-
-    # Load configuration
-    config = Config.load(project_dir=project_dir)
-
-    # Check if tag validation is enabled
-    if not config.validation.tag_validation.enabled:
-        console.print(
-            "[yellow]Warning: tag_validation is not enabled in dbt_project.yml[/yellow]"
-        )
-        console.print("Add the following to enable tag validation:\n")
-        console.print("  vars:")
-        console.print("    dbt_conceptual:")
-        console.print("      validation:")
-        console.print("        tag_validation:")
-        console.print("          enabled: true")
-        console.print()
-
-    # Check if conceptual.yml exists
-    if not config.conceptual_file.exists():
-        console.print(
-            f"[red]Error: conceptual.yml not found at {config.conceptual_file}[/red]"
-        )
-        console.print("\nRun 'dbt-conceptual init' to create it.")
-        raise click.Abort()
-
-    # Build state
-    builder = StateBuilder(config)
-    state = builder.build()
-
-    # Compute changes
-    applier = TagApplier(config, state)
-    model_list = list(models) if models else None
-    changes = applier.compute_changes(model_list)
-
-    if not changes:
-        console.print("[green]No tag changes needed.[/green]")
-        return
-
-    # Display changes
-    if dry_run:
-        console.print(f"[bold]Would modify {len(changes)} model(s):[/bold]\n")
-    else:
-        console.print(
-            f"[bold]Applying tag changes to {len(changes)} model(s):[/bold]\n"
-        )
-
-    for change in changes:
-        rel_path = change.file_path.relative_to(config.project_dir)
-        console.print(f"[cyan]{rel_path}[/cyan] ({change.model_name})")
-
-        if change.action == "add":
-            console.print(f"  [green]+ tags: {change.expected_tags}[/green]")
-        else:
-            current_display = (
-                [f"domain:{t}" for t in change.current_tags if t]
-                if change.current_tags
-                else ["(none)"]
-            )
-            console.print(
-                f"  [yellow]~ tags: {current_display} -> {change.expected_tags}[/yellow]"
-            )
-
-    if dry_run:
-        console.print("\n[dim]Run without --dry-run to apply changes.[/dim]")
-        return
-
-    # Apply changes
-    result = applier.apply(changes, dry_run=False)
-
-    if result.errors:
-        console.print("\n[red]Errors:[/red]")
-        for error in result.errors:
-            console.print(f"  {error}")
-
-    if result.modified_files:
-        console.print(
-            f"\n[green]Modified {len(result.modified_files)} file(s).[/green]"
-        )
-        console.print("\n[dim]Run 'git diff' to review changes.[/dim]")
-
-
-@main.command()
-@click.option(
-    "--project-dir",
-    type=click.Path(exists=True, file_okay=False, path_type=Path),
-    default=None,
-    help="Path to dbt project directory (default: current directory)",
-)
 def init(project_dir: Optional[Path]) -> None:
     """Initialize dbt-conceptual in a dbt project."""
     if project_dir is None:
@@ -689,45 +522,53 @@ def init(project_dir: Optional[Path]) -> None:
         console.print("Make sure you're in a dbt project directory.")
         raise click.Abort()
 
-    # Create conceptual directory
-    conceptual_dir = project_dir / "models" / "conceptual"
-    conceptual_dir.mkdir(parents=True, exist_ok=True)
-
-    # Create conceptual.yml
-    conceptual_file = conceptual_dir / "conceptual.yml"
+    # Create conceptual.yml in project root
+    conceptual_file = project_dir / "conceptual.yml"
     if conceptual_file.exists():
         console.print(
             f"[yellow]conceptual.yml already exists at {conceptual_file}[/yellow]"
         )
     else:
-        template = """version: 1
+        template = """# dbt-conceptual configuration
+# All configuration lives in this file.
 
-metadata:
-  name: "My Data Platform"
+config:
+  scan:
+    gold:
+      - models/marts/**/*.yml
+
+  validation:
+    defaults:
+      orphan_models: warn
+      unimplemented_concepts: warn
+      missing_definitions: ignore
+    # gold:
+    #   orphan_models: error
+    #   missing_definitions: warn
 
 domains:
   # Define your domains here
   # Example:
-  # party:
-  #   name: "Party"
-  #   color: "#E3F2FD"
+  # sales:
+  #   display_name: Sales
+  #   color: "#4a9eff"
+  #   owner: "@sales-team"
 
 concepts:
   # Define your concepts here
   # Example:
-  # customer:
-  #   name: "Customer"
-  #   domain: party
-  #   owner: data_team
-  #   definition: "A person or organization that purchases products"
-  #   status: complete
+  # Customer:
+  #   domain: sales
+  #   owner: "@data-team"
+  #   definition: |
+  #     A person or organization that purchases products.
 
 relationships:
   # Define relationships between concepts here
   # Example:
-  # - name: places
-  #   from: customer
-  #   to: order
+  # - from: Customer
+  #   verb: places
+  #   to: Order
   #   cardinality: "1:N"
 """
         with open(conceptual_file, "w") as f:
@@ -735,26 +576,9 @@ relationships:
 
         console.print(f"[green]✓[/green] Created {conceptual_file}")
 
-    # Create layout.yml
-    layout_file = conceptual_dir / "layout.yml"
-    if not layout_file.exists():
-        layout_template = """version: 1
-
-positions:
-  # Visual positions for the viewer
-  # Example:
-  # customer:
-  #   x: 100
-  #   y: 100
-"""
-        with open(layout_file, "w") as f:
-            f.write(layout_template)
-
-        console.print(f"[green]✓[/green] Created {layout_file}")
-
     console.print("\n[green bold]Initialization complete![/green bold]")
     console.print("\nNext steps:")
-    console.print("  1. Edit models/conceptual/conceptual.yml to define your concepts")
+    console.print("  1. Edit conceptual.yml to define your concepts")
     console.print("  2. Add meta.concept tags to your dbt models")
     console.print("  3. Run 'dbt-conceptual status' to see coverage")
 
@@ -801,14 +625,8 @@ def sync(project_dir: Optional[Path], create_stubs: bool, model: Optional[str]) 
             orphans = [o for o in orphans if o.name == model]
         else:
             console.print(f"[yellow]Model '{model}' is not an orphan[/yellow]")
-            if model in [m for c in state.concepts.values() for m in c.gold_models]:
-                console.print(
-                    f"Model '{model}' is already mapped to a concept in gold layer"
-                )
-            elif model in [m for c in state.concepts.values() for m in c.silver_models]:
-                console.print(
-                    f"Model '{model}' is already mapped to a concept in silver layer"
-                )
+            if model in [m for c in state.concepts.values() for m in c.models]:
+                console.print(f"Model '{model}' is already mapped to a concept")
             else:
                 console.print(f"Model '{model}' not found in project")
             return
@@ -860,7 +678,6 @@ def sync(project_dir: Optional[Path], create_stubs: bool, model: Optional[str]) 
         # Create stub with data from model if available
         stub_data: dict[str, object] = {
             "name": concept_id.replace("_", " ").title(),
-            "status": "stub",
         }
 
         # Use model description as definition if available

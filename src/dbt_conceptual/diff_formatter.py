@@ -75,8 +75,7 @@ def format_human(diff: ConceptualDiff) -> str:
             if rel_change.change_type == "added":
                 rel = rel_change.new_value
                 cardinality_info = f" ({rel.cardinality})" if rel.cardinality else ""  # type: ignore
-                status_info = f" - {rel.status}"  # type: ignore
-                lines.append(f"  + {rel_change.key}{cardinality_info}{status_info}")
+                lines.append(f"  + {rel_change.key}{cardinality_info}")
             elif rel_change.change_type == "removed":
                 rel = rel_change.old_value
                 cardinality_info = f" ({rel.cardinality})" if rel.cardinality else ""  # type: ignore
@@ -158,19 +157,14 @@ def format_github(diff: ConceptualDiff) -> str:
                 f"::notice title=Modified Concept::{concept_change.key} ({modified_fields_str})"
             )
 
-    # Relationship changes
+    # Relationship changes (v1.0: relationships don't have a status property)
     for rel_change in diff.relationship_changes:
         if rel_change.change_type == "added":
             rel = rel_change.new_value
             cardinality_info = f" ({rel.cardinality})" if rel.cardinality else ""  # type: ignore
-            if rel.status in ("stub", "draft"):  # type: ignore
-                lines.append(
-                    f"::warning title=New Relationship::{rel_change.key}{cardinality_info} - {rel.status}"  # type: ignore
-                )
-            else:
-                lines.append(
-                    f"::notice title=New Relationship::{rel_change.key}{cardinality_info}"
-                )
+            lines.append(
+                f"::notice title=New Relationship::{rel_change.key}{cardinality_info}"
+            )
         elif rel_change.change_type == "removed":
             rel = rel_change.old_value
             cardinality_info = f" ({rel.cardinality})" if rel.cardinality else ""  # type: ignore
@@ -326,7 +320,7 @@ def format_markdown(diff: ConceptualDiff) -> str:
                 lines.append(f"| ✏️ | `{concept_change.key}` | modified: {fields} |")
         lines.append("")
 
-    # Relationship changes
+    # Relationship changes (v1.0: relationships don't have a status property)
     if diff.relationship_changes:
         lines.append("### Relationships\n")
         lines.append("| Change | Name | Detail |")
@@ -335,9 +329,7 @@ def format_markdown(diff: ConceptualDiff) -> str:
             if rel_change.change_type == "added":
                 rel = rel_change.new_value
                 cardinality_info = f"cardinality: {rel.cardinality}" if rel.cardinality else ""  # type: ignore
-                status_info = f"status: {rel.status}"  # type: ignore
-                detail = ", ".join(filter(None, [cardinality_info, status_info]))
-                lines.append(f"| ➕ | `{rel_change.key}` | {detail} |")
+                lines.append(f"| ➕ | `{rel_change.key}` | {cardinality_info} |")
             elif rel_change.change_type == "removed":
                 rel = rel_change.old_value
                 cardinality_info = f"cardinality: {rel.cardinality}" if rel.cardinality else ""  # type: ignore

@@ -1,4 +1,7 @@
-"""Tests for parser and state builder."""
+"""Tests for parser and state builder.
+
+v1.0: Simplified model - conceptual.yml in project root, flat models list.
+"""
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -18,10 +21,8 @@ def test_parse_empty_conceptual_file() -> None:
         with open(tmppath / "dbt_project.yml", "w") as f:
             yaml.dump({"name": "test"}, f)
 
-        # Create empty conceptual.yml
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        # Create empty conceptual.yml in project root
+        with open(tmppath / "conceptual.yml", "w") as f:
             f.write("")
 
         config = Config.load(project_dir=tmppath)
@@ -42,10 +43,7 @@ def test_parse_conceptual_model_with_domains() -> None:
         with open(tmppath / "dbt_project.yml", "w") as f:
             yaml.dump({"name": "test"}, f)
 
-        # Create conceptual.yml with domains
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
+        # Create conceptual.yml in project root
         conceptual_data = {
             "version": 1,
             "domains": {
@@ -58,7 +56,6 @@ def test_parse_conceptual_model_with_domains() -> None:
                     "domain": "party",
                     "owner": "data_team",
                     "definition": "A customer",
-                    # Note: status is no longer stored, it's derived
                 }
             },
             "relationships": [
@@ -67,12 +64,11 @@ def test_parse_conceptual_model_with_domains() -> None:
                     "from": "customer",
                     "to": "order",
                     "cardinality": "1:N",
-                    "domains": ["transaction"],  # New: array of domains
                 }
             ],
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
 
         config = Config.load(project_dir=tmppath)
@@ -87,50 +83,11 @@ def test_parse_conceptual_model_with_domains() -> None:
         assert len(state.concepts) == 1
         assert "customer" in state.concepts
         assert state.concepts["customer"].domain == "party"
-        # Status is now derived: has domain but no models = "draft"
+        # Status is derived: has domain but no models = "draft"
         assert state.concepts["customer"].status == "draft"
 
         assert len(state.relationships) == 1
         assert "customer:places:order" in state.relationships
-
-
-def test_parse_conceptual_model_with_groups() -> None:
-    """Test parsing conceptual model with relationship groups."""
-    with TemporaryDirectory() as tmpdir:
-        tmppath = Path(tmpdir)
-
-        # Create dbt_project.yml
-        with open(tmppath / "dbt_project.yml", "w") as f:
-            yaml.dump({"name": "test"}, f)
-
-        # Create conceptual.yml with groups
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
-        conceptual_data = {
-            "version": 1,
-            "concepts": {
-                "customer": {"name": "Customer"},
-                "order": {"name": "Order"},
-            },
-            "relationships": [
-                {"name": "places", "from": "customer", "to": "order"},
-                {"name": "pays", "from": "customer", "to": "order"},
-            ],
-            "relationship_groups": {
-                "order_flow": ["customer:places:order", "customer:pays:order"]
-            },
-        }
-
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
-            yaml.dump(conceptual_data, f)
-
-        config = Config.load(project_dir=tmppath)
-        parser = ConceptualModelParser(config)
-        state = parser.parse()
-
-        assert "order_flow" in state.groups
-        assert len(state.groups["order_flow"]) == 2
 
 
 def test_state_builder_links_models_to_concepts() -> None:
@@ -142,33 +99,25 @@ def test_state_builder_links_models_to_concepts() -> None:
         with open(tmppath / "dbt_project.yml", "w") as f:
             yaml.dump({"name": "test"}, f)
 
-        # Create conceptual.yml
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
+        # Create conceptual.yml in project root
         conceptual_data = {
             "version": 1,
-            "concepts": {"customer": {"name": "Customer", "status": "complete"}},
-            "relationships": [{"name": "places", "from": "customer", "to": "order"}],
+            "domains": {"party": {"name": "Party"}},
+            "concepts": {
+                "customer": {
+                    "name": "Customer",
+                    "domain": "party",
+                    "owner": "data_team",
+                    "definition": "A customer",
+                }
+            },
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
 
-        # Create silver model
-        silver_dir = tmppath / "models" / "silver"
-        silver_dir.mkdir(parents=True)
-
-        schema_data = {
-            "version": 2,
-            "models": [{"name": "dim_customer_raw", "meta": {"concept": "customer"}}],
-        }
-
-        with open(silver_dir / "schema.yml", "w") as f:
-            yaml.dump(schema_data, f)
-
         # Create gold model
-        gold_dir = tmppath / "models" / "gold"
+        gold_dir = tmppath / "models" / "marts"
         gold_dir.mkdir(parents=True)
 
         schema_data_gold = {
@@ -185,111 +134,9 @@ def test_state_builder_links_models_to_concepts() -> None:
 
         # Check that models were linked
         assert "customer" in state.concepts
-        assert "dim_customer_raw" in state.concepts["customer"].silver_models
-        assert "dim_customer" in state.concepts["customer"].gold_models
-
-
-def test_state_builder_links_realizes() -> None:
-    """Test that state builder links realizes to relationships."""
-    with TemporaryDirectory() as tmpdir:
-        tmppath = Path(tmpdir)
-
-        # Create dbt_project.yml
-        with open(tmppath / "dbt_project.yml", "w") as f:
-            yaml.dump({"name": "test"}, f)
-
-        # Create conceptual.yml
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
-        conceptual_data = {
-            "version": 1,
-            "concepts": {
-                "customer": {"name": "Customer"},
-                "order": {"name": "Order"},
-            },
-            "relationships": [{"name": "places", "from": "customer", "to": "order"}],
-        }
-
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
-            yaml.dump(conceptual_data, f)
-
-        # Create fact table
-        gold_dir = tmppath / "models" / "gold"
-        gold_dir.mkdir(parents=True)
-
-        schema_data = {
-            "version": 2,
-            "models": [
-                {
-                    "name": "fact_orders",
-                    "meta": {"realizes": ["customer:places:order"]},
-                }
-            ],
-        }
-
-        with open(gold_dir / "schema.yml", "w") as f:
-            yaml.dump(schema_data, f)
-
-        config = Config.load(project_dir=tmppath)
-        builder = StateBuilder(config)
-        state = builder.build()
-
-        # Check that relationship was realized
-        assert "customer:places:order" in state.relationships
-        assert "fact_orders" in state.relationships["customer:places:order"].realized_by
-
-
-def test_state_builder_expands_groups() -> None:
-    """Test that state builder expands relationship groups."""
-    with TemporaryDirectory() as tmpdir:
-        tmppath = Path(tmpdir)
-
-        # Create dbt_project.yml
-        with open(tmppath / "dbt_project.yml", "w") as f:
-            yaml.dump({"name": "test"}, f)
-
-        # Create conceptual.yml
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
-        conceptual_data = {
-            "version": 1,
-            "concepts": {
-                "customer": {"name": "Customer"},
-                "order": {"name": "Order"},
-            },
-            "relationships": [
-                {"name": "places", "from": "customer", "to": "order"},
-                {"name": "pays", "from": "customer", "to": "order"},
-            ],
-            "relationship_groups": {
-                "order_flow": ["customer:places:order", "customer:pays:order"]
-            },
-        }
-
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
-            yaml.dump(conceptual_data, f)
-
-        # Create fact table that uses group
-        gold_dir = tmppath / "models" / "gold"
-        gold_dir.mkdir(parents=True)
-
-        schema_data = {
-            "version": 2,
-            "models": [{"name": "fact_orders", "meta": {"realizes": ["order_flow"]}}],
-        }
-
-        with open(gold_dir / "schema.yml", "w") as f:
-            yaml.dump(schema_data, f)
-
-        config = Config.load(project_dir=tmppath)
-        builder = StateBuilder(config)
-        state = builder.build()
-
-        # Check that both relationships were realized via group
-        assert "fact_orders" in state.relationships["customer:places:order"].realized_by
-        assert "fact_orders" in state.relationships["customer:pays:order"].realized_by
+        assert "dim_customer" in state.concepts["customer"].models
+        # With models + domain, status should be "complete"
+        assert state.concepts["customer"].status == "complete"
 
 
 def test_state_builder_tracks_orphans() -> None:
@@ -301,14 +148,12 @@ def test_state_builder_tracks_orphans() -> None:
         with open(tmppath / "dbt_project.yml", "w") as f:
             yaml.dump({"name": "test"}, f)
 
-        # Create empty conceptual.yml
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        # Create empty conceptual.yml in project root
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump({"version": 1}, f)
 
         # Create model without meta tags
-        gold_dir = tmppath / "models" / "gold"
+        gold_dir = tmppath / "models" / "marts"
         gold_dir.mkdir(parents=True)
 
         schema_data = {"version": 2, "models": [{"name": "dim_orphan"}]}
@@ -323,10 +168,6 @@ def test_state_builder_tracks_orphans() -> None:
         # Check that orphan was tracked
         orphan_names = [o.name for o in state.orphan_models]
         assert "dim_orphan" in orphan_names
-        # Verify orphan has expected attributes
-        orphan = state.orphan_models[0]
-        assert orphan.layer == "gold"
-        assert orphan.path == "models/gold"
 
 
 def test_validate_and_sync_creates_ghost_concepts() -> None:
@@ -339,9 +180,6 @@ def test_validate_and_sync_creates_ghost_concepts() -> None:
             yaml.dump({"name": "test"}, f)
 
         # Create conceptual.yml with relationship to non-existent concept
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
         conceptual_data = {
             "version": 1,
             "concepts": {"customer": {"name": "Customer"}},
@@ -354,7 +192,7 @@ def test_validate_and_sync_creates_ghost_concepts() -> None:
             ],
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
 
         config = Config.load(project_dir=tmppath)
@@ -365,7 +203,6 @@ def test_validate_and_sync_creates_ghost_concepts() -> None:
         # Check that ghost concept was created
         assert "order" in state.concepts
         assert state.concepts["order"].is_ghost is True
-        assert state.concepts["order"].validation_status == "error"
 
         # Check that error message was generated
         assert validation.error_count >= 1
@@ -383,9 +220,6 @@ def test_validate_and_sync_detects_duplicate_concepts() -> None:
             yaml.dump({"name": "test"}, f)
 
         # Create conceptual.yml with duplicate concept names
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
         conceptual_data = {
             "version": 1,
             "concepts": {
@@ -394,7 +228,7 @@ def test_validate_and_sync_detects_duplicate_concepts() -> None:
             },
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
 
         config = Config.load(project_dir=tmppath)
@@ -418,9 +252,6 @@ def test_validate_and_sync_handles_relationship_with_both_ghosts() -> None:
             yaml.dump({"name": "test"}, f)
 
         # Create conceptual.yml where relationship references two missing concepts
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
         conceptual_data = {
             "version": 1,
             "concepts": {},  # No concepts defined
@@ -429,7 +260,7 @@ def test_validate_and_sync_handles_relationship_with_both_ghosts() -> None:
             ],
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
 
         config = Config.load(project_dir=tmppath)
@@ -457,9 +288,6 @@ def test_validate_and_sync_counts_messages_correctly() -> None:
             yaml.dump({"name": "test"}, f)
 
         # Create conceptual.yml with various issues
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
         conceptual_data = {
             "version": 1,
             "domains": {
@@ -474,7 +302,7 @@ def test_validate_and_sync_counts_messages_correctly() -> None:
             ],
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
 
         config = Config.load(project_dir=tmppath)
@@ -482,10 +310,9 @@ def test_validate_and_sync_counts_messages_correctly() -> None:
         state = builder.build()
         validation = builder.validate_and_sync(state)
 
-        # Should have at least: 1 error (missing order), 1 warning (ghost stub + empty domain), 1 info
+        # Should have at least: 1 error (missing order), 1 warning (empty domain), 1 info
         assert validation.error_count >= 1
         assert validation.warning_count >= 1
-        assert validation.info_count >= 1
 
         # Total should match sum
         total = (
@@ -504,9 +331,6 @@ def test_validate_and_sync_detects_empty_domains() -> None:
             yaml.dump({"name": "test"}, f)
 
         # Create conceptual.yml with empty domain
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
         conceptual_data = {
             "version": 1,
             "domains": {
@@ -518,7 +342,7 @@ def test_validate_and_sync_detects_empty_domains() -> None:
             },
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
 
         config = Config.load(project_dir=tmppath)
@@ -540,10 +364,7 @@ def test_validate_and_sync_returns_info_message() -> None:
         with open(tmppath / "dbt_project.yml", "w") as f:
             yaml.dump({"name": "test"}, f)
 
-        # Create conceptual.yml
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
+        # Create conceptual.yml in project root
         conceptual_data = {
             "version": 1,
             "concepts": {
@@ -552,7 +373,7 @@ def test_validate_and_sync_returns_info_message() -> None:
             },
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
 
         config = Config.load(project_dir=tmppath)
@@ -566,8 +387,8 @@ def test_validate_and_sync_returns_info_message() -> None:
         assert any("Synced" in m.text and "concepts" in m.text for m in info_msgs)
 
 
-def test_validate_and_sync_marks_relationship_invalid() -> None:
-    """Test that relationships referencing ghost concepts are marked invalid."""
+def test_status_derived_from_domain_and_models() -> None:
+    """Test that concept status is correctly derived from domain and models."""
     with TemporaryDirectory() as tmpdir:
         tmppath = Path(tmpdir)
 
@@ -575,122 +396,52 @@ def test_validate_and_sync_marks_relationship_invalid() -> None:
         with open(tmppath / "dbt_project.yml", "w") as f:
             yaml.dump({"name": "test"}, f)
 
-        # Create conceptual.yml with missing concepts on both ends
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
+        # Create conceptual.yml with various concepts
         conceptual_data = {
             "version": 1,
-            "concepts": {},  # No concepts defined
-            "relationships": [{"verb": "places", "from": "customer", "to": "order"}],
+            "domains": {"party": {"name": "Party"}},
+            "concepts": {
+                "stub_concept": {"name": "Stub"},  # No domain = stub
+                "draft_concept": {
+                    "name": "Draft",
+                    "domain": "party",
+                },  # Domain but no models = draft
+                "complete_concept": {
+                    "name": "Complete",
+                    "domain": "party",
+                },  # Will have models = complete
+            },
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
 
-        config = Config.load(project_dir=tmppath)
-        builder = StateBuilder(config)
-        state = builder.build()
-        builder.validate_and_sync(state)
-
-        # Check that relationship was marked invalid
-        rel = state.relationships["customer:places:order"]
-        assert rel.validation_status == "error"
-        assert len(rel.validation_messages) >= 2  # Both source and target missing
-
-
-def test_lineage_inference_from_manifest() -> None:
-    """Test that lineage inference discovers upstream/downstream models."""
-    import json
-
-    with TemporaryDirectory() as tmpdir:
-        tmppath = Path(tmpdir)
-
-        # Create dbt_project.yml
-        with open(tmppath / "dbt_project.yml", "w") as f:
-            yaml.dump({"name": "test"}, f)
-
-        # Create conceptual.yml
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
-        conceptual_data = {
-            "version": 1,
-            "concepts": {"customer": {"name": "Customer", "domain": "party"}},
-        }
-
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
-            yaml.dump(conceptual_data, f)
-
-        # Create silver model with meta.concept (anchor)
-        silver_dir = tmppath / "models" / "silver"
-        silver_dir.mkdir(parents=True)
+        # Create model for complete_concept
+        gold_dir = tmppath / "models" / "marts"
+        gold_dir.mkdir(parents=True)
 
         schema_data = {
             "version": 2,
-            "models": [{"name": "stg_customer", "meta": {"concept": "customer"}}],
-        }
-
-        with open(silver_dir / "schema.yml", "w") as f:
-            yaml.dump(schema_data, f)
-
-        # Create gold model without meta.concept (should be inferred)
-        gold_dir = tmppath / "models" / "gold"
-        gold_dir.mkdir(parents=True)
-
-        schema_data_gold = {
-            "version": 2,
-            "models": [{"name": "dim_customer"}],  # No meta.concept
+            "models": [
+                {"name": "dim_complete", "meta": {"concept": "complete_concept"}}
+            ],
         }
 
         with open(gold_dir / "schema.yml", "w") as f:
-            yaml.dump(schema_data_gold, f)
-
-        # Create manifest.json with lineage
-        target_dir = tmppath / "target"
-        target_dir.mkdir()
-
-        manifest = {
-            "nodes": {
-                "model.test.stg_customer": {
-                    "name": "stg_customer",
-                    "original_file_path": "models/silver/stg_customer.sql",
-                    "depends_on": {"nodes": ["source.test.raw.customers"]},
-                },
-                "model.test.dim_customer": {
-                    "name": "dim_customer",
-                    "original_file_path": "models/gold/dim_customer.sql",
-                    "depends_on": {"nodes": ["model.test.stg_customer"]},
-                },
-            }
-        }
-
-        with open(target_dir / "manifest.json", "w") as f:
-            json.dump(manifest, f)
+            yaml.dump(schema_data, f)
 
         config = Config.load(project_dir=tmppath)
         builder = StateBuilder(config)
         state = builder.build()
 
-        # Check that dim_customer was inferred as gold model
-        assert "customer" in state.concepts
-        customer = state.concepts["customer"]
-
-        # stg_customer should be explicit (has meta.concept)
-        assert "stg_customer" in customer.silver_models
-
-        # dim_customer should be inferred from downstream lineage
-        assert "dim_customer" in customer.gold_models
-        assert "dim_customer" in customer.inferred_models
-
-        # stg_customer should NOT be in inferred (it's explicit)
-        assert "stg_customer" not in customer.inferred_models
+        # Verify statuses
+        assert state.concepts["stub_concept"].status == "stub"
+        assert state.concepts["draft_concept"].status == "draft"
+        assert state.concepts["complete_concept"].status == "complete"
 
 
-def test_lineage_inference_respects_explicit_tags() -> None:
-    """Test that explicit meta.concept tags take precedence over inference."""
-    import json
-
+def test_relationship_cardinality_validation() -> None:
+    """Test that only 1:1 and 1:N cardinalities are allowed."""
     with TemporaryDirectory() as tmpdir:
         tmppath = Path(tmpdir)
 
@@ -698,75 +449,45 @@ def test_lineage_inference_respects_explicit_tags() -> None:
         with open(tmppath / "dbt_project.yml", "w") as f:
             yaml.dump({"name": "test"}, f)
 
-        # Create conceptual.yml with two concepts
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
+        # Create conceptual.yml with various cardinalities
         conceptual_data = {
             "version": 1,
             "concepts": {
                 "customer": {"name": "Customer"},
                 "order": {"name": "Order"},
+                "address": {"name": "Address"},
             },
+            "relationships": [
+                {
+                    "verb": "places",
+                    "from": "customer",
+                    "to": "order",
+                    "cardinality": "1:N",
+                },
+                {
+                    "verb": "has",
+                    "from": "customer",
+                    "to": "address",
+                    "cardinality": "1:1",
+                },
+                {
+                    "verb": "invalid",
+                    "from": "order",
+                    "to": "address",
+                    "cardinality": "N:M",
+                },  # Invalid
+            ],
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
 
-        # Create silver model for customer
-        silver_dir = tmppath / "models" / "silver"
-        silver_dir.mkdir(parents=True)
-
-        schema_data = {
-            "version": 2,
-            "models": [{"name": "stg_customer", "meta": {"concept": "customer"}}],
-        }
-
-        with open(silver_dir / "schema.yml", "w") as f:
-            yaml.dump(schema_data, f)
-
-        # Create gold model explicitly tagged with 'order' concept
-        # This should NOT be inferred as 'customer' even though it depends on stg_customer
-        gold_dir = tmppath / "models" / "gold"
-        gold_dir.mkdir(parents=True)
-
-        schema_data_gold = {
-            "version": 2,
-            "models": [
-                {"name": "fact_orders", "meta": {"concept": "order"}}
-            ],  # Explicitly tagged
-        }
-
-        with open(gold_dir / "schema.yml", "w") as f:
-            yaml.dump(schema_data_gold, f)
-
-        # Create manifest.json with lineage
-        target_dir = tmppath / "target"
-        target_dir.mkdir()
-
-        manifest = {
-            "nodes": {
-                "model.test.stg_customer": {
-                    "name": "stg_customer",
-                    "original_file_path": "models/silver/stg_customer.sql",
-                    "depends_on": {"nodes": []},
-                },
-                "model.test.fact_orders": {
-                    "name": "fact_orders",
-                    "original_file_path": "models/gold/fact_orders.sql",
-                    "depends_on": {"nodes": ["model.test.stg_customer"]},
-                },
-            }
-        }
-
-        with open(target_dir / "manifest.json", "w") as f:
-            json.dump(manifest, f)
-
         config = Config.load(project_dir=tmppath)
-        builder = StateBuilder(config)
-        state = builder.build()
+        parser = ConceptualModelParser(config)
+        state = parser.parse()
 
-        # fact_orders should belong to 'order' concept (explicit), not 'customer' (inferred)
-        assert "fact_orders" in state.concepts["order"].gold_models
-        assert "fact_orders" not in state.concepts["customer"].gold_models
-        assert "fact_orders" not in state.concepts["customer"].inferred_models
+        # Check valid cardinalities preserved
+        assert state.relationships["customer:places:order"].cardinality == "1:N"
+        assert state.relationships["customer:has:address"].cardinality == "1:1"
+        # Invalid cardinality should default to 1:N
+        assert state.relationships["order:invalid:address"].cardinality == "1:N"

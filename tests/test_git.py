@@ -30,9 +30,7 @@ class TestLoadStateFromGitRef:
             with open(tmppath / "dbt_project.yml", "w") as f:
                 yaml.dump({"name": "test"}, f)
 
-            conceptual_dir = tmppath / "models" / "conceptual"
-            conceptual_dir.mkdir(parents=True)
-            with open(conceptual_dir / "conceptual.yml", "w") as f:
+            with open(tmppath / "conceptual.yml", "w") as f:
                 yaml.dump({"version": 1}, f)
 
             config = Config.load(project_dir=tmppath)
@@ -55,9 +53,7 @@ class TestLoadStateFromGitRef:
             with open(tmppath / "dbt_project.yml", "w") as f:
                 yaml.dump({"name": "test"}, f)
 
-            conceptual_dir = tmppath / "models" / "conceptual"
-            conceptual_dir.mkdir(parents=True)
-            with open(conceptual_dir / "conceptual.yml", "w") as f:
+            with open(tmppath / "conceptual.yml", "w") as f:
                 yaml.dump({"version": 1}, f)
 
             config = Config.load(project_dir=tmppath)
@@ -82,9 +78,7 @@ class TestLoadStateFromGitRef:
             with open(tmppath / "dbt_project.yml", "w") as f:
                 yaml.dump({"name": "test"}, f)
 
-            conceptual_dir = tmppath / "models" / "conceptual"
-            conceptual_dir.mkdir(parents=True)
-            with open(conceptual_dir / "conceptual.yml", "w") as f:
+            with open(tmppath / "conceptual.yml", "w") as f:
                 yaml.dump({"version": 1}, f)
 
             config = Config.load(project_dir=tmppath)
@@ -115,9 +109,7 @@ class TestLoadStateFromGitRef:
             with open(tmppath / "dbt_project.yml", "w") as f:
                 yaml.dump({"name": "test"}, f)
 
-            conceptual_dir = tmppath / "models" / "conceptual"
-            conceptual_dir.mkdir(parents=True)
-            with open(conceptual_dir / "conceptual.yml", "w") as f:
+            with open(tmppath / "conceptual.yml", "w") as f:
                 yaml.dump({"version": 1}, f)
 
             config = Config.load(project_dir=tmppath)
@@ -180,9 +172,6 @@ class TestComputeDiffFromRef:
                 yaml.dump({"name": "test"}, f)
 
             # Create current conceptual.yml
-            conceptual_dir = tmppath / "models" / "conceptual"
-            conceptual_dir.mkdir(parents=True)
-
             current_data = {
                 "version": 1,
                 "concepts": {
@@ -192,7 +181,7 @@ class TestComputeDiffFromRef:
                 "domains": {"party": {"name": "Party"}},
             }
 
-            with open(conceptual_dir / "conceptual.yml", "w") as f:
+            with open(tmppath / "conceptual.yml", "w") as f:
                 yaml.dump(current_data, f)
 
             config = Config.load(project_dir=tmppath)
@@ -238,15 +227,12 @@ class TestComputeDiffFromRef:
                 yaml.dump({"name": "test"}, f)
 
             # Create conceptual.yml
-            conceptual_dir = tmppath / "models" / "conceptual"
-            conceptual_dir.mkdir(parents=True)
-
             data = {
                 "version": 1,
                 "concepts": {"customer": {"name": "Customer"}},
             }
 
-            with open(conceptual_dir / "conceptual.yml", "w") as f:
+            with open(tmppath / "conceptual.yml", "w") as f:
                 yaml.dump(data, f)
 
             config = Config.load(project_dir=tmppath)
@@ -288,11 +274,11 @@ class TestExceptionClasses:
         """Test RefNotFoundError exception."""
         exc = RefNotFoundError(
             ref="feature-branch",
-            file_path="models/conceptual/conceptual.yml",
+            file_path="conceptual.yml",
             stderr="fatal: not found",
         )
 
         assert exc.ref == "feature-branch"
-        assert exc.file_path == "models/conceptual/conceptual.yml"
+        assert exc.file_path == "conceptual.yml"
         assert exc.stderr == "fatal: not found"
         assert "feature-branch" in str(exc)

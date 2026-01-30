@@ -36,12 +36,9 @@ def test_cli_init() -> None:
         assert result.exit_code == 0
         assert "Initialization complete" in result.output
 
-        # Check files were created
-        conceptual_file = tmppath / "models" / "conceptual" / "conceptual.yml"
-        layout_file = tmppath / "models" / "conceptual" / "layout.yml"
-
+        # Check conceptual.yml was created in project root
+        conceptual_file = tmppath / "conceptual.yml"
         assert conceptual_file.exists()
-        assert layout_file.exists()
 
 
 def test_cli_init_already_exists() -> None:
@@ -91,10 +88,7 @@ def test_cli_status_with_project() -> None:
         with open(tmppath / "dbt_project.yml", "w") as f:
             yaml.dump({"name": "test"}, f)
 
-        # Create conceptual.yml
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
+        # Create conceptual.yml in project root
         conceptual_data = {
             "version": 1,
             "domains": {"party": {"name": "Party"}},
@@ -104,16 +98,15 @@ def test_cli_status_with_project() -> None:
                     "domain": "party",
                     "owner": "data_team",
                     "definition": "A customer",
-                    "status": "complete",
                 }
             },
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
 
         # Create a gold model
-        gold_dir = tmppath / "models" / "gold"
+        gold_dir = tmppath / "models" / "marts"
         gold_dir.mkdir(parents=True)
 
         with open(gold_dir / "schema.yml", "w") as f:
@@ -146,28 +139,25 @@ def test_cli_validate_no_errors() -> None:
         with open(tmppath / "dbt_project.yml", "w") as f:
             yaml.dump({"name": "test"}, f)
 
-        # Create conceptual.yml
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
+        # Create conceptual.yml in project root
         conceptual_data = {
             "version": 1,
+            "domains": {"party": {"name": "Party"}},
             "concepts": {
                 "customer": {
                     "name": "Customer",
                     "domain": "party",
                     "owner": "data_team",
                     "definition": "A customer",
-                    "status": "complete",
                 }
             },
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
 
         # Create models
-        gold_dir = tmppath / "models" / "gold"
+        gold_dir = tmppath / "models" / "marts"
         gold_dir.mkdir(parents=True)
 
         with open(gold_dir / "schema.yml", "w") as f:
@@ -183,7 +173,7 @@ def test_cli_validate_no_errors() -> None:
 
         result = runner.invoke(validate, ["--project-dir", str(tmppath)])
 
-        # Should have warnings but no errors
+        # Should pass
         assert "PASSED" in result.output
 
 
@@ -198,45 +188,26 @@ def test_cli_validate_with_errors() -> None:
         with open(tmppath / "dbt_project.yml", "w") as f:
             yaml.dump({"name": "test"}, f)
 
-        # Create conceptual.yml with relationship
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
+        # Create conceptual.yml with relationship referencing unknown concept
         conceptual_data = {
             "version": 1,
             "concepts": {
-                "customer": {"name": "Customer", "status": "complete"},
-                "order": {"name": "Order", "status": "complete"},
+                "customer": {"name": "Customer"},
             },
-            "relationships": [{"name": "places", "from": "customer", "to": "order"}],
+            "relationships": [
+                {"verb": "places", "from": "customer", "to": "unknown_concept"}
+            ],
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
-
-        # Create fact that realizes relationship but endpoints aren't implemented
-        gold_dir = tmppath / "models" / "gold"
-        gold_dir.mkdir(parents=True)
-
-        with open(gold_dir / "schema.yml", "w") as f:
-            yaml.dump(
-                {
-                    "version": 2,
-                    "models": [
-                        {
-                            "name": "fact_orders",
-                            "meta": {"realizes": ["customer:places:order"]},
-                        }
-                    ],
-                },
-                f,
-            )
 
         result = runner.invoke(validate, ["--project-dir", str(tmppath)])
 
+        # Should fail with E002 (unknown reference)
         assert result.exit_code == 1
         assert "FAILED" in result.output
-        assert "ERRORS" in result.output
+        assert "E002" in result.output
 
 
 def test_cli_status_with_orphans() -> None:
@@ -250,14 +221,12 @@ def test_cli_status_with_orphans() -> None:
         with open(tmppath / "dbt_project.yml", "w") as f:
             yaml.dump({"name": "test"}, f)
 
-        # Create minimal conceptual.yml
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        # Create minimal conceptual.yml in project root
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump({"version": 1}, f)
 
         # Create orphan model
-        gold_dir = tmppath / "models" / "gold"
+        gold_dir = tmppath / "models" / "marts"
         gold_dir.mkdir(parents=True)
         with open(gold_dir / "schema.yml", "w") as f:
             yaml.dump({"version": 2, "models": [{"name": "dim_orphan"}]}, f)
@@ -281,23 +250,31 @@ def test_cli_status_with_relationships() -> None:
             yaml.dump({"name": "test"}, f)
 
         # Create conceptual.yml with relationships
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
         conceptual_data = {
             "version": 1,
+            "domains": {"party": {"name": "Party"}},
             "concepts": {
-                "customer": {"name": "Customer", "status": "complete"},
-                "order": {"name": "Order", "status": "complete"},
+                "customer": {
+                    "name": "Customer",
+                    "domain": "party",
+                    "owner": "data_team",
+                    "definition": "A customer",
+                },
+                "order": {
+                    "name": "Order",
+                    "domain": "party",
+                    "owner": "data_team",
+                    "definition": "An order",
+                },
             },
-            "relationships": [{"name": "places", "from": "customer", "to": "order"}],
+            "relationships": [{"verb": "places", "from": "customer", "to": "order"}],
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
 
-        # Create fact that realizes relationship
-        gold_dir = tmppath / "models" / "gold"
+        # Create models for both concepts
+        gold_dir = tmppath / "models" / "marts"
         gold_dir.mkdir(parents=True)
 
         with open(gold_dir / "schema.yml", "w") as f:
@@ -305,10 +282,8 @@ def test_cli_status_with_relationships() -> None:
                 {
                     "version": 2,
                     "models": [
-                        {
-                            "name": "fact_orders",
-                            "meta": {"realizes": ["customer:places:order"]},
-                        }
+                        {"name": "dim_customer", "meta": {"concept": "customer"}},
+                        {"name": "fact_orders", "meta": {"concept": "order"}},
                     ],
                 },
                 f,
@@ -319,7 +294,6 @@ def test_cli_status_with_relationships() -> None:
         assert result.exit_code == 0
         assert "Relationships" in result.output
         assert "places" in result.output
-        assert "fact_orders" in result.output
 
 
 def test_cli_status_with_stub_concept() -> None:
@@ -333,67 +307,21 @@ def test_cli_status_with_stub_concept() -> None:
         with open(tmppath / "dbt_project.yml", "w") as f:
             yaml.dump({"name": "test"}, f)
 
-        # Create conceptual.yml with stub
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
+        # Create conceptual.yml with stub (missing domain)
         conceptual_data = {
             "version": 1,
-            "concepts": {"payment": {"name": "Payment", "status": "stub"}},
+            "concepts": {"payment": {"name": "Payment"}},
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
 
         result = runner.invoke(status, ["--project-dir", str(tmppath)])
 
         assert result.exit_code == 0
         assert "payment" in result.output
-        assert "⚠" in result.output  # Warning icon for stub
+        # Stub concepts show warning icon and missing attributes
         assert "missing" in result.output
-        # Should show in "Concepts Needing Attention" section
-        assert "Concepts Needing Attention" in result.output
-        assert "missing: domain, owner, definition" in result.output
-
-
-def test_cli_status_with_deprecated_concept() -> None:
-    """Test status command shows deprecated concepts."""
-    runner = CliRunner()
-
-    with TemporaryDirectory() as tmpdir:
-        tmppath = Path(tmpdir)
-
-        # Create dbt_project.yml
-        with open(tmppath / "dbt_project.yml", "w") as f:
-            yaml.dump({"name": "test"}, f)
-
-        # Create conceptual.yml with deprecated concept
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
-        conceptual_data = {
-            "version": 1,
-            "domains": {"party": {"name": "Party"}},
-            "concepts": {
-                "old_customer": {
-                    "name": "Old Customer",
-                    "domain": "party",
-                    "owner": "data_team",
-                    "definition": "Deprecated",
-                    "status": "deprecated",
-                    "replaced_by": "customer",
-                }
-            },
-        }
-
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
-            yaml.dump(conceptual_data, f)
-
-        result = runner.invoke(status, ["--project-dir", str(tmppath)])
-
-        assert result.exit_code == 0
-        assert "old_customer" in result.output
-        assert "✗" in result.output  # X icon for deprecated
 
 
 def test_cli_validate_with_warnings_only() -> None:
@@ -407,20 +335,25 @@ def test_cli_validate_with_warnings_only() -> None:
         with open(tmppath / "dbt_project.yml", "w") as f:
             yaml.dump({"name": "test"}, f)
 
-        # Create conceptual.yml
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
+        # Create conceptual.yml with a concept that has domain/owner/definition
         conceptual_data = {
             "version": 1,
-            "concepts": {"customer": {"name": "Customer", "status": "complete"}},
+            "domains": {"party": {"name": "Party"}},
+            "concepts": {
+                "customer": {
+                    "name": "Customer",
+                    "domain": "party",
+                    "owner": "data_team",
+                    "definition": "A customer",
+                }
+            },
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
 
-        # Create gold-only model (triggers warning)
-        gold_dir = tmppath / "models" / "gold"
+        # Create gold model
+        gold_dir = tmppath / "models" / "marts"
         gold_dir.mkdir(parents=True)
 
         with open(gold_dir / "schema.yml", "w") as f:
@@ -437,9 +370,6 @@ def test_cli_validate_with_warnings_only() -> None:
         result = runner.invoke(validate, ["--project-dir", str(tmppath)])
 
         # Should pass (warnings are not errors)
-        # Exit code 0 if no errors, 1 if errors
-        # With incomplete concept (missing required fields), may have errors
-        # Let's check what actually happens
         assert "customer" in result.output
 
 
@@ -473,61 +403,8 @@ def test_cli_validate_without_conceptual_file() -> None:
         assert "conceptual.yml not found" in result.output
 
 
-def test_cli_validate_shows_silver_models() -> None:
-    """Test validate command shows silver models."""
-    runner = CliRunner()
-
-    with TemporaryDirectory() as tmpdir:
-        tmppath = Path(tmpdir)
-
-        # Create dbt_project.yml
-        with open(tmppath / "dbt_project.yml", "w") as f:
-            yaml.dump({"name": "test"}, f)
-
-        # Create conceptual.yml
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
-        conceptual_data = {
-            "version": 1,
-            "concepts": {
-                "customer": {
-                    "name": "Customer",
-                    "domain": "party",
-                    "owner": "data_team",
-                    "definition": "A customer",
-                    "status": "complete",
-                }
-            },
-            "domains": {"party": {"name": "Party"}},
-        }
-
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
-            yaml.dump(conceptual_data, f)
-
-        # Create silver model
-        silver_dir = tmppath / "models" / "silver"
-        silver_dir.mkdir(parents=True)
-
-        with open(silver_dir / "schema.yml", "w") as f:
-            yaml.dump(
-                {
-                    "version": 2,
-                    "models": [
-                        {"name": "stg_customer", "meta": {"concept": "customer"}}
-                    ],
-                },
-                f,
-            )
-
-        result = runner.invoke(validate, ["--project-dir", str(tmppath)])
-
-        assert result.exit_code == 0
-        assert "stg_customer" in result.output
-
-
-def test_cli_validate_with_unrealized_relationship() -> None:
-    """Test validate shows unrealized relationships."""
+def test_cli_validate_with_relationship() -> None:
+    """Test validate shows relationships."""
     runner = CliRunner()
 
     with TemporaryDirectory() as tmpdir:
@@ -538,38 +415,52 @@ def test_cli_validate_with_unrealized_relationship() -> None:
             yaml.dump({"name": "test"}, f)
 
         # Create conceptual.yml with relationship
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
         conceptual_data = {
             "version": 1,
+            "domains": {
+                "party": {"name": "Party"},
+                "transaction": {"name": "Transaction"},
+            },
             "concepts": {
                 "customer": {
                     "name": "Customer",
                     "domain": "party",
                     "owner": "data_team",
                     "definition": "A customer",
-                    "status": "complete",
                 },
                 "order": {
                     "name": "Order",
                     "domain": "transaction",
                     "owner": "data_team",
                     "definition": "An order",
-                    "status": "complete",
                 },
             },
-            "relationships": [{"name": "places", "from": "customer", "to": "order"}],
+            "relationships": [{"verb": "places", "from": "customer", "to": "order"}],
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
+
+        # Create models for both concepts
+        gold_dir = tmppath / "models" / "marts"
+        gold_dir.mkdir(parents=True)
+
+        with open(gold_dir / "schema.yml", "w") as f:
+            yaml.dump(
+                {
+                    "version": 2,
+                    "models": [
+                        {"name": "dim_customer", "meta": {"concept": "customer"}},
+                        {"name": "fact_orders", "meta": {"concept": "order"}},
+                    ],
+                },
+                f,
+            )
 
         result = runner.invoke(validate, ["--project-dir", str(tmppath)])
 
         assert result.exit_code == 0
         assert "places" in result.output
-        assert "NOT REALIZED" in result.output
 
 
 def test_cli_validate_with_info_messages() -> None:
@@ -583,16 +474,13 @@ def test_cli_validate_with_info_messages() -> None:
         with open(tmppath / "dbt_project.yml", "w") as f:
             yaml.dump({"name": "test"}, f)
 
-        # Create conceptual.yml with stub concept (generates info)
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
+        # Create conceptual.yml with stub concept (missing domain generates stub)
         conceptual_data = {
             "version": 1,
-            "concepts": {"payment": {"name": "Payment", "status": "stub"}},
+            "concepts": {"payment": {"name": "Payment"}},
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
 
         result = runner.invoke(validate, ["--project-dir", str(tmppath)])
@@ -613,9 +501,6 @@ def test_cli_status_with_draft_concept_missing_attrs() -> None:
             yaml.dump({"name": "test"}, f)
 
         # Create conceptual.yml with draft concept missing owner
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
         conceptual_data = {
             "version": 1,
             "domains": {"party": {"name": "Party"}},
@@ -624,13 +509,12 @@ def test_cli_status_with_draft_concept_missing_attrs() -> None:
                     "name": "Customer",
                     "domain": "party",
                     "definition": "A customer",
-                    "status": "draft",
                     # owner is missing
                 }
             },
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
 
         result = runner.invoke(status, ["--project-dir", str(tmppath)])
@@ -639,46 +523,6 @@ def test_cli_status_with_draft_concept_missing_attrs() -> None:
         assert "customer" in result.output
         assert "missing: owner" in result.output
         assert "Concepts Needing Attention" in result.output
-
-
-def test_cli_status_with_custom_status() -> None:
-    """Test status command with a custom status value."""
-    runner = CliRunner()
-
-    with TemporaryDirectory() as tmpdir:
-        tmppath = Path(tmpdir)
-
-        # Create dbt_project.yml
-        with open(tmppath / "dbt_project.yml", "w") as f:
-            yaml.dump({"name": "test"}, f)
-
-        # Create conceptual.yml with custom status
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
-        conceptual_data = {
-            "version": 1,
-            "concepts": {
-                "customer": {
-                    "name": "Customer",
-                    "domain": "party",
-                    "owner": "data_team",
-                    "definition": "A customer",
-                    "status": "in_progress",
-                }
-            },
-            "domains": {"party": {"name": "Party"}},
-        }
-
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
-            yaml.dump(conceptual_data, f)
-
-        result = runner.invoke(status, ["--project-dir", str(tmppath)])
-
-        assert result.exit_code == 0
-        assert "customer" in result.output
-        # Custom status shows as icon ◐
-        assert "◐" in result.output
 
 
 def test_cli_sync_no_orphans() -> None:
@@ -693,27 +537,24 @@ def test_cli_sync_no_orphans() -> None:
             yaml.dump({"name": "test"}, f)
 
         # Create conceptual.yml with concept
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
         conceptual_data = {
             "version": 1,
+            "domains": {"party": {"name": "Party"}},
             "concepts": {
                 "customer": {
                     "name": "Customer",
                     "domain": "party",
                     "owner": "data_team",
                     "definition": "A customer",
-                    "status": "complete",
                 }
             },
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
 
         # Create gold model with concept tag
-        gold_dir = tmppath / "models" / "gold"
+        gold_dir = tmppath / "models" / "marts"
         gold_dir.mkdir(parents=True)
 
         with open(gold_dir / "schema.yml", "w") as f:
@@ -745,13 +586,11 @@ def test_cli_sync_with_orphans() -> None:
             yaml.dump({"name": "test"}, f)
 
         # Create minimal conceptual.yml
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump({"version": 1}, f)
 
         # Create orphan model
-        gold_dir = tmppath / "models" / "gold"
+        gold_dir = tmppath / "models" / "marts"
         gold_dir.mkdir(parents=True)
         with open(gold_dir / "schema.yml", "w") as f:
             yaml.dump({"version": 2, "models": [{"name": "dim_product"}]}, f)
@@ -776,14 +615,12 @@ def test_cli_sync_create_stubs() -> None:
             yaml.dump({"name": "test"}, f)
 
         # Create minimal conceptual.yml
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-        conceptual_file = conceptual_dir / "conceptual.yml"
+        conceptual_file = tmppath / "conceptual.yml"
         with open(conceptual_file, "w") as f:
             yaml.dump({"version": 1}, f)
 
         # Create orphan models
-        gold_dir = tmppath / "models" / "gold"
+        gold_dir = tmppath / "models" / "marts"
         gold_dir.mkdir(parents=True)
         with open(gold_dir / "schema.yml", "w") as f:
             yaml.dump(
@@ -805,9 +642,7 @@ def test_cli_sync_create_stubs() -> None:
         with open(conceptual_file) as f:
             data = yaml.safe_load(f)
             assert "product" in data["concepts"]
-            assert data["concepts"]["product"]["status"] == "stub"
             assert "sales" in data["concepts"]
-            assert data["concepts"]["sales"]["status"] == "stub"
 
 
 def test_cli_sync_specific_model() -> None:
@@ -822,14 +657,12 @@ def test_cli_sync_specific_model() -> None:
             yaml.dump({"name": "test"}, f)
 
         # Create minimal conceptual.yml
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-        conceptual_file = conceptual_dir / "conceptual.yml"
+        conceptual_file = tmppath / "conceptual.yml"
         with open(conceptual_file, "w") as f:
             yaml.dump({"version": 1}, f)
 
         # Create multiple orphan models
-        gold_dir = tmppath / "models" / "gold"
+        gold_dir = tmppath / "models" / "marts"
         gold_dir.mkdir(parents=True)
         with open(gold_dir / "schema.yml", "w") as f:
             yaml.dump(

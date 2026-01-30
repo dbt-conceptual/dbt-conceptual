@@ -23,14 +23,12 @@ class ConceptualFileNotFound(Exception):
 
 def load_project_state(
     project_dir: Optional[Path] = None,
-    silver_paths: Optional[list[str]] = None,
     gold_paths: Optional[list[str]] = None,
 ) -> tuple[ProjectState, Config]:
     """Load project configuration and state.
 
     Args:
         project_dir: Path to dbt project directory (default: current directory)
-        silver_paths: Override silver layer paths
         gold_paths: Override gold layer paths
 
     Returns:
@@ -41,7 +39,6 @@ def load_project_state(
     """
     config = Config.load(
         project_dir=project_dir,
-        silver_paths=silver_paths,
         gold_paths=gold_paths,
     )
 
@@ -59,7 +56,6 @@ def project_options(f: F) -> F:
 
     Adds:
         --project-dir: Path to dbt project directory
-        --silver-paths: Override silver layer paths (multiple)
         --gold-paths: Override gold layer paths (multiple)
     """
 
@@ -68,11 +64,6 @@ def project_options(f: F) -> F:
         type=click.Path(exists=True, file_okay=False, path_type=Path),
         default=None,
         help="Path to dbt project directory (default: current directory)",
-    )
-    @click.option(
-        "--silver-paths",
-        multiple=True,
-        help="Override silver layer paths",
     )
     @click.option(
         "--gold-paths",
@@ -89,7 +80,7 @@ def project_options(f: F) -> F:
 def require_conceptual_yml(f: F) -> F:
     """Decorator that ensures conceptual.yml exists before running command.
 
-    The decorated function must accept project_dir, silver_paths, and gold_paths
+    The decorated function must accept project_dir and gold_paths
     arguments (typically added via @project_options).
 
     Injects 'state' and 'config' into the function kwargs if the function
@@ -103,13 +94,11 @@ def require_conceptual_yml(f: F) -> F:
         console = Console()
 
         project_dir = kwargs.get("project_dir")
-        silver_paths = kwargs.get("silver_paths", ())
         gold_paths = kwargs.get("gold_paths", ())
 
         try:
             state, config = load_project_state(
                 project_dir=project_dir,
-                silver_paths=list(silver_paths) if silver_paths else None,
                 gold_paths=list(gold_paths) if gold_paths else None,
             )
         except ConceptualFileNotFound as e:

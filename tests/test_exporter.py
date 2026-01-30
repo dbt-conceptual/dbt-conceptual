@@ -43,10 +43,7 @@ def test_export_coverage_basic() -> None:
         with open(tmppath / "dbt_project.yml", "w") as f:
             yaml.dump({"name": "test"}, f)
 
-        # Create conceptual.yml with various states
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
+        # Create conceptual.yml in project root
         conceptual_data = {
             "version": 1,
             "domains": {"party": {"name": "Party", "color": "#E3F2FD"}},
@@ -56,21 +53,23 @@ def test_export_coverage_basic() -> None:
                     "domain": "party",
                     "owner": "team",
                     "definition": "A customer",
-                    "status": "complete",
                 },
-                "order": {"name": "Order", "status": "stub"},
-                "product": {"name": "Product", "status": "draft"},
+                "order": {"name": "Order"},  # stub (no domain)
+                "product": {
+                    "name": "Product",
+                    "domain": "party",
+                },  # draft (domain, no models)
             },
             "relationships": [
-                {"name": "places", "from": "customer", "to": "order"},
+                {"verb": "places", "from": "customer", "to": "order"},
             ],
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
 
         # Create models
-        gold_dir = tmppath / "models" / "gold"
+        gold_dir = tmppath / "models" / "marts"
         gold_dir.mkdir(parents=True)
 
         with open(gold_dir / "schema.yml", "w") as f:
@@ -79,10 +78,6 @@ def test_export_coverage_basic() -> None:
                     "version": 2,
                     "models": [
                         {"name": "dim_customer", "meta": {"concept": "customer"}},
-                        {
-                            "name": "fact_orders",
-                            "meta": {"realizes": ["customer:places:order"]},
-                        },
                     ],
                 },
                 f,
@@ -101,9 +96,7 @@ def test_export_coverage_basic() -> None:
         assert "<!DOCTYPE html>" in result
         assert "<title>dbt-conceptual Coverage Report</title>" in result
         assert "Concept Completion" in result
-        assert "Silver Coverage" in result
-        assert "Gold Coverage" in result
-        assert "Relationships Realized" in result
+        assert "Model Coverage" in result
 
         # Verify concepts shown
         assert "Customer" in result
@@ -128,24 +121,21 @@ def test_export_coverage_with_attention_items() -> None:
             yaml.dump({"name": "test"}, f)
 
         # Create conceptual.yml
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
         conceptual_data = {
             "version": 1,
             "concepts": {
-                "customer": {"name": "Customer", "status": "stub"},
+                "customer": {"name": "Customer"},  # stub (no domain)
                 "order": {
                     "name": "Order",
-                    "status": "draft",
-                },  # Missing owner, definition, domain
+                    "domain": "sales",
+                },  # draft (domain but no models)
             },
             "relationships": [
-                {"name": "places", "from": "customer", "to": "order"},
+                {"verb": "places", "from": "customer", "to": "order"},
             ],
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
 
         config = Config.load(project_dir=tmppath)
@@ -159,8 +149,6 @@ def test_export_coverage_with_attention_items() -> None:
         # Verify attention section exists
         assert "Needs Attention" in result
         assert "Stub Concept" in result
-        assert "Missing Attributes" in result
-        assert "Unrealized Relationship" in result
 
 
 def test_cli_export_coverage_to_file() -> None:
@@ -174,17 +162,37 @@ def test_cli_export_coverage_to_file() -> None:
         with open(tmppath / "dbt_project.yml", "w") as f:
             yaml.dump({"name": "test"}, f)
 
-        # Create conceptual.yml
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
+        # Create conceptual.yml in project root
         conceptual_data = {
             "version": 1,
-            "concepts": {"customer": {"name": "Customer", "status": "complete"}},
+            "domains": {"party": {"name": "Party"}},
+            "concepts": {
+                "customer": {
+                    "name": "Customer",
+                    "domain": "party",
+                    "owner": "team",
+                    "definition": "A customer",
+                }
+            },
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
+
+        # Create models
+        gold_dir = tmppath / "models" / "marts"
+        gold_dir.mkdir(parents=True)
+
+        with open(gold_dir / "schema.yml", "w") as f:
+            yaml.dump(
+                {
+                    "version": 2,
+                    "models": [
+                        {"name": "dim_customer", "meta": {"concept": "customer"}},
+                    ],
+                },
+                f,
+            )
 
         # Run export command with output file
         output_file = tmppath / "coverage.html"
@@ -225,9 +233,6 @@ def test_export_bus_matrix_basic() -> None:
             yaml.dump({"name": "test"}, f)
 
         # Create conceptual.yml with relationships
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
         conceptual_data = {
             "version": 1,
             "concepts": {
@@ -236,40 +241,13 @@ def test_export_bus_matrix_basic() -> None:
                 "product": {"name": "Product"},
             },
             "relationships": [
-                {"name": "places", "from": "customer", "to": "order"},
-                {"name": "contains", "from": "order", "to": "product"},
+                {"verb": "places", "from": "customer", "to": "order"},
+                {"verb": "contains", "from": "order", "to": "product"},
             ],
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
-
-        # Create fact models
-        gold_dir = tmppath / "models" / "gold"
-        gold_dir.mkdir(parents=True)
-
-        with open(gold_dir / "schema.yml", "w") as f:
-            yaml.dump(
-                {
-                    "version": 2,
-                    "models": [
-                        {
-                            "name": "fact_orders",
-                            "meta": {"realizes": ["customer:places:order"]},
-                        },
-                        {
-                            "name": "fact_order_lines",
-                            "meta": {
-                                "realizes": [
-                                    "customer:places:order",
-                                    "order:contains:product",
-                                ]
-                            },
-                        },
-                    ],
-                },
-                f,
-            )
 
         config = Config.load(project_dir=tmppath)
         builder = StateBuilder(config)
@@ -282,23 +260,15 @@ def test_export_bus_matrix_basic() -> None:
 
         # Verify HTML structure
         assert "<!DOCTYPE html>" in result
-        assert "<title>dbt-conceptual Bus Matrix</title>" in result
-        assert "Bus Matrix" in result
-
-        # Verify fact tables shown
-        assert "fact_orders" in result
-        assert "fact_order_lines" in result
+        assert "Relationships" in result
 
         # Verify relationships shown
-        assert "customer:places:order" in result
-        assert "order:contains:product" in result
-
-        # Verify checkmarks present (facts realize relationships)
-        assert "✓" in result
+        assert "places" in result
+        assert "contains" in result
 
 
 def test_export_bus_matrix_empty() -> None:
-    """Test bus matrix with no fact tables."""
+    """Test bus matrix with no relationships."""
     from dbt_conceptual.exporter import export_bus_matrix
 
     with TemporaryDirectory() as tmpdir:
@@ -308,17 +278,13 @@ def test_export_bus_matrix_empty() -> None:
         with open(tmppath / "dbt_project.yml", "w") as f:
             yaml.dump({"name": "test"}, f)
 
-        # Create conceptual.yml with no realized relationships
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
+        # Create conceptual.yml with no relationships
         conceptual_data = {
             "version": 1,
             "concepts": {"customer": {"name": "Customer"}},
-            "relationships": [{"name": "places", "from": "customer", "to": "order"}],
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
 
         config = Config.load(project_dir=tmppath)
@@ -330,8 +296,7 @@ def test_export_bus_matrix_empty() -> None:
         result = output.getvalue()
 
         # Verify empty state message
-        assert "No fact tables found" in result
-        assert "meta.realizes" in result
+        assert "No relationships defined" in result
 
 
 def test_cli_export_bus_matrix_to_file() -> None:
@@ -345,36 +310,15 @@ def test_cli_export_bus_matrix_to_file() -> None:
         with open(tmppath / "dbt_project.yml", "w") as f:
             yaml.dump({"name": "test"}, f)
 
-        # Create conceptual.yml
-        conceptual_dir = tmppath / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
+        # Create conceptual.yml in project root
         conceptual_data = {
             "version": 1,
             "concepts": {"customer": {"name": "Customer"}, "order": {"name": "Order"}},
-            "relationships": [{"name": "places", "from": "customer", "to": "order"}],
+            "relationships": [{"verb": "places", "from": "customer", "to": "order"}],
         }
 
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(tmppath / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
-
-        # Create fact model
-        gold_dir = tmppath / "models" / "gold"
-        gold_dir.mkdir(parents=True)
-
-        with open(gold_dir / "schema.yml", "w") as f:
-            yaml.dump(
-                {
-                    "version": 2,
-                    "models": [
-                        {
-                            "name": "fact_orders",
-                            "meta": {"realizes": ["customer:places:order"]},
-                        }
-                    ],
-                },
-                f,
-            )
 
         # Run export command with output file
         output_file = tmppath / "bus-matrix.html"
@@ -400,5 +344,4 @@ def test_cli_export_bus_matrix_to_file() -> None:
         with open(output_file) as f:
             content = f.read()
             assert "<!DOCTYPE html>" in content
-            assert "Bus Matrix" in content
-            assert "fact_orders" in content
+            assert "Relationships" in content

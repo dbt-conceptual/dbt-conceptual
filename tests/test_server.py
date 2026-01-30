@@ -1,4 +1,7 @@
-"""Tests for Flask server."""
+"""Tests for Flask server.
+
+v1.0: conceptual.yml in project root, gold-only scanning.
+"""
 
 import json
 from pathlib import Path
@@ -21,21 +24,11 @@ def temp_project():
             "name": "test_project",
             "version": "1.0.0",
             "config-version": 2,
-            "vars": {
-                "dbt_conceptual": {
-                    "gold_paths": ["models/gold/**/*.sql"],
-                    "silver_paths": ["models/silver/**/*.sql"],
-                    "bronze_paths": ["models/bronze/**/*.sql"],
-                }
-            },
         }
         with open(project_dir / "dbt_project.yml", "w") as f:
             yaml.dump(dbt_project_data, f)
 
-        # Create conceptual directory and files
-        conceptual_dir = project_dir / "models" / "conceptual"
-        conceptual_dir.mkdir(parents=True)
-
+        # Create conceptual.yml in project root (v1.0)
         conceptual_data = {
             "version": 1,
             "domains": {
@@ -50,16 +43,17 @@ def temp_project():
             },
             "relationships": [],
         }
-        with open(conceptual_dir / "conceptual.yml", "w") as f:
+        with open(project_dir / "conceptual.yml", "w") as f:
             yaml.dump(conceptual_data, f)
 
+        # Create layout file in project root (v1.0)
         layout_data = {
             "version": 1,
             "positions": {
                 "customer": {"x": 100, "y": 100},
             },
         }
-        with open(conceptual_dir / "conceptual.layout.json", "w") as f:
+        with open(project_dir / "conceptual_layout.json", "w") as f:
             json.dump(layout_data, f)
 
         yield project_dir
@@ -199,8 +193,8 @@ def test_api_layout_post(temp_project):
     data = response.get_json()
     assert data["success"] is True
 
-    # Verify positions were saved to conceptual.layout.json
-    layout_file = temp_project / "models" / "conceptual" / "conceptual.layout.json"
+    # Verify positions were saved to conceptual_layout.json in project root
+    layout_file = temp_project / "conceptual_layout.json"
     with open(layout_file) as f:
         saved_data = json.load(f)
     assert saved_data["positions"]["customer"]["x"] == 200
@@ -217,16 +211,11 @@ def test_api_settings_get(temp_project):
 
     data = response.get_json()
     assert "domains" in data
-    assert "paths" in data
-    assert "conceptual_path" in data
+    assert "scan" in data
+    assert "validation" in data
 
     # Check domains
     assert "customer" in data["domains"]
-
-    # Check paths
-    assert "gold_paths" in data["paths"]
-    assert "silver_paths" in data["paths"]
-    assert "bronze_paths" in data["paths"]
 
 
 def test_api_settings_post_domains(temp_project):
@@ -247,42 +236,12 @@ def test_api_settings_post_domains(temp_project):
     data = response.get_json()
     assert data["success"] is True
 
-    # Verify domains were saved
-    conceptual_file = temp_project / "models" / "conceptual" / "conceptual.yml"
+    # Verify domains were saved to conceptual.yml in project root
+    conceptual_file = temp_project / "conceptual.yml"
     with open(conceptual_file) as f:
         saved_data = yaml.safe_load(f)
     assert "product" in saved_data["domains"]
     assert saved_data["domains"]["customer"]["color"] == "#ff0000"
-
-
-def test_api_settings_post_paths(temp_project):
-    """Test POST /api/settings endpoint for paths."""
-    app = create_app(temp_project)
-    client = app.test_client()
-
-    new_settings = {
-        "paths": {
-            "gold_paths": ["models/gold/**/*.sql", "models/marts/**/*.sql"],
-            "silver_paths": ["models/silver/**/*.sql"],
-            "bronze_paths": ["models/bronze/**/*.sql", "models/staging/**/*.sql"],
-        }
-    }
-
-    response = client.post("/api/settings", json=new_settings)
-    assert response.status_code == 200
-
-    data = response.get_json()
-    assert data["success"] is True
-
-    # Verify paths were saved
-    dbt_project_file = temp_project / "dbt_project.yml"
-    with open(dbt_project_file) as f:
-        saved_data = yaml.safe_load(f)
-
-    paths = saved_data["vars"]["dbt_conceptual"]
-    assert len(paths["gold_paths"]) == 2
-    assert "models/marts/**/*.sql" in paths["gold_paths"]
-    assert len(paths["bronze_paths"]) == 2
 
 
 def test_cors_headers_debug_mode(temp_project):
@@ -313,16 +272,14 @@ def test_api_state_post_updates_conceptual(temp_project):
         "domain": "customer",
         "definition": "A new concept",
         "status": "stub",  # This should not be saved (derived field)
-        "bronze_models": [],
-        "silver_models": [],
-        "gold_models": [],
+        "models": [],  # v1.0: flat models list
     }
 
     response = client.post("/api/state", json=state)
     assert response.status_code == 200
 
-    # Verify changes were saved
-    conceptual_file = temp_project / "models" / "conceptual" / "conceptual.yml"
+    # Verify changes were saved to conceptual.yml in project root
+    conceptual_file = temp_project / "conceptual.yml"
     with open(conceptual_file) as f:
         saved_data = yaml.safe_load(f)
 

@@ -1,4 +1,4 @@
-"""Tests for configuration loading."""
+"""Tests for configuration loading from conceptual.yml."""
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -14,130 +14,143 @@ def test_config_defaults() -> None:
         config = Config.load(project_dir=Path(tmpdir))
 
         assert config.project_dir == Path(tmpdir)
-        assert config.conceptual_path == "models/conceptual"
-        assert config.silver_paths == ["models/silver"]
-        assert config.gold_paths == ["models/gold"]
+        assert config.gold_paths == ["models/marts/**/*.yml"]
         # Check default validation config
         assert config.validation.orphan_models == RuleSeverity.WARN
         assert config.validation.unimplemented_concepts == RuleSeverity.WARN
-        assert config.validation.unrealized_relationships == RuleSeverity.WARN
         assert config.validation.missing_definitions == RuleSeverity.IGNORE
-        assert config.validation.domain_mismatch == RuleSeverity.WARN
 
 
-def test_config_from_dbt_project() -> None:
-    """Test that config loads from dbt_project.yml."""
+def test_config_from_conceptual_yml() -> None:
+    """Test that config loads from conceptual.yml."""
     with TemporaryDirectory() as tmpdir:
         tmppath = Path(tmpdir)
 
-        # Create dbt_project.yml with custom config
-        dbt_project = {
-            "name": "test",
-            "vars": {
-                "dbt_conceptual": {
-                    "conceptual_path": "custom/conceptual",
-                    "silver_paths": ["staging"],
-                    "gold_paths": ["marts"],
-                }
+        # Create conceptual.yml with custom config
+        conceptual_data = {
+            "config": {
+                "scan": {"gold": ["models/marts/**/*.yml", "models/semantic/**/*.yml"]},
+                "validation": {
+                    "defaults": {
+                        "orphan_models": "error",
+                        "unimplemented_concepts": "ignore",
+                    }
+                },
             },
+            "domains": {"sales": {"display_name": "Sales"}},
+            "concepts": {},
+            "relationships": [],
         }
 
-        with open(tmppath / "dbt_project.yml", "w") as f:
-            yaml.dump(dbt_project, f)
+        with open(tmppath / "conceptual.yml", "w") as f:
+            yaml.dump(conceptual_data, f)
 
         config = Config.load(project_dir=tmppath)
 
-        assert config.conceptual_path == "custom/conceptual"
-        assert config.silver_paths == ["staging"]
-        assert config.gold_paths == ["marts"]
+        assert config.gold_paths == [
+            "models/marts/**/*.yml",
+            "models/semantic/**/*.yml",
+        ]
+        assert config.validation.orphan_models == RuleSeverity.ERROR
+        assert config.validation.unimplemented_concepts == RuleSeverity.IGNORE
 
 
 def test_config_cli_overrides() -> None:
-    """Test that CLI arguments override dbt_project.yml."""
+    """Test that CLI arguments override conceptual.yml."""
     with TemporaryDirectory() as tmpdir:
         tmppath = Path(tmpdir)
 
-        # Create dbt_project.yml
-        dbt_project = {
-            "name": "test",
-            "vars": {
-                "dbt_conceptual": {
-                    "silver_paths": ["staging"],
-                    "gold_paths": ["marts"],
-                }
+        # Create conceptual.yml
+        conceptual_data = {
+            "config": {
+                "scan": {"gold": ["models/marts/**/*.yml"]},
             },
         }
 
-        with open(tmppath / "dbt_project.yml", "w") as f:
-            yaml.dump(dbt_project, f)
+        with open(tmppath / "conceptual.yml", "w") as f:
+            yaml.dump(conceptual_data, f)
 
         # CLI overrides
         config = Config.load(
             project_dir=tmppath,
-            silver_paths=["models/silver"],
-            gold_paths=["models/gold"],
+            gold_paths=["models/gold/**/*.yml"],
         )
 
-        assert config.silver_paths == ["models/silver"]
-        assert config.gold_paths == ["models/gold"]
+        assert config.gold_paths == ["models/gold/**/*.yml"]
 
 
 def test_get_layer() -> None:
     """Test layer detection from path."""
     config = Config(
         project_dir=Path("/tmp"),
-        silver_paths=["models/silver", "models/staging"],
-        gold_paths=["models/gold", "models/marts"],
+        gold_paths=["models/marts/**/*.yml", "models/gold/**/*.yml"],
     )
 
-    assert config.get_layer("models/silver/dim_customer") == "silver"
-    assert config.get_layer("models/staging/stg_orders") == "silver"
-    assert config.get_layer("models/gold/fact_orders") == "gold"
-    assert config.get_layer("models/marts/fct_sales") == "gold"
-    assert config.get_layer("models/other/something") is None
+    assert config.get_layer("models/marts/schema.yml") == "gold"
+    assert config.get_layer("models/gold/fact_orders.yml") == "gold"
+    assert config.get_layer("models/staging/stg_orders.yml") is None
 
 
-def test_get_model_type() -> None:
-    """Test model type detection from name."""
-    config = Config(project_dir=Path("/tmp"))
-
-    assert config.get_model_type("dim_customer") == "dimension"
-    assert config.get_model_type("fact_orders") == "fact"
-    assert config.get_model_type("bridge_customer_segment") == "bridge"
-    assert config.get_model_type("ref_calendar") == "reference"
-    assert config.get_model_type("stg_customers") == "unknown"
-
-
-def test_validation_config_from_dbt_project() -> None:
-    """Test that validation config loads from dbt_project.yml."""
+def test_validation_config_from_conceptual_yml() -> None:
+    """Test that validation config loads from conceptual.yml."""
     with TemporaryDirectory() as tmpdir:
         tmppath = Path(tmpdir)
 
-        # Create dbt_project.yml with validation config
-        dbt_project = {
-            "name": "test",
-            "vars": {
-                "dbt_conceptual": {
-                    "validation": {
+        # Create conceptual.yml with validation config
+        conceptual_data = {
+            "config": {
+                "validation": {
+                    "defaults": {
                         "orphan_models": "error",
                         "unimplemented_concepts": "ignore",
                         "missing_definitions": "warn",
-                    }
+                    },
+                    "gold": {
+                        "orphan_models": "error",
+                        "missing_definitions": "error",
+                    },
                 }
             },
         }
 
-        with open(tmppath / "dbt_project.yml", "w") as f:
-            yaml.dump(dbt_project, f)
+        with open(tmppath / "conceptual.yml", "w") as f:
+            yaml.dump(conceptual_data, f)
 
         config = Config.load(project_dir=tmppath)
 
+        # Check defaults
         assert config.validation.orphan_models == RuleSeverity.ERROR
         assert config.validation.unimplemented_concepts == RuleSeverity.IGNORE
         assert config.validation.missing_definitions == RuleSeverity.WARN
-        # These should remain at defaults
-        assert config.validation.unrealized_relationships == RuleSeverity.WARN
-        assert config.validation.domain_mismatch == RuleSeverity.WARN
+
+        # Check layer overrides
+        assert config.validation.gold.orphan_models == RuleSeverity.ERROR
+        assert config.validation.gold.missing_definitions == RuleSeverity.ERROR
+
+
+def test_validation_config_get_severity() -> None:
+    """Test ValidationConfig.get_severity with layer overrides."""
+    from dbt_conceptual.config import LayerValidationConfig
+
+    config = ValidationConfig(
+        orphan_models=RuleSeverity.WARN,
+        missing_definitions=RuleSeverity.IGNORE,
+        gold=LayerValidationConfig(
+            orphan_models=RuleSeverity.ERROR,
+            missing_definitions=RuleSeverity.WARN,
+        ),
+    )
+
+    # Without layer - should return defaults
+    assert config.get_severity("orphan_models") == RuleSeverity.WARN
+    assert config.get_severity("missing_definitions") == RuleSeverity.IGNORE
+
+    # With gold layer - should return layer override
+    assert config.get_severity("orphan_models", "gold") == RuleSeverity.ERROR
+    assert config.get_severity("missing_definitions", "gold") == RuleSeverity.WARN
+
+    # Rule without gold override - should return default
+    assert config.get_severity("unimplemented_concepts", "gold") == RuleSeverity.WARN
 
 
 def test_validation_config_defaults() -> None:
@@ -146,6 +159,4 @@ def test_validation_config_defaults() -> None:
 
     assert config.orphan_models == RuleSeverity.WARN
     assert config.unimplemented_concepts == RuleSeverity.WARN
-    assert config.unrealized_relationships == RuleSeverity.WARN
     assert config.missing_definitions == RuleSeverity.IGNORE
-    assert config.domain_mismatch == RuleSeverity.WARN

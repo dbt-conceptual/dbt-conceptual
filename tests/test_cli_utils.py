@@ -29,10 +29,7 @@ class TestLoadProjectState:
             with open(tmppath / "dbt_project.yml", "w") as f:
                 yaml.dump({"name": "test"}, f)
 
-            # Create conceptual.yml
-            conceptual_dir = tmppath / "models" / "conceptual"
-            conceptual_dir.mkdir(parents=True)
-
+            # Create conceptual.yml in project root
             conceptual_data = {
                 "version": 1,
                 "concepts": {
@@ -43,7 +40,7 @@ class TestLoadProjectState:
                 },
             }
 
-            with open(conceptual_dir / "conceptual.yml", "w") as f:
+            with open(tmppath / "conceptual.yml", "w") as f:
                 yaml.dump(conceptual_data, f)
 
             state, config = load_project_state(project_dir=tmppath)
@@ -67,8 +64,8 @@ class TestLoadProjectState:
             assert "conceptual.yml not found" in str(exc_info.value)
             assert exc_info.value.path.name == "conceptual.yml"
 
-    def test_with_custom_paths(self) -> None:
-        """Test loading with custom silver/gold paths."""
+    def test_with_custom_gold_paths(self) -> None:
+        """Test loading with custom gold paths."""
         with TemporaryDirectory() as tmpdir:
             tmppath = Path(tmpdir)
 
@@ -76,21 +73,17 @@ class TestLoadProjectState:
             with open(tmppath / "dbt_project.yml", "w") as f:
                 yaml.dump({"name": "test"}, f)
 
-            # Create conceptual.yml
-            conceptual_dir = tmppath / "models" / "conceptual"
-            conceptual_dir.mkdir(parents=True)
-
-            with open(conceptual_dir / "conceptual.yml", "w") as f:
+            # Create conceptual.yml in project root
+            with open(tmppath / "conceptual.yml", "w") as f:
                 yaml.dump({"version": 1, "concepts": {}}, f)
 
             state, config = load_project_state(
                 project_dir=tmppath,
-                silver_paths=["models/custom_silver"],
                 gold_paths=["models/custom_gold"],
             )
 
             # Verify config has custom paths
-            assert "models/custom_silver" in [str(p) for p in config.silver_paths]
+            assert "models/custom_gold" in config.gold_paths
 
 
 class TestProjectOptions:
@@ -103,7 +96,6 @@ class TestProjectOptions:
         @project_options
         def test_cmd(
             project_dir: Path | None,
-            silver_paths: tuple[str, ...],
             gold_paths: tuple[str, ...],
         ) -> None:
             pass
@@ -111,7 +103,6 @@ class TestProjectOptions:
         # Check that options exist
         param_names = [p.name for p in test_cmd.params]
         assert "project_dir" in param_names
-        assert "silver_paths" in param_names
         assert "gold_paths" in param_names
 
     def test_options_have_correct_types(self) -> None:
@@ -121,15 +112,13 @@ class TestProjectOptions:
         @project_options
         def test_cmd(
             project_dir: Path | None,
-            silver_paths: tuple[str, ...],
             gold_paths: tuple[str, ...],
         ) -> None:
             pass
 
         params = {p.name: p for p in test_cmd.params}
 
-        # silver_paths and gold_paths should be multiple
-        assert params["silver_paths"].multiple is True
+        # gold_paths should be multiple
         assert params["gold_paths"].multiple is True
 
 
@@ -144,7 +133,6 @@ class TestRequireConceptualYml:
         @require_conceptual_yml
         def test_func(
             project_dir: Path | None,
-            silver_paths: tuple[str, ...],
             gold_paths: tuple[str, ...],
             state: object | None = None,
             config: object | None = None,
@@ -160,14 +148,11 @@ class TestRequireConceptualYml:
             with open(tmppath / "dbt_project.yml", "w") as f:
                 yaml.dump({"name": "test"}, f)
 
-            # Create conceptual.yml
-            conceptual_dir = tmppath / "models" / "conceptual"
-            conceptual_dir.mkdir(parents=True)
-
-            with open(conceptual_dir / "conceptual.yml", "w") as f:
+            # Create conceptual.yml in project root
+            with open(tmppath / "conceptual.yml", "w") as f:
                 yaml.dump({"version": 1, "concepts": {}}, f)
 
-            test_func(project_dir=tmppath, silver_paths=(), gold_paths=())
+            test_func(project_dir=tmppath, gold_paths=())
 
             assert captured_state is not None
             assert captured_config is not None
@@ -178,7 +163,6 @@ class TestRequireConceptualYml:
         @require_conceptual_yml
         def test_func(
             project_dir: Path | None,
-            silver_paths: tuple[str, ...],
             gold_paths: tuple[str, ...],
         ) -> None:
             pass
@@ -191,7 +175,7 @@ class TestRequireConceptualYml:
                 yaml.dump({"name": "test"}, f)
 
             with pytest.raises(click.Abort):
-                test_func(project_dir=tmppath, silver_paths=(), gold_paths=())
+                test_func(project_dir=tmppath, gold_paths=())
 
 
 class TestConceptualFileNotFound:

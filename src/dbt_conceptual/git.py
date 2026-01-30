@@ -124,7 +124,6 @@ def load_state_from_git_ref(config: "Config", base_ref: str) -> ProjectState:
                 owner=concept_data.get("owner"),
                 definition=concept_data.get("definition"),
                 color=concept_data.get("color"),
-                replaced_by=concept_data.get("replaced_by"),
             )
 
         for rel in base_data.get("relationships", []):
@@ -133,15 +132,14 @@ def load_state_from_git_ref(config: "Config", base_ref: str) -> ProjectState:
             to_concept = rel.get("to", "")
             rel_key = f"{from_concept}:{verb}:{to_concept}"
 
+            # v1.0: Simplified relationship state
             base_state.relationships[rel_key] = RelationshipState(
                 verb=verb,
                 from_concept=from_concept,
                 to_concept=to_concept,
                 cardinality=rel.get("cardinality"),
                 definition=rel.get("definition"),
-                domains=rel.get("domains", []),
                 owner=rel.get("owner"),
-                custom_name=rel.get("name"),
             )
 
         return base_state

@@ -1,4 +1,7 @@
-"""Bus matrix exporter for conceptual models."""
+"""Bus matrix exporter for conceptual models.
+
+v1.0: Simplified without realized_by - shows relationships only.
+"""
 
 from typing import TextIO
 
@@ -8,37 +11,25 @@ from dbt_conceptual.state import ProjectState
 def export_bus_matrix(state: ProjectState, output: TextIO) -> None:
     """Export bus matrix as HTML table.
 
-    The bus matrix shows which fact tables realize which relationships,
-    following the Kimball dimensional modeling approach.
+    Note: v1.0 removed realized_by from relationships. This export now
+    shows a relationship summary instead of the traditional bus matrix.
+    The full bus matrix will return in a future version.
 
     Args:
         state: Project state with concepts and relationships
         output: Text stream to write HTML to
     """
-    # Collect all fact tables (models that realize relationships)
-    fact_tables: set[str] = set()
-    for rel in state.relationships.values():
-        if rel.realized_by:
-            fact_tables.update(rel.realized_by)
-
-    # Sort for consistent output
-    fact_tables_list = sorted(fact_tables)
+    # Sort relationships for consistent output
     relationships_list = sorted(
         state.relationships.items(), key=lambda x: (x[1].from_concept, x[1].name)
     )
 
-    # Build matrix data
-    matrix: dict[str, dict[str, bool]] = {}
-    for fact in fact_tables_list:
-        matrix[fact] = {}
-        for rel_id, rel in relationships_list:
-            matrix[fact][rel_id] = fact in (rel.realized_by or [])
-
     # Calculate statistics
     total_relationships = len(relationships_list)
-    total_facts = len(fact_tables_list)
-    total_realizations = sum(
-        len(rel.realized_by) for rel in state.relationships.values() if rel.realized_by
+    complete_relationships = sum(
+        1
+        for _rid, r in relationships_list
+        if r.get_status(state.concepts) == "complete"
     )
 
     output.write("""<!DOCTYPE html>
@@ -46,7 +37,7 @@ def export_bus_matrix(state: ProjectState, output: TextIO) -> None:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>dbt-conceptual Bus Matrix</title>
+    <title>dbt-conceptual Relationships</title>
     <style>
         * {
             margin: 0;
@@ -84,8 +75,8 @@ def export_bus_matrix(state: ProjectState, output: TextIO) -> None:
         }
 
         .info {
-            background: #fef5eb;
-            border-left: 4px solid #e67e22;
+            background: #e8f4fd;
+            border-left: 4px solid #2196F3;
             padding: 1rem;
             margin-bottom: 2rem;
             border-radius: 4px;
@@ -94,7 +85,7 @@ def export_bus_matrix(state: ProjectState, output: TextIO) -> None:
         .info h2 {
             font-size: 1rem;
             margin-bottom: 0.5rem;
-            color: #d35400;
+            color: #1976D2;
         }
 
         .info p {
@@ -146,59 +137,23 @@ def export_bus_matrix(state: ProjectState, output: TextIO) -> None:
             text-align: left;
             font-weight: 600;
             border-bottom: 2px solid #e8e6e3;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        th.rotate {
-            height: 200px;
-            white-space: nowrap;
-            vertical-align: bottom;
-            padding: 0;
-        }
-
-        th.rotate > div {
-            transform: rotate(-45deg) translateY(50%);
-            transform-origin: left bottom;
-            width: 30px;
-            padding-left: 0.5rem;
         }
 
         td {
             padding: 0.75rem;
             border-bottom: 1px solid #f0eeec;
-            text-align: center;
-        }
-
-        td.fact-name {
-            text-align: left;
-            font-weight: 500;
-            font-family: 'Courier New', monospace;
-            font-size: 0.8rem;
-            background: #f5f4f2;
-            position: sticky;
-            left: 0;
-            z-index: 5;
         }
 
         tr:hover td {
             background: #fafaf9;
         }
 
-        tr:hover td.fact-name {
-            background: #f0eeec;
+        .status-complete {
+            color: #4CAF50;
         }
 
-        .checkmark {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            background: #4CAF50;
-            border-radius: 50%;
-            color: white;
-            line-height: 20px;
-            font-weight: bold;
+        .status-stub {
+            color: #e67e22;
         }
 
         .empty-state {
@@ -211,51 +166,22 @@ def export_bus_matrix(state: ProjectState, output: TextIO) -> None:
             font-size: 3rem;
             margin-bottom: 1rem;
         }
-
-        .legend {
-            display: flex;
-            gap: 2rem;
-            padding: 1rem;
-            background: #f5f4f2;
-            border-radius: 4px;
-            font-size: 0.875rem;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .legend-symbol {
-            width: 20px;
-            height: 20px;
-            background: #4CAF50;
-            border-radius: 50%;
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Bus Matrix</h1>
+        <h1>Relationships</h1>
         <p class="subtitle">Generated by dbt-conceptual</p>
 
         <div class="info">
-            <h2>About the Bus Matrix</h2>
+            <h2>About Relationships</h2>
             <p>
-                The bus matrix shows which fact tables realize which conceptual relationships.
-                Each checkmark indicates that a fact table implements a specific relationship between concepts.
-                This follows the Kimball dimensional modeling approach where fact tables tie dimensions together.
+                Relationships define how concepts connect to each other.
+                A relationship is "complete" when both its endpoints are defined concepts.
             </p>
         </div>
 
         <div class="stats">
-            <div class="stat">
-                <div class="stat-label">Total Facts</div>
-                <div class="stat-value">""")
-    output.write(str(total_facts))
-    output.write("""</div>
-            </div>
             <div class="stat">
                 <div class="stat-label">Total Relationships</div>
                 <div class="stat-value">""")
@@ -263,72 +189,57 @@ def export_bus_matrix(state: ProjectState, output: TextIO) -> None:
     output.write("""</div>
             </div>
             <div class="stat">
-                <div class="stat-label">Realizations</div>
+                <div class="stat-label">Complete</div>
                 <div class="stat-value">""")
-    output.write(str(total_realizations))
+    output.write(str(complete_relationships))
     output.write("""</div>
             </div>
         </div>
 """)
 
-    if not fact_tables_list:
+    if not relationships_list:
         output.write("""
         <div class="empty-state">
-            <div class="empty-state-icon">📊</div>
-            <p>No fact tables found</p>
+            <div class="empty-state-icon">🔗</div>
+            <p>No relationships defined</p>
             <p style="font-size: 0.875rem; margin-top: 0.5rem; color: #999;">
-                Add meta.realizes tags to your fact tables to populate the bus matrix
+                Add relationships to your conceptual.yml to see them here
             </p>
         </div>
 """)
     else:
         output.write("""
-        <div class="legend">
-            <div class="legend-item">
-                <span class="legend-symbol"></span>
-                <span>Fact realizes this relationship</span>
-            </div>
-        </div>
-
         <div class="matrix-container">
             <table>
                 <thead>
                     <tr>
-                        <th>Fact Table</th>
-""")
-
-        # Write relationship headers
-        for _rel_id, rel in relationships_list:
-            rel_label = f"{rel.from_concept}:{rel.name}:{rel.to_concept}"
-            output.write(
-                f"""                        <th class="rotate"><div>{rel_label}</div></th>
-"""
-            )
-
-        output.write("""                    </tr>
+                        <th>From</th>
+                        <th>Verb</th>
+                        <th>To</th>
+                        <th>Cardinality</th>
+                        <th>Status</th>
+                    </tr>
                 </thead>
                 <tbody>
 """)
 
-        # Write fact rows
-        for fact in fact_tables_list:
-            output.write("""                    <tr>
-                        <td class="fact-name">""")
-            output.write(fact)
-            output.write("</td>\n")
+        # Write relationship rows
+        for _rel_id, rel in relationships_list:
+            status = rel.get_status(state.concepts)
+            status_class = "status-complete" if status == "complete" else "status-stub"
+            status_icon = "✓" if status == "complete" else "○"
 
-            for rel_id, _rel in relationships_list:
-                if matrix[fact][rel_id]:
-                    output.write(
-                        """                        <td><span class="checkmark">✓</span></td>
-"""
-                    )
-                else:
-                    output.write("""                        <td></td>
-""")
-
-            output.write("""                    </tr>
-""")
+            output.write("                    <tr>\n")
+            output.write(f"                        <td>{rel.from_concept}</td>\n")
+            output.write(
+                f"                        <td><strong>{rel.verb}</strong></td>\n"
+            )
+            output.write(f"                        <td>{rel.to_concept}</td>\n")
+            output.write(f"                        <td>{rel.cardinality}</td>\n")
+            output.write(
+                f'                        <td class="{status_class}">{status_icon} {status}</td>\n'
+            )
+            output.write("                    </tr>\n")
 
         output.write("""                </tbody>
             </table>

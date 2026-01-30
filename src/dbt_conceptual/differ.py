@@ -85,8 +85,9 @@ def _compare_concepts(
         return None
 
     # Compare fields that matter for conceptual model (exclude derived runtime fields)
+    # v1.0: removed replaced_by
     modified_fields = {}
-    for attr in ["name", "domain", "owner", "definition", "color", "replaced_by"]:
+    for attr in ["name", "domain", "owner", "definition", "color"]:
         old_val = getattr(old, attr)
         new_val = getattr(new, attr)
         if old_val != new_val:
@@ -126,6 +127,7 @@ def _compare_relationships(
         return None
 
     # Compare fields (exclude derived runtime fields)
+    # v1.0: removed custom_name and domains
     modified_fields = {}
     for attr in [
         "verb",
@@ -134,16 +136,11 @@ def _compare_relationships(
         "cardinality",
         "definition",
         "owner",
-        "custom_name",
     ]:
         old_val = getattr(old, attr)
         new_val = getattr(new, attr)
         if old_val != new_val:
             modified_fields[attr] = (old_val, new_val)
-
-    # Special handling for domains (list comparison)
-    if sorted(old.domains) != sorted(new.domains):
-        modified_fields["domains"] = (old.domains, new.domains)
 
     if modified_fields:
         return RelationshipChange(

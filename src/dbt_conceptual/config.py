@@ -1,4 +1,7 @@
-"""Configuration management for dbt-conceptual."""
+"""Configuration management for dbt-conceptual.
+
+All configuration is loaded from conceptual.yml in the project root.
+"""
 
 from dataclasses import dataclass, field
 from enum import Enum
@@ -17,64 +20,85 @@ class RuleSeverity(Enum):
 
 
 @dataclass
-class TagValidationConfig:
-    """Tag validation configuration.
+class LayerValidationConfig:
+    """Layer-specific validation overrides."""
 
-    Controls validation of domain/owner tags on dbt models.
-    """
-
-    enabled: bool = False
-    domains_allow_multiple: bool = True
-    domains_format: str = "standard"  # "standard" or "databricks"
+    orphan_models: Optional[RuleSeverity] = None
+    unimplemented_concepts: Optional[RuleSeverity] = None
+    missing_definitions: Optional[RuleSeverity] = None
 
 
 @dataclass
 class ValidationConfig:
-    """Validation rule configuration."""
+    """Validation rule configuration with defaults and layer overrides."""
 
+    # Default severities
     orphan_models: RuleSeverity = RuleSeverity.WARN
     unimplemented_concepts: RuleSeverity = RuleSeverity.WARN
-    unrealized_relationships: RuleSeverity = RuleSeverity.WARN
     missing_definitions: RuleSeverity = RuleSeverity.IGNORE
-    domain_mismatch: RuleSeverity = RuleSeverity.WARN
-    tag_validation: TagValidationConfig = field(default_factory=TagValidationConfig)
+
+    # Layer-specific overrides
+    gold: LayerValidationConfig = field(default_factory=LayerValidationConfig)
+
+    def get_severity(self, rule: str, layer: Optional[str] = None) -> RuleSeverity:
+        """Get effective severity for a rule, considering layer overrides.
+
+        Args:
+            rule: Rule name (e.g., 'orphan_models')
+            layer: Optional layer name (e.g., 'gold')
+
+        Returns:
+            Effective RuleSeverity for the rule
+        """
+        # Start with default
+        default_severity = getattr(self, rule, RuleSeverity.WARN)
+
+        # Check for layer override
+        if layer == "gold" and self.gold:
+            layer_override: Optional[RuleSeverity] = getattr(self.gold, rule, None)
+            if layer_override is not None:
+                return layer_override
+
+        return default_severity
 
 
 @dataclass
 class Config:
-    """Configuration for dbt-conceptual."""
+    """Configuration for dbt-conceptual.
+
+    All configuration is loaded from conceptual.yml in the project root.
+    """
 
     project_dir: Path
-    conceptual_path: str = "models/conceptual"
-    bronze_paths: list[str] = field(
-        default_factory=lambda: ["models/bronze", "models/raw"]
-    )
-    silver_paths: list[str] = field(default_factory=lambda: ["models/silver"])
-    gold_paths: list[str] = field(default_factory=lambda: ["models/gold"])
+    gold_paths: list[str] = field(default_factory=lambda: ["models/marts/**/*.yml"])
     validation: ValidationConfig = field(default_factory=ValidationConfig)
 
     @property
     def conceptual_file(self) -> Path:
-        """Get the path to conceptual.yml."""
-        return self.project_dir / self.conceptual_path / "conceptual.yml"
+        """Get the path to conceptual.yml in project root."""
+        return self.project_dir / "conceptual.yml"
 
     @property
     def layout_file(self) -> Path:
-        """Get the path to conceptual.layout.json."""
-        return self.project_dir / self.conceptual_path / "conceptual.layout.json"
+        """Get the path to conceptual_layout.json."""
+        return self.project_dir / "conceptual_layout.json"
 
     @classmethod
     def load(
         cls,
         project_dir: Optional[Path] = None,
-        conceptual_path: Optional[str] = None,
-        bronze_paths: Optional[list[str]] = None,
-        silver_paths: Optional[list[str]] = None,
         gold_paths: Optional[list[str]] = None,
     ) -> "Config":
-        """Load configuration from dbt_project.yml and CLI overrides.
+        """Load configuration from conceptual.yml.
 
-        Priority: CLI flags > dbt_project.yml > defaults
+        Priority: CLI flags > conceptual.yml config section > defaults
+
+        Args:
+            project_dir: Project directory (defaults to cwd)
+            gold_paths: CLI override for gold layer paths
+
+        Returns:
+            Config instance
         """
         if project_dir is None:
             project_dir = Path.cwd()
@@ -82,121 +106,111 @@ class Config:
             project_dir = Path(project_dir)
 
         # Start with defaults
-        config_data: dict[str, object] = {
-            "conceptual_path": "models/conceptual",
-            "bronze_paths": ["models/bronze", "models/raw"],
-            "silver_paths": ["models/silver"],
-            "gold_paths": ["models/gold"],
-        }
-        validation_data: dict[str, str] = {}
+        config_gold_paths: list[str] = ["models/marts/**/*.yml"]
+        validation_config = ValidationConfig()
 
-        # Try to load from dbt_project.yml
-        dbt_project_file = project_dir / "dbt_project.yml"
-        if dbt_project_file.exists():
-            with open(dbt_project_file) as f:
-                dbt_project = yaml.safe_load(f)
-                if dbt_project and "vars" in dbt_project:
-                    dbt_conceptual_vars = dbt_project["vars"].get("dbt_conceptual", {})
-                    # Extract validation config separately
-                    if "validation" in dbt_conceptual_vars:
-                        validation_data = dbt_conceptual_vars.pop("validation")
-                    config_data.update(dbt_conceptual_vars)
+        # Try to load from conceptual.yml
+        conceptual_file = project_dir / "conceptual.yml"
+        if conceptual_file.exists():
+            with open(conceptual_file) as f:
+                data = yaml.safe_load(f)
+
+            if data and "config" in data:
+                config_section = data["config"]
+
+                # Parse scan paths
+                if "scan" in config_section:
+                    scan_config = config_section["scan"]
+                    if "gold" in scan_config:
+                        gold_val = scan_config["gold"]
+                        if isinstance(gold_val, list):
+                            config_gold_paths = gold_val
+                        elif isinstance(gold_val, str):
+                            config_gold_paths = [gold_val]
+
+                # Parse validation config
+                if "validation" in config_section:
+                    validation_config = cls._parse_validation_config(
+                        config_section["validation"]
+                    )
 
         # Apply CLI overrides
-        if conceptual_path is not None:
-            config_data["conceptual_path"] = conceptual_path
-        if bronze_paths is not None:
-            config_data["bronze_paths"] = bronze_paths
-        if silver_paths is not None:
-            config_data["silver_paths"] = silver_paths
         if gold_paths is not None:
-            config_data["gold_paths"] = gold_paths
-
-        # Build validation config
-        validation_config = cls._parse_validation_config(validation_data)
-
-        # Cast to expected types
-        bronze = config_data["bronze_paths"]
-        silver = config_data["silver_paths"]
-        gold = config_data["gold_paths"]
+            config_gold_paths = gold_paths
 
         return cls(
             project_dir=project_dir,
-            conceptual_path=str(config_data["conceptual_path"]),
-            bronze_paths=bronze if isinstance(bronze, list) else [str(bronze)],
-            silver_paths=silver if isinstance(silver, list) else [str(silver)],
-            gold_paths=gold if isinstance(gold, list) else [str(gold)],
+            gold_paths=config_gold_paths,
             validation=validation_config,
         )
 
     @classmethod
     def _parse_validation_config(cls, data: dict) -> ValidationConfig:
-        """Parse validation config from YAML data."""
-        config = ValidationConfig()
+        """Parse validation config from YAML data.
 
+        Args:
+            data: Validation config dict from YAML
+
+        Returns:
+            ValidationConfig instance
+        """
         severity_map = {
             "error": RuleSeverity.ERROR,
             "warn": RuleSeverity.WARN,
             "ignore": RuleSeverity.IGNORE,
         }
 
+        config = ValidationConfig()
+
+        # Parse defaults section
+        defaults = data.get("defaults", {})
         for rule_name in [
             "orphan_models",
             "unimplemented_concepts",
-            "unrealized_relationships",
             "missing_definitions",
-            "domain_mismatch",
         ]:
-            if rule_name in data:
-                severity_str = str(data[rule_name]).lower()
+            if rule_name in defaults:
+                severity_str = str(defaults[rule_name]).lower()
                 if severity_str in severity_map:
                     setattr(config, rule_name, severity_map[severity_str])
 
-        # Parse tag_validation config
-        if "tag_validation" in data:
-            tag_data = data["tag_validation"]
-            if isinstance(tag_data, dict):
-                tag_config = TagValidationConfig(
-                    enabled=tag_data.get("enabled", False),
-                    domains_allow_multiple=(
-                        tag_data.get("domains", {}).get("allow_multiple", True)
-                        if isinstance(tag_data.get("domains"), dict)
-                        else True
-                    ),
-                    domains_format=(
-                        tag_data.get("domains", {}).get("format", "standard")
-                        if isinstance(tag_data.get("domains"), dict)
-                        else "standard"
-                    ),
-                )
-                config.tag_validation = tag_config
+        # Parse gold layer overrides
+        gold_data = data.get("gold", {})
+        if gold_data:
+            gold_config = LayerValidationConfig()
+            for rule_name in [
+                "orphan_models",
+                "unimplemented_concepts",
+                "missing_definitions",
+            ]:
+                if rule_name in gold_data:
+                    severity_str = str(gold_data[rule_name]).lower()
+                    if severity_str in severity_map:
+                        setattr(gold_config, rule_name, severity_map[severity_str])
+            config.gold = gold_config
 
         return config
 
     def get_layer(self, model_path: str) -> Optional[str]:
-        """Detect layer from path. Returns 'bronze', 'silver', 'gold', or None."""
-        # Check bronze paths first
-        for path in self.bronze_paths:
-            if model_path.startswith(path):
-                return "bronze"
-        # Then silver paths
-        for path in self.silver_paths:
-            if model_path.startswith(path):
-                return "silver"
-        # Then gold paths
-        for path in self.gold_paths:
-            if model_path.startswith(path):
-                return "gold"
-        return None
+        """Detect layer from path.
 
-    def get_model_type(self, model_name: str) -> str:
-        """Detect model type from name prefix."""
-        if model_name.startswith("dim_"):
-            return "dimension"
-        elif model_name.startswith("fact_"):
-            return "fact"
-        elif model_name.startswith("bridge_"):
-            return "bridge"
-        elif model_name.startswith("ref_"):
-            return "reference"
-        return "unknown"
+        For v1.0, only gold layer is supported.
+
+        Args:
+            model_path: Path to the model
+
+        Returns:
+            'gold' if path matches gold paths, None otherwise
+        """
+        import fnmatch
+
+        for pattern in self.gold_paths:
+            # Handle glob patterns
+            if fnmatch.fnmatch(model_path, pattern):
+                return "gold"
+            # Also check if path starts with the non-glob portion
+            base_pattern = pattern.split("*")[0].rstrip("/")
+            if base_pattern and model_path.startswith(base_pattern):
+                return "gold"
+
+        return None

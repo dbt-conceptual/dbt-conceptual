@@ -28,7 +28,7 @@ from dbt_conceptual.validator import Severity, ValidationIssue, Validator
 
 
 def _create_test_state() -> ProjectState:
-    """Create a test ProjectState with sample data."""
+    """Create a test ProjectState with sample data for v1.0."""
     return ProjectState(
         domains={
             "party": DomainState(
@@ -42,13 +42,12 @@ def _create_test_state() -> ProjectState:
                 domain="party",
                 owner="team-a",
                 definition="A customer definition",
-                silver_models=["stg_customer"],
-                gold_models=["dim_customer"],
+                models=["dim_customer"],  # v1.0: flat models list
             ),
             "order": ConceptState(
                 name="Order",
                 domain="sales",
-                silver_models=["stg_orders"],
+                # No models = draft status
             ),
             "product": ConceptState(
                 name="Product",
@@ -61,19 +60,16 @@ def _create_test_state() -> ProjectState:
                 from_concept="customer",
                 to_concept="order",
                 cardinality="1:N",
-                domains=["sales"],
-                realized_by=["fact_orders"],
             ),
             "order:contains:product": RelationshipState(
                 verb="contains",
                 from_concept="order",
                 to_concept="product",
-                # Not realized
             ),
         },
         orphan_models=[
-            OrphanModel(name="stg_legacy", layer="silver", path="models/staging"),
-            OrphanModel(name="dim_temp", layer="gold"),
+            OrphanModel(name="stg_legacy", path="models/staging"),
+            OrphanModel(name="dim_temp"),
         ],
     )
 
@@ -98,12 +94,12 @@ class TestCoverageExporters:
 
         # Check concept stats
         assert data["summary"]["concepts"]["total"] == 3
-        assert data["summary"]["concepts"]["complete"] == 2  # customer, order
-        assert data["summary"]["concepts"]["stub"] == 1  # product
+        assert data["summary"]["concepts"]["complete"] == 1  # customer (has models)
+        assert data["summary"]["concepts"]["draft"] == 1  # order (domain, no models)
+        assert data["summary"]["concepts"]["stub"] == 1  # product (no domain)
 
-        # Check coverage stats
-        assert data["summary"]["coverage"]["silver"]["count"] == 2
-        assert data["summary"]["coverage"]["gold"]["count"] == 1
+        # Check coverage stats (v1.0: models coverage)
+        assert data["summary"]["coverage"]["models"]["count"] == 1
 
         # Check domains and concepts_by_domain
         assert "domains" in data
@@ -120,7 +116,7 @@ class TestCoverageExporters:
 
         assert data["summary"]["concepts"]["total"] == 0
         assert data["summary"]["concepts"]["completion_percent"] == 0
-        assert data["summary"]["coverage"]["silver"]["percent"] == 0
+        assert data["summary"]["coverage"]["models"]["percent"] == 0
 
     def test_export_coverage_markdown_structure(self) -> None:
         """Test export_coverage_markdown produces valid markdown."""
@@ -132,9 +128,7 @@ class TestCoverageExporters:
         assert "### Coverage Summary" in result
         assert "| Metric | Value |" in result
         assert "Concept Completion" in result
-        assert "Silver Coverage" in result
-        assert "Gold Coverage" in result
-        assert "Relationships Realized" in result
+        assert "Model Coverage" in result
 
     def test_export_coverage_markdown_attention_items(self) -> None:
         """Test export_coverage_markdown shows attention items for stubs/drafts."""
@@ -166,33 +160,25 @@ class TestBusMatrixExporters:
         result = output.getvalue()
         data = json.loads(result)
 
-        assert "facts" in data
+        # v1.0: Bus matrix shows relationships without realization info
         assert "relationships" in data
-        assert "matrix" in data
         assert "summary" in data
 
-        # fact_orders realizes customer:places:order
-        assert "fact_orders" in data["facts"]
-        assert data["summary"]["total_facts"] == 1
+        # Check relationships are present
         assert data["summary"]["total_relationships"] == 2
 
     def test_export_bus_matrix_json_empty(self) -> None:
-        """Test export_bus_matrix_json with no realized relationships."""
+        """Test export_bus_matrix_json with no relationships."""
         state = ProjectState(
             concepts={"customer": ConceptState(name="Customer")},
-            relationships={
-                "customer:buys:product": RelationshipState(
-                    verb="buys", from_concept="customer", to_concept="product"
-                )
-            },
         )
         output = StringIO()
         export_bus_matrix_json(state, output)
         result = output.getvalue()
         data = json.loads(result)
 
-        assert data["facts"] == []
-        assert data["summary"]["total_facts"] == 0
+        assert data["relationships"] == []
+        assert data["summary"]["total_relationships"] == 0
 
     def test_export_bus_matrix_markdown_structure(self) -> None:
         """Test export_bus_matrix_markdown produces valid markdown table."""
@@ -202,21 +188,19 @@ class TestBusMatrixExporters:
         result = output.getvalue()
 
         assert "### Bus Matrix" in result
-        assert "| Fact Table |" in result
-        assert "fact_orders" in result
-        assert "places" in result  # verb shown in header
+        assert "| Relationship |" in result
+        assert "places" in result
         assert "contains" in result
 
     def test_export_bus_matrix_markdown_empty(self) -> None:
-        """Test export_bus_matrix_markdown with no fact tables."""
+        """Test export_bus_matrix_markdown with no relationships."""
         state = ProjectState()
         output = StringIO()
         export_bus_matrix_markdown(state, output)
         result = output.getvalue()
 
         assert "### Bus Matrix" in result
-        assert "No fact tables found" in result
-        assert "meta.realizes" in result
+        assert "No relationships defined" in result
 
 
 class TestStatusExporters:
@@ -239,8 +223,7 @@ class TestStatusExporters:
         customer = next(c for c in data["concepts"] if c["id"] == "customer")
         assert customer["name"] == "Customer"
         assert customer["domain"] == "party"
-        assert customer["silver_count"] == 1
-        assert customer["gold_count"] == 1
+        assert customer["model_count"] == 1  # v1.0: flat model count
 
         # Check relationships data
         assert len(data["relationships"]) == 2
@@ -259,7 +242,7 @@ class TestStatusExporters:
 
         # Check domain groups shown
         assert "Party Domain" in result
-        assert "| Concept | Status | Silver | Gold |" in result
+        assert "| Concept | Status | Models |" in result  # v1.0: flat models column
 
 
 class TestOrphansExporters:
@@ -279,7 +262,6 @@ class TestOrphansExporters:
 
         orphan = data["models"][0]
         assert "name" in orphan
-        assert "layer" in orphan
         assert "path" in orphan
 
     def test_export_orphans_json_empty(self) -> None:
@@ -302,7 +284,7 @@ class TestOrphansExporters:
 
         assert "### Orphan Models" in result
         assert "Found **2 models**" in result
-        assert "| Model | Layer |" in result
+        assert "| Model | Path |" in result
         assert "`stg_legacy`" in result
         assert "`dim_temp`" in result
 

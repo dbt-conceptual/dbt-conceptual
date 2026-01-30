@@ -1,4 +1,7 @@
-"""Tests for diff_formatter module."""
+"""Tests for diff_formatter module.
+
+v1.0: Simplified model - uses flat models[] instead of silver_models/gold_models.
+"""
 
 import json
 
@@ -259,9 +262,8 @@ class TestFormatGithub:
 
     def test_concept_added_complete(self) -> None:
         """Test format_github with added complete concept shows notice."""
-        concept = ConceptState(
-            name="Customer", domain="party", silver_models=["dim_customer"]
-        )
+        # v1.0: Complete = has domain + models
+        concept = ConceptState(name="Customer", domain="party", models=["dim_customer"])
         diff = ConceptualDiff(
             concept_changes=[
                 ConceptChange(key="customer", change_type="added", new_value=concept)
@@ -287,7 +289,7 @@ class TestFormatGithub:
         """Test format_github with added draft relationship."""
         rel = RelationshipState(
             verb="places", from_concept="customer", to_concept="order"
-        )  # No domains = draft
+        )
         diff = ConceptualDiff(
             relationship_changes=[
                 RelationshipChange(
@@ -297,8 +299,8 @@ class TestFormatGithub:
         )
         result = format_github(diff)
 
-        assert "::warning title=New Relationship::customer:places:order" in result
-        assert "draft" in result
+        # Relationships are shown as notice (no domains field anymore)
+        assert "::notice title=New Relationship::customer:places:order" in result
 
 
 class TestFormatJson:
@@ -473,13 +475,14 @@ class TestFormatMarkdown:
 
     def test_concept_section(self) -> None:
         """Test format_markdown includes concept section."""
+        # v1.0: Complete = has domain + models
         diff = ConceptualDiff(
             concept_changes=[
                 ConceptChange(
                     key="customer",
                     change_type="added",
                     new_value=ConceptState(
-                        name="Customer", domain="party", silver_models=["x"]
+                        name="Customer", domain="party", models=["dim_customer"]
                     ),
                 ),
             ]
@@ -492,6 +495,7 @@ class TestFormatMarkdown:
 
     def test_relationship_section(self) -> None:
         """Test format_markdown includes relationship section."""
+        # v1.0: RelationshipState no longer has domains field
         diff = ConceptualDiff(
             relationship_changes=[
                 RelationshipChange(
@@ -502,7 +506,6 @@ class TestFormatMarkdown:
                         from_concept="customer",
                         to_concept="order",
                         cardinality="1:N",
-                        domains=["sales"],
                     ),
                 ),
             ]

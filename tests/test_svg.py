@@ -124,12 +124,13 @@ class TestExportDiagramSvg:
 
     def test_complete_concept_styling(self) -> None:
         """Test that complete concepts have full opacity."""
+        # v1.0: Complete = domain + models (flat list)
         state = ProjectState(
             concepts={
                 "complete_concept": ConceptState(
                     name="Complete",
                     domain="test",
-                    silver_models=["stg_model"],
+                    models=["dim_model"],  # v1.0: flat models list
                 ),
             },
             domains={
