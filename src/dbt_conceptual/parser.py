@@ -367,15 +367,25 @@ class StateBuilder:
                                 concept.inferred_models.append(upstream)
                             # Update ModelInfo (append to list for multi-concept)
                             if upstream in state.models:
-                                if concept_id not in state.models[upstream].inferred_concepts:
-                                    state.models[upstream].inferred_concepts.append(concept_id)
+                                if (
+                                    concept_id
+                                    not in state.models[upstream].inferred_concepts
+                                ):
+                                    state.models[upstream].inferred_concepts.append(
+                                        concept_id
+                                    )
                         elif layer == "silver":
                             if upstream not in concept.silver_models:
                                 concept.silver_models.append(upstream)
                                 concept.inferred_models.append(upstream)
                             if upstream in state.models:
-                                if concept_id not in state.models[upstream].inferred_concepts:
-                                    state.models[upstream].inferred_concepts.append(concept_id)
+                                if (
+                                    concept_id
+                                    not in state.models[upstream].inferred_concepts
+                                ):
+                                    state.models[upstream].inferred_concepts.append(
+                                        concept_id
+                                    )
                             # Continue traversing upstream
                             queue.append(upstream)
 
@@ -402,8 +412,13 @@ class StateBuilder:
                                 concept.gold_models.append(downstream)
                                 concept.inferred_models.append(downstream)
                             if downstream in state.models:
-                                if concept_id not in state.models[downstream].inferred_concepts:
-                                    state.models[downstream].inferred_concepts.append(concept_id)
+                                if (
+                                    concept_id
+                                    not in state.models[downstream].inferred_concepts
+                                ):
+                                    state.models[downstream].inferred_concepts.append(
+                                        concept_id
+                                    )
                             # Continue traversing downstream gold
                             queue.append(downstream)
                         elif layer == "silver":

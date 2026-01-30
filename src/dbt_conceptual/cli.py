@@ -26,8 +26,18 @@ from typing import Optional, TextIO
 import click
 from rich.console import Console
 
+from dbt_conceptual.cli_utils import (
+    ConceptualFileNotFound,
+    load_project_state,
+    project_options,
+)
 from dbt_conceptual.config import Config
-from dbt_conceptual.differ import ConceptualDiff
+from dbt_conceptual.git import (
+    GitNotFoundError,
+    NotAGitRepoError,
+    RefNotFoundError,
+    compute_diff_from_ref,
+)
 from dbt_conceptual.parser import StateBuilder
 from dbt_conceptual.state import ConceptState, ProjectState
 from dbt_conceptual.tag_applier import TagApplier
@@ -98,46 +108,23 @@ def main(ctx: click.Context, verbose: int, quiet: bool) -> None:
 
 
 @main.command()
-@click.option(
-    "--project-dir",
-    type=click.Path(exists=True, file_okay=False, path_type=Path),
-    default=None,
-    help="Path to dbt project directory (default: current directory)",
-)
-@click.option(
-    "--silver-paths",
-    multiple=True,
-    help="Override silver layer paths",
-)
-@click.option(
-    "--gold-paths",
-    multiple=True,
-    help="Override gold layer paths",
-)
+@project_options
 def status(
     project_dir: Optional[Path],
     silver_paths: tuple[str, ...],
     gold_paths: tuple[str, ...],
 ) -> None:
     """Show status of conceptual model coverage."""
-    # Load configuration
-    config = Config.load(
-        project_dir=project_dir,
-        silver_paths=list(silver_paths) if silver_paths else None,
-        gold_paths=list(gold_paths) if gold_paths else None,
-    )
-
-    # Check if conceptual.yml exists
-    if not config.conceptual_file.exists():
-        console.print(
-            f"[red]Error: conceptual.yml not found at {config.conceptual_file}[/red]"
+    try:
+        state, _config = load_project_state(
+            project_dir=project_dir,
+            silver_paths=list(silver_paths) if silver_paths else None,
+            gold_paths=list(gold_paths) if gold_paths else None,
         )
+    except ConceptualFileNotFound as e:
+        console.print(f"[red]Error: conceptual.yml not found at {e.path}[/red]")
         console.print("\nRun 'dbt-conceptual init' to create it.")
-        raise click.Abort()
-
-    # Build state
-    builder = StateBuilder(config)
-    state = builder.build()
+        raise click.Abort() from None
 
     # Display concepts by domain
     console.print("\n[bold]Concepts by Domain[/bold]")
@@ -271,22 +258,7 @@ def _print_concept_status(concept_id: str, concept: ConceptState) -> None:
 
 
 @main.command()
-@click.option(
-    "--project-dir",
-    type=click.Path(exists=True, file_okay=False, path_type=Path),
-    default=None,
-    help="Path to dbt project directory (default: current directory)",
-)
-@click.option(
-    "--silver-paths",
-    multiple=True,
-    help="Override silver layer paths",
-)
-@click.option(
-    "--gold-paths",
-    multiple=True,
-    help="Override gold layer paths",
-)
+@project_options
 def orphans(
     project_dir: Optional[Path],
     silver_paths: tuple[str, ...],
@@ -297,24 +269,16 @@ def orphans(
     Shows models that need conceptual tagging. Useful for tracking
     adoption and identifying where to focus next.
     """
-    # Load configuration
-    config = Config.load(
-        project_dir=project_dir,
-        silver_paths=list(silver_paths) if silver_paths else None,
-        gold_paths=list(gold_paths) if gold_paths else None,
-    )
-
-    # Check if conceptual.yml exists
-    if not config.conceptual_file.exists():
-        console.print(
-            f"[red]Error: conceptual.yml not found at {config.conceptual_file}[/red]"
+    try:
+        state, _config = load_project_state(
+            project_dir=project_dir,
+            silver_paths=list(silver_paths) if silver_paths else None,
+            gold_paths=list(gold_paths) if gold_paths else None,
         )
+    except ConceptualFileNotFound as e:
+        console.print(f"[red]Error: conceptual.yml not found at {e.path}[/red]")
         console.print("\nRun 'dbt-conceptual init' to create it.")
-        raise click.Abort()
-
-    # Build state
-    builder = StateBuilder(config)
-    state = builder.build()
+        raise click.Abort() from None
 
     # Display orphan models
     if not state.orphan_models:
@@ -342,22 +306,7 @@ def orphans(
 
 
 @main.command()
-@click.option(
-    "--project-dir",
-    type=click.Path(exists=True, file_okay=False, path_type=Path),
-    default=None,
-    help="Path to dbt project directory (default: current directory)",
-)
-@click.option(
-    "--silver-paths",
-    multiple=True,
-    help="Override silver layer paths",
-)
-@click.option(
-    "--gold-paths",
-    multiple=True,
-    help="Override gold layer paths",
-)
+@project_options
 @click.option(
     "--format",
     "output_format",
@@ -379,27 +328,19 @@ def validate(
     no_drafts: bool,
 ) -> None:
     """Validate conceptual model correspondence (for CI)."""
-    # Load configuration
-    config = Config.load(
-        project_dir=project_dir,
-        silver_paths=list(silver_paths) if silver_paths else None,
-        gold_paths=list(gold_paths) if gold_paths else None,
-    )
-
-    # Check if conceptual.yml exists
-    if not config.conceptual_file.exists():
+    try:
+        state, config = load_project_state(
+            project_dir=project_dir,
+            silver_paths=list(silver_paths) if silver_paths else None,
+            gold_paths=list(gold_paths) if gold_paths else None,
+        )
+    except ConceptualFileNotFound as e:
         if output_format == "github":
-            print(f"::error file={config.conceptual_file}::conceptual.yml not found")
+            print(f"::error file={e.path}::conceptual.yml not found")
         else:
-            console.print(
-                f"[red]Error: conceptual.yml not found at {config.conceptual_file}[/red]"
-            )
+            console.print(f"[red]Error: conceptual.yml not found at {e.path}[/red]")
             console.print("\nRun 'dbt-conceptual init' to create it.")
-        raise click.Abort()
-
-    # Build state
-    builder = StateBuilder(config)
-    state = builder.build()
+        raise click.Abort() from None
 
     # Run validation
     validator = Validator(config, state, no_drafts=no_drafts)
@@ -1072,6 +1013,7 @@ def export(
         export_coverage,
         export_coverage_json,
         export_coverage_markdown,
+        export_diagram_svg,
         export_orphans_json,
         export_orphans_markdown,
         export_status_json,
@@ -1120,7 +1062,7 @@ def export(
         with _get_output_stream(output) as out:
             if export_type == "diagram":
                 if export_format == "svg":
-                    _export_diagram_svg(state, out)
+                    export_diagram_svg(state, out)
 
             elif export_type == "coverage":
                 if export_format == "html":
@@ -1160,7 +1102,23 @@ def export(
 
             elif export_type == "diff":
                 # Diff requires computing against base ref
-                diff_result = _compute_diff_for_export(config, base)  # type: ignore
+                try:
+                    diff_result = compute_diff_from_ref(config, base)  # type: ignore
+                except GitNotFoundError:
+                    console.print(
+                        "[red]Error: git not found. This command requires git.[/red]"
+                    )
+                    raise click.Abort() from None
+                except NotAGitRepoError:
+                    console.print("[red]Error: Not a git repository[/red]")
+                    raise click.Abort() from None
+                except RefNotFoundError as e:
+                    console.print(
+                        f"[red]Error: Could not find conceptual.yml at ref '{e.ref}'[/red]"
+                    )
+                    if e.stderr:
+                        console.print(f"[dim]{e.stderr}[/dim]")
+                    raise click.Abort() from None
                 if export_format == "markdown":
                     from dbt_conceptual.diff_formatter import format_markdown
 
@@ -1200,270 +1158,6 @@ def _get_output_stream(output: Optional[Path]) -> Generator[TextIO, None, None]:
             f.close()
     else:
         yield sys.stdout
-
-
-def _load_state_from_git_ref(config: Config, base_ref: str) -> ProjectState:
-    """Load ProjectState from a git ref.
-
-    Args:
-        config: Project configuration
-        base_ref: Git ref to load from (e.g., 'main', 'origin/main', 'HEAD~1')
-
-    Returns:
-        ProjectState loaded from the git ref
-
-    Raises:
-        click.Abort: If git operations fail
-    """
-    import subprocess
-    import tempfile
-
-    import yaml
-
-    from dbt_conceptual.state import DomainState, RelationshipState
-
-    project_dir = config.project_dir
-
-    # Check if we're in a git repo
-    try:
-        subprocess.run(
-            ["git", "rev-parse", "--git-dir"],
-            cwd=project_dir,
-            check=True,
-            capture_output=True,
-        )
-    except subprocess.CalledProcessError as e:
-        console.print("[red]Error: Not a git repository[/red]")
-        raise click.Abort() from e
-    except FileNotFoundError as e:
-        console.print("[red]Error: git not found. This command requires git.[/red]")
-        raise click.Abort() from e
-
-    # Get the conceptual.yml content from base ref
-    conceptual_rel_path = config.conceptual_file.relative_to(project_dir)
-    result = subprocess.run(
-        ["git", "show", f"{base_ref}:{conceptual_rel_path}"],
-        cwd=project_dir,
-        capture_output=True,
-        text=True,
-    )
-
-    if result.returncode != 0:
-        console.print(
-            f"[red]Error: Could not find conceptual.yml at ref '{base_ref}'[/red]"
-        )
-        console.print(f"[dim]{result.stderr.strip()}[/dim]")
-        raise click.Abort()
-
-    # Write base version to temp file and parse
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".yml", delete=False
-    ) as temp_file:
-        temp_file.write(result.stdout)
-        temp_path = Path(temp_file.name)
-
-    try:
-        with open(temp_path) as f:
-            base_data = yaml.safe_load(f) or {}
-
-        base_state = ProjectState()
-
-        # Populate base state (simplified - no dbt manifest needed for diff)
-        for domain_id, domain_data in base_data.get("domains", {}).items():
-            base_state.domains[domain_id] = DomainState(
-                name=domain_id,
-                display_name=domain_data.get("name", domain_id),
-                color=domain_data.get("color"),
-            )
-
-        for concept_id, concept_data in base_data.get("concepts", {}).items():
-            base_state.concepts[concept_id] = ConceptState(
-                name=concept_data.get("name", concept_id),
-                domain=concept_data.get("domain"),
-                owner=concept_data.get("owner"),
-                definition=concept_data.get("definition"),
-                color=concept_data.get("color"),
-                replaced_by=concept_data.get("replaced_by"),
-            )
-
-        for rel in base_data.get("relationships", []):
-            verb = rel.get("verb", "")
-            from_concept = rel.get("from", "")
-            to_concept = rel.get("to", "")
-            rel_key = f"{from_concept}:{verb}:{to_concept}"
-
-            base_state.relationships[rel_key] = RelationshipState(
-                verb=verb,
-                from_concept=from_concept,
-                to_concept=to_concept,
-                cardinality=rel.get("cardinality"),
-                definition=rel.get("definition"),
-                domains=rel.get("domains", []),
-                owner=rel.get("owner"),
-                custom_name=rel.get("name"),
-            )
-
-        return base_state
-
-    finally:
-        # Clean up temp file
-        temp_path.unlink()
-
-
-def _compute_diff_for_export(config: Config, base: str) -> ConceptualDiff:
-    """Compute diff between current state and base git ref.
-
-    Args:
-        config: Project configuration
-        base: Base git ref to compare against
-
-    Returns:
-        ConceptualDiff object with changes
-    """
-    from dbt_conceptual.differ import compute_diff
-
-    # Load current state
-    builder = StateBuilder(config)
-    current_state = builder.build()
-
-    # Load base state from git ref
-    base_state = _load_state_from_git_ref(config, base)
-
-    # Compute and return diff
-    return compute_diff(base_state, current_state)
-
-
-def _export_diagram_svg(state: ProjectState, output: TextIO) -> None:
-    """Export conceptual model as SVG diagram.
-
-    Creates a visual diagram showing concepts and relationships.
-    """
-    # Calculate layout dimensions
-    concepts_list = list(state.concepts.items())
-    num_concepts = len(concepts_list)
-
-    if num_concepts == 0:
-        output.write(
-            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">'
-            '<text x="200" y="100" text-anchor="middle" fill="#666">'
-            "No concepts defined</text></svg>"
-        )
-        return
-
-    # Simple grid layout
-    cols = min(4, num_concepts)
-    rows = (num_concepts + cols - 1) // cols
-
-    node_width = 160
-    node_height = 80
-    h_spacing = 200
-    v_spacing = 120
-    padding = 50
-
-    width = cols * h_spacing + padding * 2
-    height = rows * v_spacing + padding * 2
-
-    # Calculate node positions
-    positions: dict[str, tuple[int, int]] = {}
-    for i, (concept_id, _concept) in enumerate(concepts_list):
-        col = i % cols
-        row = i // cols
-        x = padding + col * h_spacing + node_width // 2
-        y = padding + row * v_spacing + node_height // 2
-        positions[concept_id] = (x, y)
-
-    # Domain colors
-    domain_colors: dict[str, str] = {}
-    for domain_id, domain in state.domains.items():
-        domain_colors[domain_id] = domain.color or "#3498db"
-
-    # Start SVG
-    output.write(
-        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}">\n'
-    )
-    output.write("  <defs>\n")
-    output.write('    <marker id="arrowhead" markerWidth="10" markerHeight="7" ')
-    output.write('refX="9" refY="3.5" orient="auto">\n')
-    output.write('      <polygon points="0 0, 10 3.5, 0 7" fill="#666"/>\n')
-    output.write("    </marker>\n")
-    output.write("  </defs>\n")
-
-    # Draw relationships (edges)
-    for _rel_id, rel in state.relationships.items():
-        if rel.from_concept in positions and rel.to_concept in positions:
-            from_pos = positions[rel.from_concept]
-            to_pos = positions[rel.to_concept]
-
-            # Calculate edge points (from edge of node, not center)
-            dx = to_pos[0] - from_pos[0]
-            dy = to_pos[1] - from_pos[1]
-            dist = max(1, (dx * dx + dy * dy) ** 0.5)
-
-            # Offset from center to edge
-            from_x = from_pos[0] + (dx / dist) * (node_width // 2)
-            from_y = from_pos[1] + (dy / dist) * (node_height // 2)
-            to_x = to_pos[0] - (dx / dist) * (node_width // 2 + 10)
-            to_y = to_pos[1] - (dy / dist) * (node_height // 2 + 10)
-
-            output.write(f'  <line x1="{from_x}" y1="{from_y}" ')
-            output.write(f'x2="{to_x}" y2="{to_y}" ')
-            output.write(
-                'stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"/>\n'
-            )
-
-            # Relationship label
-            mid_x = (from_x + to_x) // 2
-            mid_y = (from_y + to_y) // 2
-            output.write(f'  <text x="{mid_x}" y="{mid_y - 5}" ')
-            output.write('text-anchor="middle" font-size="10" fill="#666">')
-            output.write(f"{rel.verb}</text>\n")
-
-    # Draw concepts (nodes)
-    for concept_id, concept in concepts_list:
-        x, y = positions[concept_id]
-        color = domain_colors.get(concept.domain or "", "#3498db")
-
-        # Status-based styling
-        if concept.status == "stub":
-            stroke_dash = "5,5"
-            opacity = "0.7"
-        elif concept.status == "draft":
-            stroke_dash = "none"
-            opacity = "0.85"
-        else:
-            stroke_dash = "none"
-            opacity = "1"
-
-        # Node rectangle
-        output.write(f'  <rect x="{x - node_width // 2}" y="{y - node_height // 2}" ')
-        output.write(f'width="{node_width}" height="{node_height}" ')
-        output.write(f'rx="8" fill="white" stroke="{color}" stroke-width="2" ')
-        output.write(f'stroke-dasharray="{stroke_dash}" opacity="{opacity}"/>\n')
-
-        # Domain color bar
-        output.write(f'  <rect x="{x - node_width // 2}" y="{y - node_height // 2}" ')
-        output.write(f'width="{node_width}" height="6" rx="8" fill="{color}"/>\n')
-        output.write(
-            f'  <rect x="{x - node_width // 2}" y="{y - node_height // 2 + 3}" '
-        )
-        output.write(f'width="{node_width}" height="3" fill="{color}"/>\n')
-
-        # Concept name
-        output.write(f'  <text x="{x}" y="{y + 5}" ')
-        output.write('text-anchor="middle" font-family="system-ui, sans-serif" ')
-        output.write(
-            f'font-size="14" font-weight="600" fill="#333">{concept.name}</text>\n'
-        )
-
-        # Status indicator
-        status_icon = {"complete": "✓", "draft": "◐", "stub": "○"}.get(
-            concept.status, "?"
-        )
-        output.write(f'  <text x="{x + node_width // 2 - 15}" ')
-        output.write(f'y="{y - node_height // 2 + 20}" ')
-        output.write(f'font-size="12" fill="{color}">{status_icon}</text>\n')
-
-    output.write("</svg>\n")
 
 
 @main.command()
@@ -1595,7 +1289,6 @@ def diff(base: str, format: str, project_dir: Optional[Path]) -> None:
         format_json,
         format_markdown,
     )
-    from dbt_conceptual.differ import compute_diff
 
     project_dir = project_dir or Path.cwd()
 
@@ -1608,14 +1301,22 @@ def diff(base: str, format: str, project_dir: Optional[Path]) -> None:
         console.print("\nRun 'dbt-conceptual init' to create it.")
         raise click.Abort()
 
-    builder = StateBuilder(config)
-    current_state = builder.build()
-
-    # Load base state from git ref
-    base_state = _load_state_from_git_ref(config, base)
-
-    # Compute diff
-    conceptual_diff = compute_diff(base_state, current_state)
+    # Compute diff against base ref
+    try:
+        conceptual_diff = compute_diff_from_ref(config, base)
+    except GitNotFoundError:
+        console.print("[red]Error: git not found. This command requires git.[/red]")
+        raise click.Abort() from None
+    except NotAGitRepoError:
+        console.print("[red]Error: Not a git repository[/red]")
+        raise click.Abort() from None
+    except RefNotFoundError as e:
+        console.print(
+            f"[red]Error: Could not find conceptual.yml at ref '{e.ref}'[/red]"
+        )
+        if e.stderr:
+            console.print(f"[dim]{e.stderr}[/dim]")
+        raise click.Abort() from None
 
     # Format and output
     if format == "human":

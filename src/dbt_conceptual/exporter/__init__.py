@@ -14,11 +14,14 @@ from dbt_conceptual.exporter.formats import (
     export_validation_json,
     export_validation_markdown,
 )
+from dbt_conceptual.exporter.svg import export_diagram_svg
 
 __all__ = [
     # HTML exporters (existing)
     "export_coverage",
     "export_bus_matrix",
+    # SVG exporters
+    "export_diagram_svg",
     # JSON exporters
     "export_coverage_json",
     "export_bus_matrix_json",
