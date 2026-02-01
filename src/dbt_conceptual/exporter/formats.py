@@ -8,34 +8,8 @@ v1.0: Simplified model - single models[] array, no realized_by.
 import json
 from typing import Any, TextIO
 
-from dbt_conceptual.state import CoverageStats, ProjectState
+from dbt_conceptual.state import ProjectState
 from dbt_conceptual.validator import ValidationIssue, Validator
-
-
-def _stats_to_dict(stats: CoverageStats) -> dict[str, Any]:
-    """Convert CoverageStats to dict format for JSON export."""
-    return {
-        "concepts": {
-            "total": stats.total_concepts,
-            "complete": stats.complete_concepts,
-            "draft": stats.draft_concepts,
-            "stub": stats.stub_concepts,
-            "completion_percent": stats.completion_percent,
-        },
-        "coverage": {
-            "models": {
-                "count": stats.concepts_with_models,
-                "percent": stats.model_coverage_percent,
-            },
-        },
-        "relationships": {
-            "total": stats.total_relationships,
-            "complete": stats.complete_relationships,
-            "percent": stats.relationship_percent,
-        },
-        "orphans": stats.orphan_count,
-    }
-
 
 # ============================================================================
 # Coverage Exporters
@@ -44,7 +18,7 @@ def _stats_to_dict(stats: CoverageStats) -> dict[str, Any]:
 
 def export_coverage_json(state: ProjectState, output: TextIO) -> None:
     """Export coverage report as JSON."""
-    stats = _stats_to_dict(state.calculate_coverage_stats())
+    stats = state.calculate_coverage_stats().to_dict()
 
     # Add concept details using shared helper
     concepts_by_domain: dict[str, list[dict[str, Any]]] = {}
@@ -81,7 +55,7 @@ def export_coverage_json(state: ProjectState, output: TextIO) -> None:
 
 def export_coverage_markdown(state: ProjectState, output: TextIO) -> None:
     """Export coverage report as markdown."""
-    stats = _stats_to_dict(state.calculate_coverage_stats())
+    stats = state.calculate_coverage_stats().to_dict()
 
     output.write("### Coverage Summary\n\n")
     output.write("| Metric | Value |\n")
@@ -188,7 +162,7 @@ def export_bus_matrix_markdown(state: ProjectState, output: TextIO) -> None:
 
 def export_status_json(state: ProjectState, output: TextIO) -> None:
     """Export status report as JSON."""
-    stats = _stats_to_dict(state.calculate_coverage_stats())
+    stats = state.calculate_coverage_stats().to_dict()
 
     concepts_data = []
     for concept_id, concept in sorted(state.concepts.items()):
@@ -227,7 +201,7 @@ def export_status_json(state: ProjectState, output: TextIO) -> None:
 
 def export_status_markdown(state: ProjectState, output: TextIO) -> None:
     """Export status report as markdown."""
-    stats = _stats_to_dict(state.calculate_coverage_stats())
+    stats = state.calculate_coverage_stats().to_dict()
 
     output.write("### Status Summary\n\n")
     output.write(f"**Concepts:** {stats['concepts']['total']} total ")

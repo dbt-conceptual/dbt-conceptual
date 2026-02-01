@@ -8,7 +8,7 @@ Simplified v1.0 state model:
 """
 
 from dataclasses import dataclass, field
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 # Validation types
 ValidationStatus = Literal["valid", "warning", "error"]
@@ -200,6 +200,30 @@ class CoverageStats:
         if self.total_relationships == 0:
             return 0
         return int((self.complete_relationships / self.total_relationships) * 100)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to nested dict for JSON serialization."""
+        return {
+            "concepts": {
+                "total": self.total_concepts,
+                "complete": self.complete_concepts,
+                "draft": self.draft_concepts,
+                "stub": self.stub_concepts,
+                "completion_percent": self.completion_percent,
+            },
+            "coverage": {
+                "models": {
+                    "count": self.concepts_with_models,
+                    "percent": self.model_coverage_percent,
+                },
+            },
+            "relationships": {
+                "total": self.total_relationships,
+                "complete": self.complete_relationships,
+                "percent": self.relationship_percent,
+            },
+            "orphans": self.orphan_count,
+        }
 
 
 @dataclass
