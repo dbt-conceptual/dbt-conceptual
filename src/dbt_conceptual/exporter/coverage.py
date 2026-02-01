@@ -5,7 +5,7 @@ v1.0: Simplified model - single models[] array.
 
 from typing import TextIO
 
-from dbt_conceptual.state import ConceptState, ProjectState
+from dbt_conceptual.state import ProjectState
 
 
 def export_coverage(state: ProjectState, output: TextIO) -> None:
@@ -15,45 +15,9 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
         state: Project state with concepts and relationships
         output: Text stream to write HTML to
     """
-    # Calculate statistics
-    total_concepts = len(state.concepts)
-    complete_concepts = sum(
-        1 for c in state.concepts.values() if c.status == "complete"
-    )
-    stub_concepts = sum(1 for c in state.concepts.values() if c.status == "stub")
-    draft_concepts = sum(1 for c in state.concepts.values() if c.status == "draft")
-
-    concepts_with_models = sum(1 for c in state.concepts.values() if c.models)
-
-    total_relationships = len(state.relationships)
-    complete_relationships = sum(
-        1
-        for r in state.relationships.values()
-        if r.get_status(state.concepts) == "complete"
-    )
-
-    orphan_count = len(state.orphan_models)
-
-    # Calculate completion percentage
-    completion_pct = (
-        int((complete_concepts / total_concepts) * 100) if total_concepts > 0 else 0
-    )
-    model_coverage_pct = (
-        int((concepts_with_models / total_concepts) * 100) if total_concepts > 0 else 0
-    )
-    relationship_pct = (
-        int((complete_relationships / total_relationships) * 100)
-        if total_relationships > 0
-        else 0
-    )
-
-    # Group concepts by domain
-    domain_groups: dict[str, list[tuple[str, ConceptState]]] = {}
-    for concept_id, concept in state.concepts.items():
-        domain = concept.domain or "uncategorized"
-        if domain not in domain_groups:
-            domain_groups[domain] = []
-        domain_groups[domain].append((concept_id, concept))
+    # Use shared stats calculation
+    stats = state.calculate_coverage_stats()
+    domain_groups = state.concepts_by_domain()
 
     # Find attention items
     incomplete_concepts = [
@@ -311,14 +275,16 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
             <div class="stat-card">
                 <div class="stat-label">Concept Completion</div>
                 <div class="stat-value">""")
-    output.write(f"{completion_pct}%")
+    output.write(f"{stats.completion_percent}%")
     output.write("""</div>
                 <div class="stat-secondary">""")
-    output.write(f"{complete_concepts} of {total_concepts} concepts complete")
+    output.write(
+        f"{stats.complete_concepts} of {stats.total_concepts} concepts complete"
+    )
     output.write("""</div>
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: """)
-    output.write(f"{completion_pct}%")
+    output.write(f"{stats.completion_percent}%")
     output.write(""""></div>
                 </div>
             </div>
@@ -326,14 +292,14 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
             <div class="stat-card">
                 <div class="stat-label">Model Coverage</div>
                 <div class="stat-value">""")
-    output.write(f"{model_coverage_pct}%")
+    output.write(f"{stats.model_coverage_percent}%")
     output.write("""</div>
                 <div class="stat-secondary">""")
-    output.write(f"{concepts_with_models} concepts have models")
+    output.write(f"{stats.concepts_with_models} concepts have models")
     output.write("""</div>
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: """)
-    output.write(f"{model_coverage_pct}%")
+    output.write(f"{stats.model_coverage_percent}%")
     output.write(""""></div>
                 </div>
             </div>
@@ -341,14 +307,16 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
             <div class="stat-card">
                 <div class="stat-label">Relationships Complete</div>
                 <div class="stat-value">""")
-    output.write(f"{relationship_pct}%")
+    output.write(f"{stats.relationship_percent}%")
     output.write("""</div>
                 <div class="stat-secondary">""")
-    output.write(f"{complete_relationships} of {total_relationships} complete")
+    output.write(
+        f"{stats.complete_relationships} of {stats.total_relationships} complete"
+    )
     output.write("""</div>
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: """)
-    output.write(f"{relationship_pct}%")
+    output.write(f"{stats.relationship_percent}%")
     output.write(""""></div>
                 </div>
             </div>
@@ -356,31 +324,33 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
 """)
 
     # Attention items
-    if incomplete_concepts or orphan_count > 0:
+    if incomplete_concepts or stats.orphan_count > 0:
         output.write("""
         <section>
             <h2>Needs Attention</h2>
             <div class="attention-list">
 """)
 
-        if stub_concepts > 0:
+        if stats.stub_concepts > 0:
             output.write("""
                 <div class="attention-item error">
                     <div class="attention-title">⚠️ """)
             output.write(
-                f"{stub_concepts} Stub Concept{'s' if stub_concepts != 1 else ''}"
+                f"{stats.stub_concepts} Stub Concept"
+                f"{'s' if stats.stub_concepts != 1 else ''}"
             )
             output.write("""</div>
                     <div class="attention-detail">These concepts were auto-generated and need definitions, owners, and domains.</div>
                 </div>
 """)
 
-        if draft_concepts > 0:
+        if stats.draft_concepts > 0:
             output.write("""
                 <div class="attention-item warning">
                     <div class="attention-title">◐ """)
             output.write(
-                f"{draft_concepts} Draft Concept{'s' if draft_concepts != 1 else ''}"
+                f"{stats.draft_concepts} Draft Concept"
+                f"{'s' if stats.draft_concepts != 1 else ''}"
             )
             output.write("""</div>
                     <div class="attention-detail">These concepts have no implementing models yet.</div>
@@ -411,12 +381,13 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
                 </div>
 """)
 
-        if orphan_count > 0:
+        if stats.orphan_count > 0:
             output.write("""
                 <div class="attention-item">
                     <div class="attention-title">🔍 """)
             output.write(
-                f"{orphan_count} Orphan Model{'s' if orphan_count != 1 else ''}"
+                f"{stats.orphan_count} Orphan Model"
+                f"{'s' if stats.orphan_count != 1 else ''}"
             )
             output.write("""</div>
                     <div class="attention-detail">dbt models without concept tags. Run <code>dbt-conceptual sync</code> to discover them.</div>
@@ -491,7 +462,7 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
 """)
 
     # Orphan models section
-    if orphan_count > 0:
+    if stats.orphan_count > 0:
         output.write("""
         <section>
             <h2>Orphan Models</h2>

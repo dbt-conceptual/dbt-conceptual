@@ -161,6 +161,48 @@ class OrphanModel:
 
 
 @dataclass
+class CoverageStats:
+    """Coverage statistics calculated from project state."""
+
+    # Concept counts
+    total_concepts: int = 0
+    complete_concepts: int = 0
+    draft_concepts: int = 0
+    stub_concepts: int = 0
+
+    # Model coverage
+    concepts_with_models: int = 0
+
+    # Relationship counts
+    total_relationships: int = 0
+    complete_relationships: int = 0
+
+    # Orphans
+    orphan_count: int = 0
+
+    @property
+    def completion_percent(self) -> int:
+        """Percentage of concepts that are complete."""
+        if self.total_concepts == 0:
+            return 0
+        return int((self.complete_concepts / self.total_concepts) * 100)
+
+    @property
+    def model_coverage_percent(self) -> int:
+        """Percentage of concepts with at least one model."""
+        if self.total_concepts == 0:
+            return 0
+        return int((self.concepts_with_models / self.total_concepts) * 100)
+
+    @property
+    def relationship_percent(self) -> int:
+        """Percentage of relationships that are complete."""
+        if self.total_relationships == 0:
+            return 0
+        return int((self.complete_relationships / self.total_relationships) * 100)
+
+
+@dataclass
 class ProjectState:
     """Represents the complete state of the conceptual model and its dbt implementation."""
 
@@ -172,3 +214,43 @@ class ProjectState:
         default_factory=dict
     )  # Model info for validation
     metadata: dict[str, str] = field(default_factory=dict)
+
+    def concepts_by_domain(self) -> dict[str, list[tuple[str, ConceptState]]]:
+        """Group concepts by their domain.
+
+        Returns:
+            Dict mapping domain name to list of (concept_id, concept) tuples.
+            Concepts without a domain are grouped under 'uncategorized'.
+        """
+        groups: dict[str, list[tuple[str, ConceptState]]] = {}
+        for concept_id, concept in self.concepts.items():
+            domain = concept.domain or "uncategorized"
+            if domain not in groups:
+                groups[domain] = []
+            groups[domain].append((concept_id, concept))
+        return groups
+
+    def calculate_coverage_stats(self) -> CoverageStats:
+        """Calculate coverage statistics for this project state.
+
+        Returns:
+            CoverageStats with all metrics populated.
+        """
+        return CoverageStats(
+            total_concepts=len(self.concepts),
+            complete_concepts=sum(
+                1 for c in self.concepts.values() if c.status == "complete"
+            ),
+            draft_concepts=sum(
+                1 for c in self.concepts.values() if c.status == "draft"
+            ),
+            stub_concepts=sum(1 for c in self.concepts.values() if c.status == "stub"),
+            concepts_with_models=sum(1 for c in self.concepts.values() if c.models),
+            total_relationships=len(self.relationships),
+            complete_relationships=sum(
+                1
+                for r in self.relationships.values()
+                if r.get_status(self.concepts) == "complete"
+            ),
+            orphan_count=len(self.orphan_models),
+        )

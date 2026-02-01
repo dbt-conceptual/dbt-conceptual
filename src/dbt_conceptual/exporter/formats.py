@@ -8,60 +8,32 @@ v1.0: Simplified model - single models[] array, no realized_by.
 import json
 from typing import Any, TextIO
 
-from dbt_conceptual.state import ProjectState
+from dbt_conceptual.state import CoverageStats, ProjectState
 from dbt_conceptual.validator import ValidationIssue, Validator
 
 
-def _calculate_coverage_stats(state: ProjectState) -> dict[str, Any]:
-    """Calculate coverage statistics from project state."""
-    total_concepts = len(state.concepts)
-    complete_concepts = sum(
-        1 for c in state.concepts.values() if c.status == "complete"
-    )
-    stub_concepts = sum(1 for c in state.concepts.values() if c.status == "stub")
-    draft_concepts = sum(1 for c in state.concepts.values() if c.status == "draft")
-
-    concepts_with_models = sum(1 for c in state.concepts.values() if c.models)
-
-    total_relationships = len(state.relationships)
-    complete_relationships = sum(
-        1
-        for r in state.relationships.values()
-        if r.get_status(state.concepts) == "complete"
-    )
-
+def _stats_to_dict(stats: CoverageStats) -> dict[str, Any]:
+    """Convert CoverageStats to dict format for JSON export."""
     return {
         "concepts": {
-            "total": total_concepts,
-            "complete": complete_concepts,
-            "draft": draft_concepts,
-            "stub": stub_concepts,
-            "completion_percent": (
-                int((complete_concepts / total_concepts) * 100)
-                if total_concepts > 0
-                else 0
-            ),
+            "total": stats.total_concepts,
+            "complete": stats.complete_concepts,
+            "draft": stats.draft_concepts,
+            "stub": stats.stub_concepts,
+            "completion_percent": stats.completion_percent,
         },
         "coverage": {
             "models": {
-                "count": concepts_with_models,
-                "percent": (
-                    int((concepts_with_models / total_concepts) * 100)
-                    if total_concepts > 0
-                    else 0
-                ),
+                "count": stats.concepts_with_models,
+                "percent": stats.model_coverage_percent,
             },
         },
         "relationships": {
-            "total": total_relationships,
-            "complete": complete_relationships,
-            "percent": (
-                int((complete_relationships / total_relationships) * 100)
-                if total_relationships > 0
-                else 0
-            ),
+            "total": stats.total_relationships,
+            "complete": stats.complete_relationships,
+            "percent": stats.relationship_percent,
         },
-        "orphans": len(state.orphan_models),
+        "orphans": stats.orphan_count,
     }
 
 
@@ -72,9 +44,9 @@ def _calculate_coverage_stats(state: ProjectState) -> dict[str, Any]:
 
 def export_coverage_json(state: ProjectState, output: TextIO) -> None:
     """Export coverage report as JSON."""
-    stats = _calculate_coverage_stats(state)
+    stats = _stats_to_dict(state.calculate_coverage_stats())
 
-    # Add concept details
+    # Add concept details using shared helper
     concepts_by_domain: dict[str, list[dict[str, Any]]] = {}
     for concept_id, concept in state.concepts.items():
         domain = concept.domain or "uncategorized"
@@ -109,7 +81,7 @@ def export_coverage_json(state: ProjectState, output: TextIO) -> None:
 
 def export_coverage_markdown(state: ProjectState, output: TextIO) -> None:
     """Export coverage report as markdown."""
-    stats = _calculate_coverage_stats(state)
+    stats = _stats_to_dict(state.calculate_coverage_stats())
 
     output.write("### Coverage Summary\n\n")
     output.write("| Metric | Value |\n")
@@ -216,7 +188,7 @@ def export_bus_matrix_markdown(state: ProjectState, output: TextIO) -> None:
 
 def export_status_json(state: ProjectState, output: TextIO) -> None:
     """Export status report as JSON."""
-    stats = _calculate_coverage_stats(state)
+    stats = _stats_to_dict(state.calculate_coverage_stats())
 
     concepts_data = []
     for concept_id, concept in sorted(state.concepts.items()):
@@ -255,7 +227,7 @@ def export_status_json(state: ProjectState, output: TextIO) -> None:
 
 def export_status_markdown(state: ProjectState, output: TextIO) -> None:
     """Export status report as markdown."""
-    stats = _calculate_coverage_stats(state)
+    stats = _stats_to_dict(state.calculate_coverage_stats())
 
     output.write("### Status Summary\n\n")
     output.write(f"**Concepts:** {stats['concepts']['total']} total ")
@@ -266,13 +238,8 @@ def export_status_markdown(state: ProjectState, output: TextIO) -> None:
     output.write(f"**Relationships:** {stats['relationships']['total']} total ")
     output.write(f"({stats['relationships']['complete']} complete)\n\n")
 
-    # Group by domain
-    domain_groups: dict[str, list[tuple[str, Any]]] = {}
-    for concept_id, concept in state.concepts.items():
-        domain = concept.domain or "uncategorized"
-        if domain not in domain_groups:
-            domain_groups[domain] = []
-        domain_groups[domain].append((concept_id, concept))
+    # Use shared helper for domain grouping
+    domain_groups = state.concepts_by_domain()
 
     output.write("#### Concepts by Domain\n\n")
     for domain_id in sorted(domain_groups.keys()):
