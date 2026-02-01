@@ -716,8 +716,8 @@ def sync(project_dir: Optional[Path], create_stubs: bool, model: Optional[str]) 
 # Valid type/format combinations matrix
 EXPORT_MATRIX: dict[str, set[str]] = {
     "diagram": {"svg"},
-    "coverage": {"html", "markdown", "json"},
-    "bus-matrix": {"html", "markdown", "json"},
+    "coverage": {"markdown", "json"},
+    "bus-matrix": {"markdown", "json"},
     "status": {"markdown", "json"},
     "orphans": {"markdown", "json"},
     "validation": {"markdown", "json"},
@@ -824,10 +824,8 @@ def export(
         dbt-conceptual export --type diff --format markdown --base main
     """
     from dbt_conceptual.exporter import (
-        export_bus_matrix,
         export_bus_matrix_json,
         export_bus_matrix_markdown,
-        export_coverage,
         export_coverage_json,
         export_coverage_markdown,
         export_diagram_svg,
@@ -882,17 +880,13 @@ def export(
                     export_diagram_svg(state, out)
 
             elif export_type == "coverage":
-                if export_format == "html":
-                    export_coverage(state, out)
-                elif export_format == "markdown":
+                if export_format == "markdown":
                     export_coverage_markdown(state, out)
                 elif export_format == "json":
                     export_coverage_json(state, out)
 
             elif export_type == "bus-matrix":
-                if export_format == "html":
-                    export_bus_matrix(state, out)
-                elif export_format == "markdown":
+                if export_format == "markdown":
                     export_bus_matrix_markdown(state, out)
                 elif export_format == "json":
                     export_bus_matrix_json(state, out)
@@ -911,11 +905,11 @@ def export(
 
             elif export_type == "validation":
                 validator = Validator(config, state, no_drafts=no_drafts)
-                issues = validator.validate()
+                validator.validate()
                 if export_format == "markdown":
-                    export_validation_markdown(validator, issues, out)
+                    export_validation_markdown(validator, out)
                 elif export_format == "json":
-                    export_validation_json(validator, issues, out)
+                    export_validation_json(validator, out)
 
             elif export_type == "diff":
                 # Diff requires computing against base ref

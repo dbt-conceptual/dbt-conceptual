@@ -1,12 +1,10 @@
 """Export modules for dbt-conceptual.
 
-Provides export functionality for various output formats (HTML, JSON, Markdown, SVG).
+Provides export functionality for various output formats (JSON, Markdown, SVG).
 """
 
 from typing import Protocol, TextIO
 
-from dbt_conceptual.exporter.bus_matrix import export_bus_matrix
-from dbt_conceptual.exporter.coverage import export_coverage
 from dbt_conceptual.exporter.formats import (
     export_bus_matrix_json,
     export_bus_matrix_markdown,
@@ -29,8 +27,8 @@ class StateExporter(Protocol):
     """Protocol for exporters that take ProjectState and write to TextIO.
 
     This is the common pattern for most exporters:
-    - coverage (HTML, JSON, Markdown)
-    - bus_matrix (HTML, JSON, Markdown)
+    - coverage (JSON, Markdown)
+    - bus_matrix (JSON, Markdown)
     - status (JSON, Markdown)
     - orphans (JSON, Markdown)
     - diagram (SVG)
@@ -52,12 +50,10 @@ class StateExporter(Protocol):
 # Registry of state exporters by format
 STATE_EXPORTERS: dict[str, dict[str, StateExporter]] = {
     "coverage": {
-        "html": export_coverage,
         "json": export_coverage_json,
         "markdown": export_coverage_markdown,
     },
     "bus_matrix": {
-        "html": export_bus_matrix,
         "json": export_bus_matrix_json,
         "markdown": export_bus_matrix_markdown,
     },
@@ -80,9 +76,6 @@ __all__ = [
     "StateExporter",
     # Registry
     "STATE_EXPORTERS",
-    # HTML exporters
-    "export_coverage",
-    "export_bus_matrix",
     # SVG exporters
     "export_diagram_svg",
     # JSON exporters

@@ -11,8 +11,10 @@ import yaml
 from flask import Flask, Response, jsonify, request, send_from_directory
 
 from dbt_conceptual.config import Config
-from dbt_conceptual.exporter.bus_matrix import export_bus_matrix
-from dbt_conceptual.exporter.coverage import export_coverage
+from dbt_conceptual.exporter.formats import (
+    export_bus_matrix_json,
+    export_coverage_json,
+)
 from dbt_conceptual.parser import StateBuilder
 from dbt_conceptual.scanner import DbtProjectScanner
 
@@ -245,7 +247,7 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
 
     @app.route("/api/coverage", methods=["GET"])
     def get_coverage() -> Any:
-        """Get coverage report as HTML."""
+        """Get coverage report as JSON."""
         try:
             from io import StringIO
 
@@ -253,15 +255,15 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
             state = builder.build()
 
             output = StringIO()
-            export_coverage(state, output)
+            export_coverage_json(state, output)
 
-            return output.getvalue(), 200, {"Content-Type": "text/html"}
+            return output.getvalue(), 200, {"Content-Type": "application/json"}
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
     @app.route("/api/bus-matrix", methods=["GET"])
     def get_bus_matrix() -> Any:
-        """Get bus matrix as HTML."""
+        """Get bus matrix as JSON."""
         try:
             from io import StringIO
 
@@ -269,9 +271,9 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
             state = builder.build()
 
             output = StringIO()
-            export_bus_matrix(state, output)
+            export_bus_matrix_json(state, output)
 
-            return output.getvalue(), 200, {"Content-Type": "text/html"}
+            return output.getvalue(), 200, {"Content-Type": "application/json"}
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 

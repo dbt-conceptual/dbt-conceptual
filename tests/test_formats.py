@@ -308,10 +308,9 @@ class TestValidationExporters:
         state = _create_test_state()
         config = Config(project_dir=Path("/tmp"))
         validator = Validator(config, state)
-        issues: list[ValidationIssue] = []
 
         output = StringIO()
-        export_validation_json(validator, issues, output)
+        export_validation_json(validator, output)
         result = output.getvalue()
         data = json.loads(result)
 
@@ -325,7 +324,7 @@ class TestValidationExporters:
         state = _create_test_state()
         config = Config(project_dir=Path("/tmp"))
         validator = Validator(config, state)
-        issues = [
+        validator.issues = [
             ValidationIssue(
                 code="E001",
                 severity=Severity.ERROR,
@@ -339,11 +338,9 @@ class TestValidationExporters:
                 context={},
             ),
         ]
-        # Add issues to validator for summary
-        validator.issues = issues
 
         output = StringIO()
-        export_validation_json(validator, issues, output)
+        export_validation_json(validator, output)
         result = output.getvalue()
         data = json.loads(result)
 
@@ -359,10 +356,9 @@ class TestValidationExporters:
         state = _create_test_state()
         config = Config(project_dir=Path("/tmp"))
         validator = Validator(config, state)
-        issues: list[ValidationIssue] = []
 
         output = StringIO()
-        export_validation_markdown(validator, issues, output)
+        export_validation_markdown(validator, output)
         result = output.getvalue()
 
         assert "### " in result  # Has a header
@@ -373,7 +369,7 @@ class TestValidationExporters:
         state = _create_test_state()
         config = Config(project_dir=Path("/tmp"))
         validator = Validator(config, state)
-        issues = [
+        validator.issues = [
             ValidationIssue(
                 code="E001",
                 severity=Severity.ERROR,
@@ -381,10 +377,9 @@ class TestValidationExporters:
                 context={},
             ),
         ]
-        validator.issues = issues
 
         output = StringIO()
-        export_validation_markdown(validator, issues, output)
+        export_validation_markdown(validator, output)
         result = output.getvalue()
 
         assert "Validation Failed" in result
@@ -398,7 +393,7 @@ class TestValidationExporters:
         state = _create_test_state()
         config = Config(project_dir=Path("/tmp"))
         validator = Validator(config, state)
-        issues = [
+        validator.issues = [
             ValidationIssue(
                 code="W001",
                 severity=Severity.WARNING,
@@ -406,10 +401,9 @@ class TestValidationExporters:
                 context={},
             ),
         ]
-        validator.issues = issues
 
         output = StringIO()
-        export_validation_markdown(validator, issues, output)
+        export_validation_markdown(validator, output)
         result = output.getvalue()
 
         # No errors = passed

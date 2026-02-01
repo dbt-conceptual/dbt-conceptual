@@ -9,7 +9,7 @@ import json
 from typing import Any, TextIO
 
 from dbt_conceptual.state import ProjectState
-from dbt_conceptual.validator import ValidationIssue, Validator
+from dbt_conceptual.validator import Validator
 
 # ============================================================================
 # Coverage Exporters
@@ -288,9 +288,7 @@ def export_orphans_markdown(state: ProjectState, output: TextIO) -> None:
 # ============================================================================
 
 
-def export_validation_json(
-    validator: Validator, issues: list[ValidationIssue], output: TextIO
-) -> None:
+def export_validation_json(validator: Validator, output: TextIO) -> None:
     """Export validation results as JSON."""
     summary = validator.get_summary()
 
@@ -301,7 +299,7 @@ def export_validation_json(
             "message": issue.message,
             "context": issue.context,
         }
-        for issue in issues
+        for issue in validator.issues
     ]
 
     data = {
@@ -318,9 +316,7 @@ def export_validation_json(
     output.write("\n")
 
 
-def export_validation_markdown(
-    validator: Validator, issues: list[ValidationIssue], output: TextIO
-) -> None:
+def export_validation_markdown(validator: Validator, output: TextIO) -> None:
     """Export validation results as markdown."""
     from dbt_conceptual.validator import Severity
 
@@ -343,8 +339,8 @@ def export_validation_markdown(
     output.write("\n")
 
     # Group issues by severity
-    errors = [i for i in issues if i.severity == Severity.ERROR]
-    warnings = [i for i in issues if i.severity == Severity.WARNING]
+    errors = [i for i in validator.issues if i.severity == Severity.ERROR]
+    warnings = [i for i in validator.issues if i.severity == Severity.WARNING]
 
     if errors:
         output.write("#### Errors\n\n")
