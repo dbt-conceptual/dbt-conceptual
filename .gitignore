@@ -155,6 +155,9 @@ logs/
 PUBLISHING.md
 .claude/
 
+# The Herd (local minion configs)
+.herd/
+
 # Local testing folder (for development)
 user_testing/
 
