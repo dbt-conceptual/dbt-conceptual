@@ -3,9 +3,12 @@
 v1.0: Simplified API with flat models[], no realized_by.
 """
 
+from __future__ import annotations
+
 import json
+import logging
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 import yaml
 from flask import Flask, Response, jsonify, request, send_from_directory
@@ -15,6 +18,98 @@ from dbt_conceptual.exporter.bus_matrix import export_bus_matrix
 from dbt_conceptual.exporter.coverage import export_coverage
 from dbt_conceptual.parser import StateBuilder
 from dbt_conceptual.scanner import DbtProjectScanner
+from dbt_conceptual.state import ProjectState
+
+logger = logging.getLogger(__name__)
+
+
+def _serialize_state(state: ProjectState) -> dict[str, Any]:
+    """Serialize ProjectState to a JSON-compatible dictionary.
+
+    Converts domain, concept, and relationship dataclasses into plain dicts
+    suitable for JSON responses. Status fields are derived at serialization time.
+
+    Args:
+        state: The project state to serialize.
+
+    Returns:
+        Dictionary with 'domains', 'concepts', and 'relationships' keys.
+    """
+    return {
+        "domains": {
+            domain_id: {
+                "name": domain.name,
+                "display_name": domain.display_name,
+                "color": domain.color,
+            }
+            for domain_id, domain in state.domains.items()
+        },
+        "concepts": {
+            concept_id: {
+                "name": concept.name,
+                "definition": concept.definition,
+                "domain": concept.domain,
+                "owner": concept.owner,
+                "status": concept.status,  # Derived at runtime
+                "color": concept.color,
+                "models": concept.models,  # Flat list
+                # Validation fields
+                "isGhost": concept.is_ghost,
+                "validationStatus": concept.validation_status,
+                "validationMessages": concept.validation_messages,
+            }
+            for concept_id, concept in state.concepts.items()
+        },
+        "relationships": {
+            rel_id: {
+                "name": rel.name,  # Derived
+                "verb": rel.verb,
+                "from_concept": rel.from_concept,
+                "to_concept": rel.to_concept,
+                "cardinality": rel.cardinality,
+                "owner": rel.owner,
+                "definition": rel.definition,
+                "status": rel.get_status(state.concepts),  # Derived
+                # Validation fields
+                "validationStatus": rel.validation_status,
+                "validationMessages": rel.validation_messages,
+            }
+            for rel_id, rel in state.relationships.items()
+        },
+    }
+
+
+def _read_conceptual_yml(conceptual_file: Path) -> dict[str, Any]:
+    """Read and parse the conceptual.yml file.
+
+    Args:
+        conceptual_file: Path to conceptual.yml.
+
+    Returns:
+        Parsed YAML data as a dictionary, or empty dict if file is empty.
+
+    Raises:
+        FileNotFoundError: If the file does not exist.
+        yaml.YAMLError: If the file contains invalid YAML.
+        OSError: If the file cannot be read due to permission or I/O errors.
+    """
+    with open(conceptual_file) as f:
+        return yaml.safe_load(f) or {}
+
+
+def _write_conceptual_yml(conceptual_file: Path, data: dict[str, Any]) -> None:
+    """Write data to the conceptual.yml file.
+
+    Args:
+        conceptual_file: Path to conceptual.yml.
+        data: Dictionary to serialize as YAML.
+
+    Raises:
+        OSError: If the file cannot be written due to permission or I/O errors.
+        yaml.YAMLError: If the data cannot be serialized.
+    """
+    with open(conceptual_file, "w") as f:
+        yaml.dump(data, f, sort_keys=False, default_flow_style=False)
 
 
 def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
@@ -51,7 +146,7 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
     config = Config.load(project_dir=project_dir)
 
     @app.route("/")
-    def index() -> Union[str, Response]:
+    def index() -> str | Response:
         """Serve the main UI page."""
         if app.static_folder and (Path(app.static_folder) / "index.html").exists():
             return send_from_directory(app.static_folder, "index.html")
@@ -80,7 +175,7 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
         """
 
     @app.route("/api/state", methods=["GET"])
-    def get_state() -> Any:
+    def get_state() -> Response | tuple[Response, int]:
         """Get current conceptual model state as JSON."""
         try:
             builder = StateBuilder(config)
@@ -97,64 +192,27 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
 
             # Load positions from conceptual_layout.json
             layout_file = config.layout_file
-            positions = {}
+            positions: dict[str, Any] = {}
             if layout_file.exists():
                 with open(layout_file) as f:
                     layout_data = json.load(f) or {}
                     positions = layout_data.get("positions", {})
 
             # Convert state to JSON-serializable format (v1.0 simplified)
-            response = {
-                "domains": {
-                    domain_id: {
-                        "name": domain.name,
-                        "display_name": domain.display_name,
-                        "color": domain.color,
-                    }
-                    for domain_id, domain in state.domains.items()
-                },
-                "concepts": {
-                    concept_id: {
-                        "name": concept.name,
-                        "definition": concept.definition,
-                        "domain": concept.domain,
-                        "owner": concept.owner,
-                        "status": concept.status,  # Derived at runtime
-                        "color": concept.color,
-                        "models": concept.models,  # Flat list
-                        # Validation fields
-                        "isGhost": concept.is_ghost,
-                        "validationStatus": concept.validation_status,
-                        "validationMessages": concept.validation_messages,
-                    }
-                    for concept_id, concept in state.concepts.items()
-                },
-                "relationships": {
-                    rel_id: {
-                        "name": rel.name,  # Derived
-                        "verb": rel.verb,
-                        "from_concept": rel.from_concept,
-                        "to_concept": rel.to_concept,
-                        "cardinality": rel.cardinality,
-                        "owner": rel.owner,
-                        "definition": rel.definition,
-                        "status": rel.get_status(state.concepts),  # Derived
-                        # Validation fields
-                        "validationStatus": rel.validation_status,
-                        "validationMessages": rel.validation_messages,
-                    }
-                    for rel_id, rel in state.relationships.items()
-                },
-                "positions": positions,  # React Flow node positions
-                "hasIntegrityErrors": has_integrity_errors,
-            }
+            response = _serialize_state(state)
+            response["positions"] = positions  # React Flow node positions
+            response["hasIntegrityErrors"] = has_integrity_errors
 
             return jsonify(response)
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
+        except (yaml.YAMLError, json.JSONDecodeError) as e:
+            logger.error("Failed to parse project files: %s", e)
+            return jsonify({"error": f"Parse error: {e}"}), 500
+        except (FileNotFoundError, OSError) as e:
+            logger.error("File I/O error reading state: %s", e)
+            return jsonify({"error": f"File error: {e}"}), 500
 
     @app.route("/api/state", methods=["POST"])
-    def save_state() -> Any:
+    def save_state() -> Response | tuple[Response, int]:
         """Save conceptual model state to conceptual.yml."""
         try:
             data = request.json
@@ -167,8 +225,7 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
                 return jsonify({"error": "conceptual.yml not found"}), 404
 
             # Read existing file to preserve config section
-            with open(conceptual_file) as f:
-                existing_data = yaml.safe_load(f) or {}
+            existing_data = _read_conceptual_yml(conceptual_file)
 
             # Start with config section preserved
             yaml_data: dict[str, Any] = {}
@@ -213,7 +270,7 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
             if data.get("relationships"):
                 yaml_data["relationships"] = []
                 for rel in data["relationships"].values():
-                    rel_dict = {}
+                    rel_dict: dict[str, Any] = {}
                     for k, v in rel.items():
                         if v is None:
                             continue
@@ -235,16 +292,19 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
                     yaml_data["relationships"].append(rel_dict)
 
             # Write to file
-            with open(conceptual_file, "w") as f:
-                yaml.dump(yaml_data, f, sort_keys=False, default_flow_style=False)
+            _write_conceptual_yml(conceptual_file, yaml_data)
 
             return jsonify({"success": True, "message": "Saved to conceptual.yml"})
 
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
+        except (yaml.YAMLError, ValueError, KeyError) as e:
+            logger.error("Data error saving state: %s", e)
+            return jsonify({"error": f"Data error: {e}"}), 500
+        except (FileNotFoundError, OSError) as e:
+            logger.error("File I/O error saving state: %s", e)
+            return jsonify({"error": f"File error: {e}"}), 500
 
     @app.route("/api/coverage", methods=["GET"])
-    def get_coverage() -> Any:
+    def get_coverage() -> Response | tuple[Response, int]:
         """Get coverage report as HTML."""
         try:
             from io import StringIO
@@ -255,12 +315,13 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
             output = StringIO()
             export_coverage(state, output)
 
-            return output.getvalue(), 200, {"Content-Type": "text/html"}
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
+            return output.getvalue(), 200, {"Content-Type": "text/html"}  # type: ignore[return-value]
+        except (yaml.YAMLError, FileNotFoundError, OSError) as e:
+            logger.error("Error generating coverage report: %s", e)
+            return jsonify({"error": f"Coverage report error: {e}"}), 500
 
     @app.route("/api/bus-matrix", methods=["GET"])
-    def get_bus_matrix() -> Any:
+    def get_bus_matrix() -> Response | tuple[Response, int]:
         """Get bus matrix as HTML."""
         try:
             from io import StringIO
@@ -271,12 +332,13 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
             output = StringIO()
             export_bus_matrix(state, output)
 
-            return output.getvalue(), 200, {"Content-Type": "text/html"}
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
+            return output.getvalue(), 200, {"Content-Type": "text/html"}  # type: ignore[return-value]
+        except (yaml.YAMLError, FileNotFoundError, OSError) as e:
+            logger.error("Error generating bus matrix: %s", e)
+            return jsonify({"error": f"Bus matrix error: {e}"}), 500
 
     @app.route("/api/layout", methods=["GET"])
-    def get_layout() -> Any:
+    def get_layout() -> Response | tuple[Response, int]:
         """Get layout positions from conceptual_layout.json."""
         try:
             layout_file = config.layout_file
@@ -287,11 +349,15 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
                 layout_data = json.load(f) or {}
 
             return jsonify(layout_data.get("positions", {}))
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
+        except json.JSONDecodeError as e:
+            logger.error("Invalid JSON in layout file: %s", e)
+            return jsonify({"error": f"Invalid layout JSON: {e}"}), 500
+        except (FileNotFoundError, OSError) as e:
+            logger.error("File I/O error reading layout: %s", e)
+            return jsonify({"error": f"File error: {e}"}), 500
 
     @app.route("/api/layout", methods=["POST"])
-    def save_layout() -> Any:
+    def save_layout() -> Response | tuple[Response, int]:
         """Save layout positions to conceptual_layout.json."""
         try:
             data = request.json
@@ -308,21 +374,26 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
                 json.dump(layout_data, f, indent=2)
 
             return jsonify({"success": True, "message": "Layout saved"})
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
+        except (ValueError, TypeError) as e:
+            logger.error("Invalid data for layout save: %s", e)
+            return jsonify({"error": f"Invalid layout data: {e}"}), 500
+        except OSError as e:
+            logger.error("File I/O error saving layout: %s", e)
+            return jsonify({"error": f"File error: {e}"}), 500
 
     @app.route("/api/models", methods=["GET"])
-    def get_models() -> Any:
+    def get_models() -> Response | tuple[Response, int]:
         """Get available dbt models from gold layer."""
         try:
             scanner = DbtProjectScanner(config)
             models = scanner.scan()
             return jsonify(models)
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
+        except (yaml.YAMLError, FileNotFoundError, OSError) as e:
+            logger.error("Error scanning models: %s", e)
+            return jsonify({"error": f"Model scan error: {e}"}), 500
 
     @app.route("/api/sync", methods=["POST"])
-    def sync_from_dbt() -> Any:
+    def sync_from_dbt() -> Response | tuple[Response, int]:
         """Trigger sync from dbt project.
 
         Scans dbt models for meta.concept tags,
@@ -349,47 +420,8 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
             ghost_concepts = [cid for cid, c in state.concepts.items() if c.is_ghost]
 
             # Build full state response (same format as GET /api/state)
-            state_response = {
-                "domains": {
-                    domain_id: {
-                        "name": domain.name,
-                        "display_name": domain.display_name,
-                        "color": domain.color,
-                    }
-                    for domain_id, domain in state.domains.items()
-                },
-                "concepts": {
-                    concept_id: {
-                        "name": concept.name,
-                        "definition": concept.definition,
-                        "domain": concept.domain,
-                        "owner": concept.owner,
-                        "status": concept.status,
-                        "color": concept.color,
-                        "models": concept.models,
-                        "isGhost": concept.is_ghost,
-                        "validationStatus": concept.validation_status,
-                        "validationMessages": concept.validation_messages,
-                    }
-                    for concept_id, concept in state.concepts.items()
-                },
-                "relationships": {
-                    rel_id: {
-                        "name": rel.name,
-                        "verb": rel.verb,
-                        "from_concept": rel.from_concept,
-                        "to_concept": rel.to_concept,
-                        "cardinality": rel.cardinality,
-                        "owner": rel.owner,
-                        "definition": rel.definition,
-                        "status": rel.get_status(state.concepts),
-                        "validationStatus": rel.validation_status,
-                        "validationMessages": rel.validation_messages,
-                    }
-                    for rel_id, rel in state.relationships.items()
-                },
-                "positions": positions,
-            }
+            state_response = _serialize_state(state)
+            state_response["positions"] = positions
 
             return jsonify(
                 {
@@ -413,11 +445,15 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
                     "state": state_response,
                 }
             )
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
+        except (yaml.YAMLError, json.JSONDecodeError) as e:
+            logger.error("Parse error during sync: %s", e)
+            return jsonify({"error": f"Parse error: {e}"}), 500
+        except (FileNotFoundError, OSError) as e:
+            logger.error("File I/O error during sync: %s", e)
+            return jsonify({"error": f"File error: {e}"}), 500
 
     @app.route("/api/settings", methods=["GET"])
-    def get_settings() -> Any:
+    def get_settings() -> Response | tuple[Response, int]:
         """Get configuration (domains, scan paths, validation)."""
         try:
             # Read full config from conceptual.yml
@@ -426,12 +462,11 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
             domains_data: dict[str, Any] = {}
 
             if conceptual_file.exists():
-                with open(conceptual_file) as f:
-                    data = yaml.safe_load(f) or {}
-                    if "config" in data:
-                        config_data = data["config"]
-                    if "domains" in data:
-                        domains_data = data["domains"]
+                data = _read_conceptual_yml(conceptual_file)
+                if "config" in data:
+                    config_data = data["config"]
+                if "domains" in data:
+                    domains_data = data["domains"]
 
             return jsonify(
                 {
@@ -440,11 +475,15 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
                     "validation": config_data.get("validation", {}),
                 }
             )
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
+        except yaml.YAMLError as e:
+            logger.error("Invalid YAML in conceptual.yml: %s", e)
+            return jsonify({"error": f"YAML parse error: {e}"}), 500
+        except (FileNotFoundError, OSError) as e:
+            logger.error("File I/O error reading settings: %s", e)
+            return jsonify({"error": f"File error: {e}"}), 500
 
     @app.route("/api/settings", methods=["POST"])
-    def save_settings() -> Any:
+    def save_settings() -> Response | tuple[Response, int]:
         """Update configuration in conceptual.yml."""
         try:
             data = request.json
@@ -456,8 +495,7 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
                 return jsonify({"error": "conceptual.yml not found"}), 404
 
             # Read existing file
-            with open(conceptual_file) as f:
-                conceptual_data = yaml.safe_load(f) or {}
+            conceptual_data = _read_conceptual_yml(conceptual_file)
 
             # Update domains
             if "domains" in data:
@@ -474,35 +512,36 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
                 conceptual_data["config"]["validation"] = data["validation"]
 
             # Write back
-            with open(conceptual_file, "w") as f:
-                yaml.dump(
-                    conceptual_data,
-                    f,
-                    sort_keys=False,
-                    default_flow_style=False,
-                )
+            _write_conceptual_yml(conceptual_file, conceptual_data)
 
             return jsonify({"success": True, "message": "Settings saved"})
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
+        except (yaml.YAMLError, ValueError) as e:
+            logger.error("Data error saving settings: %s", e)
+            return jsonify({"error": f"Data error: {e}"}), 500
+        except (FileNotFoundError, OSError) as e:
+            logger.error("File I/O error saving settings: %s", e)
+            return jsonify({"error": f"File error: {e}"}), 500
 
     @app.route("/api/config", methods=["GET"])
-    def get_config() -> Any:
+    def get_config() -> Response | tuple[Response, int]:
         """Get current configuration."""
         try:
             conceptual_file = config.conceptual_file
             if not conceptual_file.exists():
                 return jsonify({"error": "conceptual.yml not found"}), 404
 
-            with open(conceptual_file) as f:
-                data = yaml.safe_load(f) or {}
+            data = _read_conceptual_yml(conceptual_file)
 
             return jsonify(data.get("config", {}))
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
+        except yaml.YAMLError as e:
+            logger.error("Invalid YAML in conceptual.yml: %s", e)
+            return jsonify({"error": f"YAML parse error: {e}"}), 500
+        except (FileNotFoundError, OSError) as e:
+            logger.error("File I/O error reading config: %s", e)
+            return jsonify({"error": f"File error: {e}"}), 500
 
     @app.route("/api/config", methods=["POST"])
-    def save_config() -> Any:
+    def save_config() -> Response | tuple[Response, int]:
         """Save configuration to conceptual.yml."""
         try:
             data = request.json
@@ -513,25 +552,22 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
             if not conceptual_file.exists():
                 return jsonify({"error": "conceptual.yml not found"}), 404
 
-            with open(conceptual_file) as f:
-                conceptual_data = yaml.safe_load(f) or {}
+            conceptual_data = _read_conceptual_yml(conceptual_file)
 
             conceptual_data["config"] = data
 
-            with open(conceptual_file, "w") as f:
-                yaml.dump(
-                    conceptual_data,
-                    f,
-                    sort_keys=False,
-                    default_flow_style=False,
-                )
+            _write_conceptual_yml(conceptual_file, conceptual_data)
 
             return jsonify({"success": True, "message": "Config saved"})
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
+        except (yaml.YAMLError, ValueError) as e:
+            logger.error("Data error saving config: %s", e)
+            return jsonify({"error": f"Data error: {e}"}), 500
+        except (FileNotFoundError, OSError) as e:
+            logger.error("File I/O error saving config: %s", e)
+            return jsonify({"error": f"File error: {e}"}), 500
 
     @app.route("/api/mode", methods=["GET"])
-    def get_mode() -> Any:
+    def get_mode() -> Response:
         """Get current mode (demo or normal)."""
         return jsonify({"demoMode": app.config.get("DEMO_MODE", False)})
 
