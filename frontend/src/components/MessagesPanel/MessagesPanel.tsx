@@ -1,5 +1,26 @@
+import type { ReactNode } from 'react';
 import { useStore } from '../../store';
 import type { MessageSeverity } from '../../types';
+
+// Safely render message text with highlighted quoted terms using React elements
+// instead of dangerouslySetInnerHTML to prevent XSS
+function renderMessageText(text: string): ReactNode {
+  const parts = text.split(/'([^']+)'/g);
+  if (parts.length === 1) {
+    return text;
+  }
+  return parts.map((part, index) => {
+    // Odd indices are the captured groups (text between quotes)
+    if (index % 2 === 1) {
+      return (
+        <span key={index} className="highlight">
+          {part}
+        </span>
+      );
+    }
+    return part;
+  });
+}
 
 const severityIcons: Record<MessageSeverity, string> = {
   error: '\u2298', // ⊘
@@ -163,15 +184,9 @@ export function MessagesPanel() {
               <span className={`message-icon ${msg.severity}`}>
                 {severityIcons[msg.severity]}
               </span>
-              <span
-                className="message-text"
-                dangerouslySetInnerHTML={{
-                  __html: msg.text.replace(
-                    /'([^']+)'/g,
-                    '<span class="highlight">$1</span>'
-                  ),
-                }}
-              />
+              <span className="message-text">
+                {renderMessageText(msg.text)}
+              </span>
             </div>
           ))
         )}

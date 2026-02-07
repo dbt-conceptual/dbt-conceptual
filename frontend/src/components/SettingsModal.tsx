@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Modal } from './Modal';
 
 interface SettingsModalProps {
@@ -20,13 +20,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchSettings();
-    }
-  }, [isOpen]);
-
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await fetch('/api/settings');
@@ -41,7 +35,13 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchSettings();
+    }
+  }, [isOpen, fetchSettings]);
 
   const handleSave = async () => {
     if (!settings) return;
