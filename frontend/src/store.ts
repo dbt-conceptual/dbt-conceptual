@@ -54,6 +54,7 @@ interface AppState extends ProjectState {
   forceClearSelection: () => void;
 
   // Messages panel actions
+  addMessage: (severity: MessageSeverity, text: string) => void;
   toggleMessageFilter: (severity: MessageSeverity) => void;
   toggleMessagesPanel: () => void;
   clearMessages: () => void;
@@ -291,6 +292,22 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   // Messages panel actions
+  addMessage: (severity: MessageSeverity, text: string) => {
+    set((state) => {
+      const newMessage = {
+        id: `msg-${Date.now()}`,
+        severity,
+        text,
+      };
+      const newCounts = { ...state.messageCounts };
+      newCounts[severity] = newCounts[severity] + 1;
+      return {
+        messages: [...state.messages, newMessage],
+        messageCounts: newCounts,
+      };
+    });
+  },
+
   toggleMessageFilter: (severity: MessageSeverity) => {
     set((state) => ({
       messageFilters: {

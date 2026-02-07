@@ -33,6 +33,7 @@ function CanvasInner() {
     fetchState,
     updatePositions,
     saveLayout,
+    addMessage,
     selectConcept,
     selectRelationship,
     requestClearSelection,
@@ -61,9 +62,11 @@ function CanvasInner() {
       const autoPositions = applyAutoLayout(concepts, relationships);
       updatePositions(autoPositions);
       // Save the auto-generated layout
-      saveLayout().catch(console.error);
+      saveLayout().catch(() => {
+        addMessage('error', 'Failed to save layout');
+      });
     }
-  }, [concepts, relationships, positions, updatePositions, saveLayout]);
+  }, [concepts, relationships, positions, updatePositions, saveLayout, addMessage]);
 
   // Track previous selection to detect changes from search
   const prevSelectedConceptId = useRef<string | null>(null);
@@ -173,8 +176,10 @@ function CanvasInner() {
 
   // Save layout when drag ends
   const handleNodeDragStop = useCallback(() => {
-    saveLayout().catch(console.error);
-  }, [saveLayout]);
+    saveLayout().catch(() => {
+      addMessage('error', 'Failed to save layout');
+    });
+  }, [saveLayout, addMessage]);
 
   // Handle node selection
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

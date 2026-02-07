@@ -99,32 +99,16 @@ const ConceptProperties = forwardRef<PropertiesTabHandle, ConceptPropertiesProps
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isDomainPickerOpen]);
 
-  if (!concept) return null;
-
-  const isGhost = concept.isGhost;
-  const hasValidationIssues =
-    concept.validationStatus === 'error' || concept.validationStatus === 'warning';
-
-  // Count relationships referencing this ghost concept
-  const referencingRelationships = isGhost
-    ? Object.values(relationships).filter(
-        (r) => r.from_concept === conceptId || r.to_concept === conceptId
-      ).length
-    : 0;
-
-  // Check if there are unsaved changes
+  // Check if there are unsaved changes (computed before early return so hooks can use it)
   const hasChanges = conceptHasChanges(originalConcept, concept);
-  // Ghost concepts always show save button as enabled (to create the concept)
+  const isGhost = concept?.isGhost ?? false;
   const canSave = isGhost || hasChanges;
 
   // Notify parent of dirty state changes
+  // All hooks must be called before any conditional returns (Rules of Hooks)
   useEffect(() => {
     onDirtyChange?.(hasChanges);
   }, [hasChanges, onDirtyChange]);
-
-  const handleChange = (field: string, value: string) => {
-    updateConcept(conceptId, { [field]: value });
-  };
 
   const handleSave = useCallback(async () => {
     if (!canSave || isSaving) return;
@@ -151,6 +135,22 @@ const ConceptProperties = forwardRef<PropertiesTabHandle, ConceptPropertiesProps
     save: handleSave,
     discard: fetchState,
   }), [hasChanges, handleSave, fetchState]);
+
+  if (!concept) return null;
+
+  const hasValidationIssues =
+    concept.validationStatus === 'error' || concept.validationStatus === 'warning';
+
+  // Count relationships referencing this ghost concept
+  const referencingRelationships = isGhost
+    ? Object.values(relationships).filter(
+        (r) => r.from_concept === conceptId || r.to_concept === conceptId
+      ).length
+    : 0;
+
+  const handleChange = (field: string, value: string) => {
+    updateConcept(conceptId, { [field]: value });
+  };
 
   // Get domain info for color picker
   const domain = concept.domain ? domains[concept.domain] : null;
@@ -421,29 +421,14 @@ const RelationshipProperties = forwardRef<PropertiesTabHandle, RelationshipPrope
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isDomainPickerOpen]);
 
-  if (!relationship) return null;
-
-  const isInvalid = relationship.validationStatus === 'error';
-  const hasValidationIssues =
-    relationship.validationStatus === 'error' || relationship.validationStatus === 'warning';
-
-  // Check if source or target is a ghost
-  const fromConcept = concepts[relationship.from_concept];
-  const toConcept = concepts[relationship.to_concept];
-  const fromIsGhost = fromConcept?.isGhost;
-  const toIsGhost = toConcept?.isGhost;
-
-  // Check if there are unsaved changes
+  // Check if there are unsaved changes (computed before early return so hooks can use it)
   const hasChanges = relationshipHasChanges(originalRelationship, relationship);
 
   // Notify parent of dirty state changes
+  // All hooks must be called before any conditional returns (Rules of Hooks)
   useEffect(() => {
     onDirtyChange?.(hasChanges);
   }, [hasChanges, onDirtyChange]);
-
-  const handleChange = (field: string, value: string | string[]) => {
-    updateRelationship(relationshipId, { [field]: value });
-  };
 
   const handleSave = useCallback(async () => {
     if (!hasChanges || isSaving) return;
@@ -466,6 +451,22 @@ const RelationshipProperties = forwardRef<PropertiesTabHandle, RelationshipPrope
     save: handleSave,
     discard: fetchState,
   }), [hasChanges, handleSave, fetchState]);
+
+  if (!relationship) return null;
+
+  const isInvalid = relationship.validationStatus === 'error';
+  const hasValidationIssues =
+    relationship.validationStatus === 'error' || relationship.validationStatus === 'warning';
+
+  // Check if source or target is a ghost
+  const fromConcept = concepts[relationship.from_concept];
+  const toConcept = concepts[relationship.to_concept];
+  const fromIsGhost = fromConcept?.isGhost;
+  const toIsGhost = toConcept?.isGhost;
+
+  const handleChange = (field: string, value: string | string[]) => {
+    updateRelationship(relationshipId, { [field]: value });
+  };
 
   return (
     <div className="properties-tab">
