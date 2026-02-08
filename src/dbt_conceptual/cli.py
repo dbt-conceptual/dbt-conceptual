@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Optional, TextIO
 
 import click
+import yaml
 from rich.console import Console
 
 from dbt_conceptual.cli_utils import (
@@ -522,8 +523,6 @@ def init(project_dir: Optional[Path], force: bool) -> None:
     Creates conceptual.yml (model template) and adds configuration
     to dbt_project.yml under vars.dbt_conceptual.
     """
-    import yaml
-
     if project_dir is None:
         project_dir = Path.cwd()
 
@@ -570,8 +569,7 @@ relationships:
   #   to: Order
   #   cardinality: "1:N"
 """
-        with open(conceptual_file, "w") as f:
-            f.write(template)
+        conceptual_file.write_text(template)
 
         if force:
             console.print(f"[green]✓[/green] Overwrote {conceptual_file}")
@@ -579,8 +577,7 @@ relationships:
             console.print(f"[green]✓[/green] Created {conceptual_file}")
 
     # 2. Add vars.dbt_conceptual to dbt_project.yml (merge, don't overwrite)
-    with open(dbt_project_path) as f:
-        dbt_data = yaml.safe_load(f) or {}
+    dbt_data = yaml.safe_load(dbt_project_path.read_text()) or {}
 
     dbt_conceptual_block = {
         "scan": {
@@ -603,8 +600,9 @@ relationships:
             dbt_data["vars"] = {}
         dbt_data["vars"]["dbt_conceptual"] = dbt_conceptual_block
 
-        with open(dbt_project_path, "w") as f:
-            yaml.dump(dbt_data, f, default_flow_style=False, sort_keys=False)
+        dbt_project_path.write_text(
+            yaml.dump(dbt_data, default_flow_style=False, sort_keys=False)
+        )
 
         console.print("[green]✓[/green] Added vars.dbt_conceptual to dbt_project.yml")
 
@@ -680,11 +678,8 @@ def sync(project_dir: Optional[Path], create_stubs: bool, model: Optional[str]) 
         return
 
     # Create stubs
-    import yaml
-
     # Read existing conceptual.yml
-    with open(config.conceptual_file) as f:
-        conceptual_data = yaml.safe_load(f) or {}
+    conceptual_data = yaml.safe_load(config.conceptual_file.read_text()) or {}
 
     if "concepts" not in conceptual_data:
         conceptual_data["concepts"] = {}
@@ -730,8 +725,9 @@ def sync(project_dir: Optional[Path], create_stubs: bool, model: Optional[str]) 
         return
 
     # Write back to file
-    with open(config.conceptual_file, "w") as f:
-        yaml.dump(conceptual_data, f, default_flow_style=False, sort_keys=False)
+    config.conceptual_file.write_text(
+        yaml.dump(conceptual_data, default_flow_style=False, sort_keys=False)
+    )
 
     console.print(f"\n[green]✓ Created {len(stubs_created)} stub concept(s):[/green]")
     for model_name, concept_id in stubs_created:
@@ -1000,7 +996,7 @@ def _get_output_stream(output: Optional[Path]) -> Generator[TextIO, None, None]:
         File handle or sys.stdout
     """
     if output:
-        f = open(output, "w")
+        f = output.open("w")
         try:
             yield f
         finally:

@@ -25,14 +25,24 @@ def format_human(diff: ConceptualDiff) -> str:
         lines.append("Domains:")
         lines.append("-" * 50)
         for domain_change in diff.domain_changes:
-            if domain_change.change_type == "added":
-                lines.append(f"  + {domain_change.key} - {domain_change.new_value.display_name}")  # type: ignore
-            elif domain_change.change_type == "removed":
-                lines.append(f"  - {domain_change.key} - {domain_change.old_value.display_name}")  # type: ignore
+            if (
+                domain_change.change_type == "added"
+                and domain_change.new_value is not None
+            ):
+                lines.append(
+                    f"  + {domain_change.key} - {domain_change.new_value.display_name}"
+                )
+            elif (
+                domain_change.change_type == "removed"
+                and domain_change.old_value is not None
+            ):
+                lines.append(
+                    f"  - {domain_change.key} - {domain_change.old_value.display_name}"
+                )
             elif domain_change.change_type == "modified":
                 lines.append(f"  ~ {domain_change.key}")
                 for field, (old, new) in domain_change.modified_fields.items():
-                    lines.append(f"      {field}: {old!r} → {new!r}")
+                    lines.append(f"      {field}: {old!r} \u2192 {new!r}")
         lines.append("")
 
     # Concept changes
@@ -40,14 +50,24 @@ def format_human(diff: ConceptualDiff) -> str:
         lines.append("Concepts:")
         lines.append("-" * 50)
         for concept_change in diff.concept_changes:
-            if concept_change.change_type == "added":
+            if (
+                concept_change.change_type == "added"
+                and concept_change.new_value is not None
+            ):
                 concept = concept_change.new_value
-                domain_info = f" ({concept.domain})" if concept.domain else " (no domain)"  # type: ignore
-                status_info = f" - {concept.status}"  # type: ignore
+                domain_info = (
+                    f" ({concept.domain})" if concept.domain else " (no domain)"
+                )
+                status_info = f" - {concept.status}"
                 lines.append(f"  + {concept_change.key}{domain_info}{status_info}")
-            elif concept_change.change_type == "removed":
+            elif (
+                concept_change.change_type == "removed"
+                and concept_change.old_value is not None
+            ):
                 concept = concept_change.old_value
-                domain_info = f" ({concept.domain})" if concept.domain else " (no domain)"  # type: ignore
+                domain_info = (
+                    f" ({concept.domain})" if concept.domain else " (no domain)"
+                )
                 lines.append(f"  - {concept_change.key}{domain_info}")
             elif concept_change.change_type == "modified":
                 lines.append(f"  ~ {concept_change.key}")
@@ -61,10 +81,10 @@ def format_human(diff: ConceptualDiff) -> str:
                             (new[:50] + "...") if new and len(new) > 50 else new
                         )
                         lines.append(
-                            f"      {field}: {old_preview!r} → {new_preview!r}"
+                            f"      {field}: {old_preview!r} \u2192 {new_preview!r}"
                         )
                     else:
-                        lines.append(f"      {field}: {old!r} → {new!r}")
+                        lines.append(f"      {field}: {old!r} \u2192 {new!r}")
         lines.append("")
 
     # Relationship changes
@@ -72,13 +92,15 @@ def format_human(diff: ConceptualDiff) -> str:
         lines.append("Relationships:")
         lines.append("-" * 50)
         for rel_change in diff.relationship_changes:
-            if rel_change.change_type == "added":
+            if rel_change.change_type == "added" and rel_change.new_value is not None:
                 rel = rel_change.new_value
-                cardinality_info = f" ({rel.cardinality})" if rel.cardinality else ""  # type: ignore
+                cardinality_info = f" ({rel.cardinality})" if rel.cardinality else ""
                 lines.append(f"  + {rel_change.key}{cardinality_info}")
-            elif rel_change.change_type == "removed":
+            elif (
+                rel_change.change_type == "removed" and rel_change.old_value is not None
+            ):
                 rel = rel_change.old_value
-                cardinality_info = f" ({rel.cardinality})" if rel.cardinality else ""  # type: ignore
+                cardinality_info = f" ({rel.cardinality})" if rel.cardinality else ""
                 lines.append(f"  - {rel_change.key}{cardinality_info}")
             elif rel_change.change_type == "modified":
                 lines.append(f"  ~ {rel_change.key}")
@@ -92,10 +114,10 @@ def format_human(diff: ConceptualDiff) -> str:
                             (new[:50] + "...") if new and len(new) > 50 else new
                         )
                         lines.append(
-                            f"      {field}: {old_preview!r} → {new_preview!r}"
+                            f"      {field}: {old_preview!r} \u2192 {new_preview!r}"
                         )
                     else:
-                        lines.append(f"      {field}: {old!r} → {new!r}")
+                        lines.append(f"      {field}: {old!r} \u2192 {new!r}")
         lines.append("")
 
     return "\n".join(lines)
@@ -111,20 +133,22 @@ def format_github(diff: ConceptualDiff) -> str:
         Formatted string with GitHub Actions annotations
     """
     if not diff.has_changes:
-        print("::notice title=Conceptual Model::No changes detected")
-        return ""
+        return "::notice title=Conceptual Model::No changes detected"
 
-    lines = []
+    lines: list[str] = []
 
     # Domain changes
     for domain_change in diff.domain_changes:
-        if domain_change.change_type == "added":
+        if domain_change.change_type == "added" and domain_change.new_value is not None:
             lines.append(
-                f"::notice title=New Domain::{domain_change.key} - {domain_change.new_value.display_name}"  # type: ignore
+                f"::notice title=New Domain::{domain_change.key} - {domain_change.new_value.display_name}"
             )
-        elif domain_change.change_type == "removed":
+        elif (
+            domain_change.change_type == "removed"
+            and domain_change.old_value is not None
+        ):
             lines.append(
-                f"::warning title=Removed Domain::{domain_change.key} - {domain_change.old_value.display_name}"  # type: ignore
+                f"::warning title=Removed Domain::{domain_change.key} - {domain_change.old_value.display_name}"
             )
         elif domain_change.change_type == "modified":
             modified_fields_str = ", ".join(domain_change.modified_fields.keys())
@@ -134,20 +158,26 @@ def format_github(diff: ConceptualDiff) -> str:
 
     # Concept changes
     for concept_change in diff.concept_changes:
-        if concept_change.change_type == "added":
+        if (
+            concept_change.change_type == "added"
+            and concept_change.new_value is not None
+        ):
             concept = concept_change.new_value
-            domain_info = f" ({concept.domain})" if concept.domain else " (no domain)"  # type: ignore
-            if concept.status in ("stub", "draft"):  # type: ignore
+            domain_info = f" ({concept.domain})" if concept.domain else " (no domain)"
+            if concept.status in ("stub", "draft"):
                 lines.append(
-                    f"::warning title=New Concept::{concept_change.key}{domain_info} - {concept.status}"  # type: ignore
+                    f"::warning title=New Concept::{concept_change.key}{domain_info} - {concept.status}"
                 )
             else:
                 lines.append(
                     f"::notice title=New Concept::{concept_change.key}{domain_info}"
                 )
-        elif concept_change.change_type == "removed":
+        elif (
+            concept_change.change_type == "removed"
+            and concept_change.old_value is not None
+        ):
             concept = concept_change.old_value
-            domain_info = f" ({concept.domain})" if concept.domain else ""  # type: ignore
+            domain_info = f" ({concept.domain})" if concept.domain else ""
             lines.append(
                 f"::warning title=Removed Concept::{concept_change.key}{domain_info}"
             )
@@ -159,15 +189,15 @@ def format_github(diff: ConceptualDiff) -> str:
 
     # Relationship changes (v1.0: relationships don't have a status property)
     for rel_change in diff.relationship_changes:
-        if rel_change.change_type == "added":
+        if rel_change.change_type == "added" and rel_change.new_value is not None:
             rel = rel_change.new_value
-            cardinality_info = f" ({rel.cardinality})" if rel.cardinality else ""  # type: ignore
+            cardinality_info = f" ({rel.cardinality})" if rel.cardinality else ""
             lines.append(
                 f"::notice title=New Relationship::{rel_change.key}{cardinality_info}"
             )
-        elif rel_change.change_type == "removed":
+        elif rel_change.change_type == "removed" and rel_change.old_value is not None:
             rel = rel_change.old_value
-            cardinality_info = f" ({rel.cardinality})" if rel.cardinality else ""  # type: ignore
+            cardinality_info = f" ({rel.cardinality})" if rel.cardinality else ""
             lines.append(
                 f"::warning title=Removed Relationship::{rel_change.key}{cardinality_info}"
             )
@@ -241,9 +271,9 @@ def format_markdown(diff: ConceptualDiff) -> str:
         Formatted markdown string
     """
     if not diff.has_changes:
-        return "## ✅ No Conceptual Changes\n\nThe conceptual model is unchanged."
+        return "## \u2705 No Conceptual Changes\n\nThe conceptual model is unchanged."
 
-    lines = ["## 📊 Conceptual Model Changes\n"]
+    lines = ["## \U0001f4ca Conceptual Model Changes\n"]
 
     # Summary table
     added = sum(
@@ -271,11 +301,11 @@ def format_markdown(diff: ConceptualDiff) -> str:
     lines.append("| | Count |")
     lines.append("|---|-----|")
     if added:
-        lines.append(f"| ➕ Added | {added} |")
+        lines.append(f"| \u2795 Added | {added} |")
     if modified:
-        lines.append(f"| ✏️ Modified | {modified} |")
+        lines.append(f"| \u270f\ufe0f Modified | {modified} |")
     if removed:
-        lines.append(f"| ➖ Removed | {removed} |")
+        lines.append(f"| \u2796 Removed | {removed} |")
     lines.append("")
 
     # Domain changes
@@ -284,18 +314,24 @@ def format_markdown(diff: ConceptualDiff) -> str:
         lines.append("| Change | Name | Detail |")
         lines.append("|--------|------|--------|")
         for domain_change in diff.domain_changes:
-            if domain_change.change_type == "added":
+            if (
+                domain_change.change_type == "added"
+                and domain_change.new_value is not None
+            ):
                 name = domain_change.key
-                display = domain_change.new_value.display_name  # type: ignore
-                lines.append(f"| ➕ | `{name}` | {display} |")
-            elif domain_change.change_type == "removed":
+                display = domain_change.new_value.display_name
+                lines.append(f"| \u2795 | `{name}` | {display} |")
+            elif (
+                domain_change.change_type == "removed"
+                and domain_change.old_value is not None
+            ):
                 name = domain_change.key
-                display = domain_change.old_value.display_name  # type: ignore
-                lines.append(f"| ➖ | `{name}` | {display} |")
+                display = domain_change.old_value.display_name
+                lines.append(f"| \u2796 | `{name}` | {display} |")
             elif domain_change.change_type == "modified":
                 name = domain_change.key
                 fields = ", ".join(domain_change.modified_fields.keys())
-                lines.append(f"| ✏️ | `{name}` | modified: {fields} |")
+                lines.append(f"| \u270f\ufe0f | `{name}` | modified: {fields} |")
         lines.append("")
 
     # Concept changes
@@ -304,20 +340,32 @@ def format_markdown(diff: ConceptualDiff) -> str:
         lines.append("| Change | Name | Detail |")
         lines.append("|--------|------|--------|")
         for concept_change in diff.concept_changes:
-            if concept_change.change_type == "added":
+            if (
+                concept_change.change_type == "added"
+                and concept_change.new_value is not None
+            ):
                 concept = concept_change.new_value
-                domain_info = f"domain: {concept.domain}" if concept.domain else "no domain"  # type: ignore
-                status_info = f"status: {concept.status}"  # type: ignore
-                lines.append(
-                    f"| ➕ | `{concept_change.key}` | {domain_info}, {status_info} |"
+                domain_info = (
+                    f"domain: {concept.domain}" if concept.domain else "no domain"
                 )
-            elif concept_change.change_type == "removed":
+                status_info = f"status: {concept.status}"
+                lines.append(
+                    f"| \u2795 | `{concept_change.key}` | {domain_info}, {status_info} |"
+                )
+            elif (
+                concept_change.change_type == "removed"
+                and concept_change.old_value is not None
+            ):
                 concept = concept_change.old_value
-                domain_info = f"domain: {concept.domain}" if concept.domain else "no domain"  # type: ignore
-                lines.append(f"| ➖ | `{concept_change.key}` | {domain_info} |")
+                domain_info = (
+                    f"domain: {concept.domain}" if concept.domain else "no domain"
+                )
+                lines.append(f"| \u2796 | `{concept_change.key}` | {domain_info} |")
             elif concept_change.change_type == "modified":
                 fields = ", ".join(concept_change.modified_fields.keys())
-                lines.append(f"| ✏️ | `{concept_change.key}` | modified: {fields} |")
+                lines.append(
+                    f"| \u270f\ufe0f | `{concept_change.key}` | modified: {fields} |"
+                )
         lines.append("")
 
     # Relationship changes (v1.0: relationships don't have a status property)
@@ -326,17 +374,25 @@ def format_markdown(diff: ConceptualDiff) -> str:
         lines.append("| Change | Name | Detail |")
         lines.append("|--------|------|--------|")
         for rel_change in diff.relationship_changes:
-            if rel_change.change_type == "added":
+            if rel_change.change_type == "added" and rel_change.new_value is not None:
                 rel = rel_change.new_value
-                cardinality_info = f"cardinality: {rel.cardinality}" if rel.cardinality else ""  # type: ignore
-                lines.append(f"| ➕ | `{rel_change.key}` | {cardinality_info} |")
-            elif rel_change.change_type == "removed":
+                cardinality_info = (
+                    f"cardinality: {rel.cardinality}" if rel.cardinality else ""
+                )
+                lines.append(f"| \u2795 | `{rel_change.key}` | {cardinality_info} |")
+            elif (
+                rel_change.change_type == "removed" and rel_change.old_value is not None
+            ):
                 rel = rel_change.old_value
-                cardinality_info = f"cardinality: {rel.cardinality}" if rel.cardinality else ""  # type: ignore
-                lines.append(f"| ➖ | `{rel_change.key}` | {cardinality_info} |")
+                cardinality_info = (
+                    f"cardinality: {rel.cardinality}" if rel.cardinality else ""
+                )
+                lines.append(f"| \u2796 | `{rel_change.key}` | {cardinality_info} |")
             elif rel_change.change_type == "modified":
                 fields = ", ".join(rel_change.modified_fields.keys())
-                lines.append(f"| ✏️ | `{rel_change.key}` | modified: {fields} |")
+                lines.append(
+                    f"| \u270f\ufe0f | `{rel_change.key}` | modified: {fields} |"
+                )
         lines.append("")
 
     return "\n".join(lines)

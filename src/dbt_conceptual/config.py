@@ -4,6 +4,7 @@ Configuration is loaded from dbt_project.yml vars.dbt_conceptual block,
 with legacy fallback to conceptual.yml config section.
 """
 
+import fnmatch
 import warnings
 from dataclasses import dataclass, field
 from enum import Enum
@@ -229,8 +230,7 @@ class Config:
         loaded_from_dbt_project = False
 
         if dbt_project_file.exists():
-            with open(dbt_project_file) as f:
-                dbt_data = yaml.safe_load(f)
+            dbt_data = yaml.safe_load(dbt_project_file.read_text())
 
             if dbt_data and isinstance(dbt_data.get("vars"), dict):
                 dbc_vars = dbt_data["vars"].get("dbt_conceptual")
@@ -244,8 +244,7 @@ class Config:
         if not loaded_from_dbt_project:
             conceptual_file = project_dir / "conceptual.yml"
             if conceptual_file.exists():
-                with open(conceptual_file) as f:
-                    data = yaml.safe_load(f)
+                data = yaml.safe_load(conceptual_file.read_text())
 
                 if data and "config" in data:
                     warnings.warn(
@@ -477,8 +476,6 @@ class Config:
         Returns:
             'gold' if path matches gold paths, None otherwise
         """
-        import fnmatch
-
         for pattern in self.gold_paths:
             # Handle glob patterns
             if fnmatch.fnmatch(model_path, pattern):
