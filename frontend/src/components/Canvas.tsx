@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
+import type { MouseEvent as ReactMouseEvent } from 'react';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -7,13 +8,23 @@ import {
   useNodesState,
   useEdgesState,
   useReactFlow,
+  type NodeChange,
+  type Node,
+  type Edge,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 import { useStore } from '../store';
+import type { Concept, Relationship } from '../types';
 import { ConceptNode } from './ConceptNode';
 import { RelationshipEdge } from './RelationshipEdge';
 import { applyAutoLayout, needsAutoLayout } from '../layout';
+
+// Typed React Flow node/edge for the concept canvas
+type ConceptNodeData = { concept: Concept; conceptId: string };
+type ConceptFlowNode = Node<ConceptNodeData, string>;
+type RelationshipEdgeData = { relationship: Relationship; relationshipId: string };
+type RelationshipFlowEdge = Edge<RelationshipEdgeData, string>;
 
 const nodeTypes = {
   concept: ConceptNode,
@@ -151,22 +162,20 @@ function CanvasInner() {
   }, [initialEdges, setEdges]);
 
   // Handle node position changes (updates local state during drag)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleNodesChange = useCallback(
-    (changes: any[]) => {
+    (changes: NodeChange<ConceptFlowNode>[]) => {
       onNodesChange(changes);
 
       // Extract position changes to keep store in sync
       const positionChanges = changes.filter(
-        (change: any) => change.type === 'position' && change.position
+        (change): change is NodeChange<ConceptFlowNode> & { type: 'position'; id: string; position: { x: number; y: number } } =>
+          change.type === 'position' && 'position' in change && change.position != null
       );
 
       if (positionChanges.length > 0) {
         const newPositions: Record<string, { x: number; y: number }> = {};
-        positionChanges.forEach((change: any) => {
-          if (change.position) {
-            newPositions[change.id] = change.position;
-          }
+        positionChanges.forEach((change) => {
+          newPositions[change.id] = change.position;
         });
         updatePositions(newPositions);
       }
@@ -182,18 +191,16 @@ function CanvasInner() {
   }, [saveLayout, addMessage]);
 
   // Handle node selection
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleNodeClick = useCallback(
-    (_event: any, node: any) => {
+    (_event: ReactMouseEvent, node: ConceptFlowNode) => {
       selectConcept(node.id);
     },
     [selectConcept]
   );
 
   // Handle edge selection
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleEdgeClick = useCallback(
-    (_event: any, edge: any) => {
+    (_event: ReactMouseEvent, edge: RelationshipFlowEdge) => {
       selectRelationship(edge.id);
     },
     [selectRelationship]

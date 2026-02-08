@@ -1,18 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Modal } from './Modal';
+import type { Settings } from '../types';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-}
-
-interface Settings {
-  domains: Record<string, { name: string; color?: string }>;
-  paths: {
-    gold_paths: string[];
-    silver_paths: string[];
-    bronze_paths: string[];
-  };
 }
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
