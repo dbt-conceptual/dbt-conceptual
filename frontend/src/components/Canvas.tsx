@@ -214,7 +214,7 @@ function CanvasInner() {
   // Show blocked state when integrity errors exist
   if (hasIntegrityErrors) {
     return (
-      <div style={{ flex: 1, height: '100vh', position: 'relative' }}>
+      <div className="canvas-container--blocked">
         <div className="canvas-blocked-overlay">
           <div className="canvas-blocked-x">✕</div>
         </div>
@@ -223,7 +223,7 @@ function CanvasInner() {
   }
 
   return (
-    <div style={{ flex: 1, height: '100vh' }}>
+    <div className="canvas-container">
       <ReactFlow
         nodes={nodes}
         edges={edges}
