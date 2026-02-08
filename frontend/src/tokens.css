@@ -380,27 +380,6 @@ code, pre {
   overflow: hidden;
 }
 
-.property-panel-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  padding: var(--space-8);
-  text-align: center;
-  color: var(--text-muted);
-}
-
-.property-panel-empty-icon {
-  font-size: 48px;
-  margin-bottom: var(--space-5);
-  opacity: 0.3;
-}
-
-.property-panel-empty-text {
-  font-size: var(--font-size-sm);
-}
-
 .property-panel-header {
   display: flex;
   align-items: center;
@@ -590,7 +569,6 @@ code, pre {
   flex-shrink: 0;
 }
 
-
 .property-readonly {
   display: flex;
   align-items: center;
@@ -605,22 +583,6 @@ code, pre {
 .property-help {
   font-size: var(--font-size-xs);
   color: var(--text-muted);
-}
-
-.property-checkbox {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) 0;
-  font-size: var(--font-size-sm);
-  color: var(--text-primary);
-  cursor: pointer;
-}
-
-.property-checkbox input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
 }
 
 .status-badge {
@@ -1431,12 +1393,6 @@ code, pre {
   transform: translateX(-50%);
 }
 
-.toolbar-title {
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-semibold);
-  color: var(--text-primary);
-}
-
 .logo {
   display: flex;
   align-items: center;
@@ -2135,22 +2091,6 @@ code, pre {
   font-weight: var(--font-weight-semibold);
   border-radius: 2px;
   padding: 0 1px;
-}
-
-/* === Keyboard Shortcut Hint === */
-.search-shortcut-hint {
-  position: absolute;
-  right: var(--space-3);
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: var(--font-size-xs);
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  background: var(--bg-surface);
-  padding: var(--space-1) var(--space-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  pointer-events: none;
 }
 
 /* === Inferred Model Styling === */

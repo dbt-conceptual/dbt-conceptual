@@ -27,11 +27,7 @@ function highlightMatch(text: string, query: string): React.ReactNode {
   );
 }
 
-interface SearchBarProps {
-  onNavigate?: (id: string, type: 'concept' | 'relationship') => void;
-}
-
-export function SearchBar({ onNavigate }: SearchBarProps) {
+export function SearchBar() {
   const { concepts, relationships, selectConcept, selectRelationship } = useStore();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -117,13 +113,12 @@ export function SearchBar({ onNavigate }: SearchBarProps) {
       } else {
         selectRelationship(result.id);
       }
-      onNavigate?.(result.id, result.type);
       setQuery('');
       setResults([]);
       setIsOpen(false);
       inputRef.current?.blur();
     },
-    [selectConcept, selectRelationship, onNavigate]
+    [selectConcept, selectRelationship]
   );
 
   // Handle keyboard navigation
