@@ -8,61 +8,12 @@ v1.0: Simplified model - single models[] array, no realized_by.
 import json
 from typing import Any, TextIO
 
+from dbt_conceptual.exporter._stats import calculate_coverage_stats
 from dbt_conceptual.state import ProjectState
 from dbt_conceptual.validator import ValidationIssue, Validator
 
-
-def _calculate_coverage_stats(state: ProjectState) -> dict[str, Any]:
-    """Calculate coverage statistics from project state."""
-    total_concepts = len(state.concepts)
-    complete_concepts = sum(
-        1 for c in state.concepts.values() if c.status == "complete"
-    )
-    stub_concepts = sum(1 for c in state.concepts.values() if c.status == "stub")
-    draft_concepts = sum(1 for c in state.concepts.values() if c.status == "draft")
-
-    concepts_with_models = sum(1 for c in state.concepts.values() if c.models)
-
-    total_relationships = len(state.relationships)
-    complete_relationships = sum(
-        1
-        for r in state.relationships.values()
-        if r.get_status(state.concepts) == "complete"
-    )
-
-    return {
-        "concepts": {
-            "total": total_concepts,
-            "complete": complete_concepts,
-            "draft": draft_concepts,
-            "stub": stub_concepts,
-            "completion_percent": (
-                int((complete_concepts / total_concepts) * 100)
-                if total_concepts > 0
-                else 0
-            ),
-        },
-        "coverage": {
-            "models": {
-                "count": concepts_with_models,
-                "percent": (
-                    int((concepts_with_models / total_concepts) * 100)
-                    if total_concepts > 0
-                    else 0
-                ),
-            },
-        },
-        "relationships": {
-            "total": total_relationships,
-            "complete": complete_relationships,
-            "percent": (
-                int((complete_relationships / total_relationships) * 100)
-                if total_relationships > 0
-                else 0
-            ),
-        },
-        "orphans": len(state.orphan_models),
-    }
+# Module-level alias so any callers using the old private name still work.
+_calculate_coverage_stats = calculate_coverage_stats
 
 
 # ============================================================================
@@ -72,7 +23,7 @@ def _calculate_coverage_stats(state: ProjectState) -> dict[str, Any]:
 
 def export_coverage_json(state: ProjectState, output: TextIO) -> None:
     """Export coverage report as JSON."""
-    stats = _calculate_coverage_stats(state)
+    stats = calculate_coverage_stats(state)
 
     # Add concept details
     concepts_by_domain: dict[str, list[dict[str, Any]]] = {}
@@ -109,7 +60,7 @@ def export_coverage_json(state: ProjectState, output: TextIO) -> None:
 
 def export_coverage_markdown(state: ProjectState, output: TextIO) -> None:
     """Export coverage report as markdown."""
-    stats = _calculate_coverage_stats(state)
+    stats = calculate_coverage_stats(state)
 
     output.write("### Coverage Summary\n\n")
     output.write("| Metric | Value |\n")
@@ -134,10 +85,14 @@ def export_coverage_markdown(state: ProjectState, output: TextIO) -> None:
     if stats["concepts"]["stub"] > 0 or stats["concepts"]["draft"] > 0:
         output.write("#### Attention Needed\n\n")
         if stats["concepts"]["stub"] > 0:
-            output.write(f"- ⚠️ **{stats['concepts']['stub']} stub concepts** ")
+            output.write(
+                f"- \u26a0\ufe0f **{stats['concepts']['stub']} stub concepts** "
+            )
             output.write("need definitions and domain assignment\n")
         if stats["concepts"]["draft"] > 0:
-            output.write(f"- 📝 **{stats['concepts']['draft']} draft concepts** ")
+            output.write(
+                f"- \U0001f4dd **{stats['concepts']['draft']} draft concepts** "
+            )
             output.write("have no model implementations yet\n")
         output.write("\n")
 
@@ -216,7 +171,7 @@ def export_bus_matrix_markdown(state: ProjectState, output: TextIO) -> None:
 
 def export_status_json(state: ProjectState, output: TextIO) -> None:
     """Export status report as JSON."""
-    stats = _calculate_coverage_stats(state)
+    stats = calculate_coverage_stats(state)
 
     concepts_data = []
     for concept_id, concept in sorted(state.concepts.items()):
@@ -255,7 +210,7 @@ def export_status_json(state: ProjectState, output: TextIO) -> None:
 
 def export_status_markdown(state: ProjectState, output: TextIO) -> None:
     """Export status report as markdown."""
-    stats = _calculate_coverage_stats(state)
+    stats = calculate_coverage_stats(state)
 
     output.write("### Status Summary\n\n")
     output.write(f"**Concepts:** {stats['concepts']['total']} total ")
@@ -288,9 +243,11 @@ def export_status_markdown(state: ProjectState, output: TextIO) -> None:
         output.write("|---------|--------|--------|\n")
 
         for _cid, c in sorted(concepts, key=lambda x: x[1].name):
-            status_icon = {"complete": "✅", "draft": "📝", "stub": "⚠️"}.get(
-                c.status, "❓"
-            )
+            status_icon = {
+                "complete": "\u2705",
+                "draft": "\U0001f4dd",
+                "stub": "\u26a0\ufe0f",
+            }.get(c.status, "\u2753")
             output.write(f"| {c.name} | {status_icon} {c.status} | {len(c.models)} |\n")
         output.write("\n")
 
@@ -327,7 +284,7 @@ def export_orphans_markdown(state: ProjectState, output: TextIO) -> None:
     output.write("### Orphan Models\n\n")
 
     if not orphans:
-        output.write("✅ **No orphan models found!**\n\n")
+        output.write("\u2705 **No orphan models found!**\n\n")
         output.write("All models have `meta.concept` tags.\n\n")
         return
 
@@ -386,19 +343,19 @@ def export_validation_markdown(
     summary = validator.get_summary()
 
     if validator.has_errors():
-        output.write("### ❌ Validation Failed\n\n")
+        output.write("### \u274c Validation Failed\n\n")
     else:
-        output.write("### ✅ Validation Passed\n\n")
+        output.write("### \u2705 Validation Passed\n\n")
 
     # Summary table
     output.write("| | Count |\n")
     output.write("|---|-----|\n")
     if summary["errors"]:
-        output.write(f"| 🔴 Errors | {summary['errors']} |\n")
+        output.write(f"| \U0001f534 Errors | {summary['errors']} |\n")
     if summary["warnings"]:
-        output.write(f"| 🟡 Warnings | {summary['warnings']} |\n")
+        output.write(f"| \U0001f7e1 Warnings | {summary['warnings']} |\n")
     if summary["info"]:
-        output.write(f"| ℹ️ Info | {summary['info']} |\n")
+        output.write(f"| \u2139\ufe0f Info | {summary['info']} |\n")
     output.write("\n")
 
     # Group issues by severity
@@ -408,11 +365,11 @@ def export_validation_markdown(
     if errors:
         output.write("#### Errors\n\n")
         for issue in errors:
-            output.write(f"- **{issue.code}** — {issue.message}\n")
+            output.write(f"- **{issue.code}** \u2014 {issue.message}\n")
         output.write("\n")
 
     if warnings:
         output.write("#### Warnings\n\n")
         for issue in warnings:
-            output.write(f"- **{issue.code}** — {issue.message}\n")
+            output.write(f"- **{issue.code}** \u2014 {issue.message}\n")
         output.write("\n")
