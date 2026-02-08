@@ -3,7 +3,7 @@
 v1.0: Simplified parser with flat model lists and no lineage inference.
 """
 
-from typing import Optional
+from typing import Literal, Optional
 
 import yaml
 
@@ -13,12 +13,16 @@ from dbt_conceptual.state import (
     ConceptState,
     DomainState,
     Message,
+    MessageSeverity,
     ModelInfo,
     OrphanModel,
     ProjectState,
     RelationshipState,
     ValidationState,
 )
+
+# Element types that can appear in validation messages
+ElementType = Literal["concept", "relationship", "domain"]
 
 
 class ConceptualModelParser:
@@ -37,6 +41,11 @@ class ConceptualModelParser:
 
         Returns:
             ProjectState with concepts, relationships, and domains
+
+        Raises:
+            ValueError: If relationships section is malformed (not a list,
+                entries missing required 'from'/'to' keys, or entries are
+                not mappings).
         """
         state = ProjectState()
 
@@ -80,10 +89,35 @@ class ConceptualModelParser:
 
         # Parse relationships
         if "relationships" in data:
-            for rel in data["relationships"]:
+            relationships = data["relationships"]
+            if not isinstance(relationships, list):
+                raise ValueError(
+                    "Invalid conceptual.yml: 'relationships' must be a list, "
+                    f"got {type(relationships).__name__}. "
+                    "Expected format: relationships:\\n  - from: x\\n    to: y"
+                )
+            for i, rel in enumerate(relationships):
+                if not isinstance(rel, dict):
+                    raise ValueError(
+                        f"Invalid conceptual.yml: relationship at index {i} "
+                        f"must be a mapping, got {type(rel).__name__}"
+                    )
+                from_concept = rel.get("from")
+                to_concept = rel.get("to")
+                if not from_concept:
+                    raise ValueError(
+                        f"Invalid conceptual.yml: relationship at index {i} "
+                        "is missing required key 'from'. "
+                        "Each relationship must have 'from' and 'to' keys."
+                    )
+                if not to_concept:
+                    raise ValueError(
+                        f"Invalid conceptual.yml: relationship at index {i} "
+                        "is missing required key 'to'. "
+                        "Each relationship must have 'from' and 'to' keys."
+                    )
+
                 verb = rel.get("verb", "relates_to")
-                from_concept = rel["from"]
-                to_concept = rel["to"]
 
                 # Create relationship ID using verb
                 rel_id = f"{from_concept}:{verb}:{to_concept}"
@@ -118,6 +152,7 @@ class StateBuilder:
         self.config = config
         self.parser = ConceptualModelParser(config)
         self.scanner = DbtProjectScanner(config)
+        self._msg_counter = 0
 
     def build(self) -> ProjectState:
         """Build complete project state from conceptual model and dbt models.
@@ -192,47 +227,53 @@ class StateBuilder:
 
         return state
 
-    def validate_and_sync(self, state: ProjectState) -> ValidationState:
-        """Run validation checks and create ghost concepts for missing references.
-
-        This method:
-        1. Creates ghost concepts for relationships referencing non-existent concepts
-        2. Checks for duplicate concept names
-        3. Checks for duplicate relationships
-        4. Generates appropriate messages
+    def _make_msg(
+        self,
+        severity: MessageSeverity,
+        text: str,
+        element_type: Optional[ElementType] = None,
+        element_id: Optional[str] = None,
+    ) -> Message:
+        """Create a validation message with auto-incrementing ID.
 
         Args:
-            state: The current project state (will be modified in place)
+            severity: Message severity level (error, warning, info)
+            text: Human-readable message text
+            element_type: Type of element this message relates to
+            element_id: ID of the element this message relates to
 
         Returns:
-            ValidationState with all messages and counts
+            A new Message instance
+        """
+        self._msg_counter += 1
+        return Message(
+            id=f"msg-{self._msg_counter}",
+            severity=severity,
+            text=text,
+            element_type=element_type,
+            element_id=element_id,
+        )
+
+    def _check_ghost_concepts(self, state: ProjectState) -> list[Message]:
+        """Check relationships for missing concepts and create ghosts.
+
+        For each relationship, if the 'from' or 'to' concept does not exist
+        in state.concepts, a ghost ConceptState is created and error/warning
+        messages are generated.
+
+        Args:
+            state: The current project state (modified in place)
+
+        Returns:
+            List of validation messages generated
         """
         messages: list[Message] = []
-        msg_counter = 0
 
-        def make_msg(
-            severity: str,
-            text: str,
-            element_type: Optional[str] = None,
-            element_id: Optional[str] = None,
-        ) -> Message:
-            nonlocal msg_counter
-            msg_counter += 1
-            return Message(
-                id=f"msg-{msg_counter}",
-                severity=severity,  # type: ignore[arg-type]
-                text=text,
-                element_type=element_type,  # type: ignore[arg-type]
-                element_id=element_id,
-            )
-
-        # 1. Check relationships for missing concepts and create ghosts
         for rel_id, rel in state.relationships.items():
             from_missing = rel.from_concept not in state.concepts
             to_missing = rel.to_concept not in state.concepts
 
             if from_missing:
-                # Create ghost concept
                 ghost = ConceptState(
                     name=rel.from_concept,
                     domain=None,
@@ -242,7 +283,7 @@ class StateBuilder:
                 )
                 state.concepts[rel.from_concept] = ghost
                 messages.append(
-                    make_msg(
+                    self._make_msg(
                         "error",
                         f"Relationship '{rel_id}' references non-existent "
                         f"concept '{rel.from_concept}'",
@@ -251,7 +292,7 @@ class StateBuilder:
                     )
                 )
                 messages.append(
-                    make_msg(
+                    self._make_msg(
                         "warning",
                         f"Ghost created for concept '{rel.from_concept}'",
                         "concept",
@@ -264,7 +305,6 @@ class StateBuilder:
                 )
 
             if to_missing:
-                # Create ghost concept
                 ghost = ConceptState(
                     name=rel.to_concept,
                     domain=None,
@@ -274,7 +314,7 @@ class StateBuilder:
                 )
                 state.concepts[rel.to_concept] = ghost
                 messages.append(
-                    make_msg(
+                    self._make_msg(
                         "error",
                         f"Relationship '{rel_id}' references non-existent "
                         f"concept '{rel.to_concept}'",
@@ -283,7 +323,7 @@ class StateBuilder:
                     )
                 )
                 messages.append(
-                    make_msg(
+                    self._make_msg(
                         "warning",
                         f"Ghost created for concept '{rel.to_concept}'",
                         "concept",
@@ -295,15 +335,30 @@ class StateBuilder:
                     f"Target concept '{rel.to_concept}' not defined"
                 )
 
-        # 2. Check for duplicate concept names
+        return messages
+
+    def _check_duplicate_concepts(self, state: ProjectState) -> list[Message]:
+        """Check for duplicate concept names.
+
+        Scans all non-ghost concepts and flags any that share the same
+        display name.
+
+        Args:
+            state: The current project state (modified in place)
+
+        Returns:
+            List of validation messages generated
+        """
+        messages: list[Message] = []
         names_seen: dict[str, str] = {}  # name -> first concept_id
+
         for concept_id, concept in state.concepts.items():
             if concept.is_ghost:
                 continue  # Skip ghosts for duplicate check
             if concept.name in names_seen:
                 first_id = names_seen[concept.name]
                 messages.append(
-                    make_msg(
+                    self._make_msg(
                         "error",
                         f"Duplicate concept name '{concept.name}'",
                         "concept",
@@ -321,13 +376,28 @@ class StateBuilder:
             else:
                 names_seen[concept.name] = concept_id
 
-        # 3. Check for duplicate relationships
+        return messages
+
+    def _check_duplicate_relationships(self, state: ProjectState) -> list[Message]:
+        """Check for duplicate relationships.
+
+        Two relationships are considered duplicates if they have the same
+        from_concept, verb, and to_concept.
+
+        Args:
+            state: The current project state (modified in place)
+
+        Returns:
+            List of validation messages generated
+        """
+        messages: list[Message] = []
         rel_keys_seen: dict[str, str] = {}  # key -> first rel_id
+
         for rel_id, rel in state.relationships.items():
             key = f"{rel.from_concept}:{rel.verb}:{rel.to_concept}"
             if key in rel_keys_seen and rel_keys_seen[key] != rel_id:
                 messages.append(
-                    make_msg(
+                    self._make_msg(
                         "error",
                         f"Duplicate relationship '{rel_id}'",
                         "relationship",
@@ -339,16 +409,29 @@ class StateBuilder:
             else:
                 rel_keys_seen[key] = rel_id
 
-        # 4. Check for empty domains
+        return messages
+
+    def _check_empty_domains(self, state: ProjectState) -> list[Message]:
+        """Check for domains with no concepts assigned.
+
+        Args:
+            state: The current project state (read only)
+
+        Returns:
+            List of validation messages generated
+        """
+        messages: list[Message] = []
         domain_concept_counts: dict[str, int] = dict.fromkeys(state.domains, 0)
+
         for concept in state.concepts.values():
             if concept.domain and not concept.is_ghost:
                 if concept.domain in domain_concept_counts:
                     domain_concept_counts[concept.domain] += 1
+
         for domain_id, count in domain_concept_counts.items():
             if count == 0:
                 messages.append(
-                    make_msg(
+                    self._make_msg(
                         "warning",
                         f"Domain '{domain_id}' has no concepts",
                         "domain",
@@ -356,14 +439,58 @@ class StateBuilder:
                     )
                 )
 
-        # 5. Add sync info message
+        return messages
+
+    def _make_sync_summary(self, state: ProjectState) -> list[Message]:
+        """Generate sync summary info message.
+
+        Args:
+            state: The current project state (read only)
+
+        Returns:
+            List containing the sync info message
+        """
         real_concepts = [c for c in state.concepts.values() if not c.is_ghost]
-        messages.append(
-            make_msg(
+        return [
+            self._make_msg(
                 "info",
                 f"Synced {len(real_concepts)} concepts from conceptual.yml",
             )
-        )
+        ]
+
+    def validate_and_sync(self, state: ProjectState) -> ValidationState:
+        """Run validation checks and create ghost concepts for missing references.
+
+        This method:
+        1. Creates ghost concepts for relationships referencing non-existent concepts
+        2. Checks for duplicate concept names
+        3. Checks for duplicate relationships
+        4. Checks for empty domains
+        5. Generates sync summary
+
+        Args:
+            state: The current project state (will be modified in place)
+
+        Returns:
+            ValidationState with all messages and counts
+        """
+        self._msg_counter = 0
+        messages: list[Message] = []
+
+        # 1. Check relationships for missing concepts and create ghosts
+        messages.extend(self._check_ghost_concepts(state))
+
+        # 2. Check for duplicate concept names
+        messages.extend(self._check_duplicate_concepts(state))
+
+        # 3. Check for duplicate relationships
+        messages.extend(self._check_duplicate_relationships(state))
+
+        # 4. Check for empty domains
+        messages.extend(self._check_empty_domains(state))
+
+        # 5. Add sync info message
+        messages.extend(self._make_sync_summary(state))
 
         # Count by severity
         error_count = sum(1 for m in messages if m.severity == "error")
