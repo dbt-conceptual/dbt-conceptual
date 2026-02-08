@@ -68,6 +68,16 @@ export const RelationshipEdge = memo(({
   if (isError) labelClasses.push('invalid');
   if (isWarning) labelClasses.push('warning');
 
+  // Build descriptive aria-label for the edge
+  const edgeAriaLabelParts = [`Relationship: ${relationship.verb}`];
+  if (relationship.cardinality) edgeAriaLabelParts.push(`cardinality: ${relationship.cardinality}`);
+  edgeAriaLabelParts.push(`status: ${relationship.status}`);
+  if (hasValidationIssue) edgeAriaLabelParts.push(`validation: ${relationship.validationStatus}`);
+  if (relationship.realized_by.length > 0) {
+    edgeAriaLabelParts.push(`${relationship.realized_by.length} model${relationship.realized_by.length !== 1 ? 's' : ''}`);
+  }
+  const edgeAriaLabel = edgeAriaLabelParts.join(', ');
+
   return (
     <>
       {/* Edge path */}
@@ -83,7 +93,7 @@ export const RelationshipEdge = memo(({
       />
 
       {/* Label */}
-      <g transform={`translate(${labelX}, ${labelY})`}>
+      <g transform={`translate(${labelX}, ${labelY})`} role="group">
         <foreignObject
           width={200}
           height={60}
@@ -91,7 +101,7 @@ export const RelationshipEdge = memo(({
           y={-30}
           className="edge-label-wrapper"
         >
-          <div className={labelClasses.join(' ')}>
+          <div className={labelClasses.join(' ')} aria-label={edgeAriaLabel}>
             {/* Verb */}
             <div className="relationship-edge-verb">{relationship.verb}</div>
 

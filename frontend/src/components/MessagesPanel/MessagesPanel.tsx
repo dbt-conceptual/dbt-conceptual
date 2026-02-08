@@ -74,7 +74,20 @@ export function MessagesPanel() {
       <div
         className="messages-bar"
         onClick={handleBarClick}
+        onKeyDown={(e: React.KeyboardEvent) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            // Don't toggle if focus is on an interactive child (e.g., sync button)
+            if ((e.target as HTMLElement).closest('.messages-bar-sync')) {
+              return;
+            }
+            e.preventDefault();
+            toggleMessagesPanel();
+          }
+        }}
+        role="button"
+        tabIndex={0}
         title="Click to expand messages panel"
+        aria-label={`Messages panel: ${messages.length} messages. Click to expand.`}
       >
         <div className="messages-bar-actions">
           <button
@@ -175,11 +188,22 @@ export function MessagesPanel() {
             {messages.length === 0 ? 'Click sync to validate' : 'No messages match filters'}
           </div>
         ) : (
-          filteredMessages.map((msg) => (
+          filteredMessages.map((msg) => {
+            const isClickable = !!(msg.elementType && msg.elementId);
+            return (
             <div
               key={msg.id}
               className="message-item"
               onClick={() => handleMessageClick(msg.elementType, msg.elementId)}
+              onKeyDown={isClickable ? (e: React.KeyboardEvent) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleMessageClick(msg.elementType, msg.elementId);
+                }
+              } : undefined}
+              role={isClickable ? 'button' : undefined}
+              tabIndex={isClickable ? 0 : undefined}
+              aria-label={isClickable ? `${msg.severity}: ${msg.text}. Click to navigate.` : undefined}
             >
               <span className={`message-icon ${msg.severity}`}>
                 {severityIcons[msg.severity]}
@@ -188,7 +212,8 @@ export function MessagesPanel() {
                 {renderMessageText(msg.text)}
               </span>
             </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
