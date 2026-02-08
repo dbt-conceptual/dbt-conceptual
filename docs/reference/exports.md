@@ -7,7 +7,7 @@ All available export types and formats.
 ## Export Command
 
 ```bash
-dcm export --type TYPE --format FORMAT [OPTIONS]
+dbc export --type TYPE --format FORMAT [OPTIONS]
 ```
 
 | Option | Description |
@@ -25,9 +25,9 @@ dcm export --type TYPE --format FORMAT [OPTIONS]
 Implementation coverage report.
 
 ```bash
-dcm export --type coverage --format markdown
-dcm export --type coverage --format html -o coverage.html
-dcm export --type coverage --format json
+dbc export --type coverage --format markdown
+dbc export --type coverage --format html -o coverage.html
+dbc export --type coverage --format json
 ```
 
 **Formats:** `markdown`, `html`, `json`
@@ -43,8 +43,8 @@ dcm export --type coverage --format json
 Current status of the conceptual model.
 
 ```bash
-dcm export --type status --format markdown
-dcm export --type status --format json
+dbc export --type status --format markdown
+dbc export --type status --format json
 ```
 
 **Formats:** `markdown`, `json`
@@ -59,8 +59,8 @@ dcm export --type status --format json
 Models without concept tags.
 
 ```bash
-dcm export --type orphans --format markdown
-dcm export --type orphans --format json
+dbc export --type orphans --format markdown
+dbc export --type orphans --format json
 ```
 
 **Formats:** `markdown`, `json`
@@ -74,8 +74,8 @@ dcm export --type orphans --format json
 Validation results.
 
 ```bash
-dcm export --type validation --format markdown
-dcm export --type validation --format json
+dbc export --type validation --format markdown
+dbc export --type validation --format json
 ```
 
 **Formats:** `markdown`, `json`
@@ -90,7 +90,7 @@ dcm export --type validation --format json
 Visual diagram of the conceptual model.
 
 ```bash
-dcm export --type diagram --format svg -o model.svg
+dbc export --type diagram --format svg -o model.svg
 ```
 
 **Formats:** `svg`
@@ -105,9 +105,9 @@ dcm export --type diagram --format svg -o model.svg
 Dimensional modeling bus matrix.
 
 ```bash
-dcm export --type bus-matrix --format markdown
-dcm export --type bus-matrix --format html -o matrix.html
-dcm export --type bus-matrix --format json
+dbc export --type bus-matrix --format markdown
+dbc export --type bus-matrix --format html -o matrix.html
+dbc export --type bus-matrix --format json
 ```
 
 **Formats:** `markdown`, `html`, `json`
@@ -122,8 +122,8 @@ dcm export --type bus-matrix --format json
 Changes compared to a git reference.
 
 ```bash
-dcm export --type diff --format markdown --base main
-dcm export --type diff --format json --base HEAD~1
+dbc export --type diff --format markdown --base main
+dbc export --type diff --format json --base HEAD~1
 ```
 
 **Formats:** `markdown`, `json`
@@ -142,8 +142,8 @@ dcm export --type diff --format json --base HEAD~1
 Raw concept data.
 
 ```bash
-dcm export --type concepts --format json -o concepts.json
-dcm export --type concepts --format yaml
+dbc export --type concepts --format json -o concepts.json
+dbc export --type concepts --format yaml
 ```
 
 **Formats:** `json`, `yaml`
@@ -164,7 +164,7 @@ Human-readable tables, suitable for:
 - Documentation
 
 ```bash
-dcm export --type coverage --format markdown >> $GITHUB_STEP_SUMMARY
+dbc export --type coverage --format markdown >> $GITHUB_STEP_SUMMARY
 ```
 
 ### html
@@ -175,7 +175,7 @@ Standalone HTML page with styling, suitable for:
 - Archiving
 
 ```bash
-dcm export --type coverage --format html -o report.html
+dbc export --type coverage --format html -o report.html
 ```
 
 ### json
@@ -186,7 +186,7 @@ Machine-readable, suitable for:
 - Custom tooling
 
 ```bash
-dcm export --type coverage --format json | jq '.coverage_percent'
+dbc export --type coverage --format json | jq '.coverage_percent'
 ```
 
 ### yaml
@@ -194,7 +194,7 @@ dcm export --type coverage --format json | jq '.coverage_percent'
 YAML format for concept data:
 
 ```bash
-dcm export --type concepts --format yaml
+dbc export --type concepts --format yaml
 ```
 
 ### svg
@@ -202,7 +202,7 @@ dcm export --type concepts --format yaml
 Vector graphics for diagrams:
 
 ```bash
-dcm export --type diagram --format svg -o model.svg
+dbc export --type diagram --format svg -o model.svg
 ```
 
 ---
@@ -215,9 +215,9 @@ dcm export --type diagram --format svg -o model.svg
 - name: Report
   run: |
     echo "## Conceptual Model" >> $GITHUB_STEP_SUMMARY
-    dcm export --type coverage --format markdown >> $GITHUB_STEP_SUMMARY
+    dbc export --type coverage --format markdown >> $GITHUB_STEP_SUMMARY
     echo "## Validation" >> $GITHUB_STEP_SUMMARY
-    dcm export --type validation --format markdown >> $GITHUB_STEP_SUMMARY
+    dbc export --type validation --format markdown >> $GITHUB_STEP_SUMMARY
 ```
 
 ### Coverage Badge
@@ -225,7 +225,7 @@ dcm export --type diagram --format svg -o model.svg
 Extract coverage for a badge:
 
 ```bash
-COVERAGE=$(dcm export --type coverage --format json | jq -r '.coverage_percent')
+COVERAGE=$(dbc export --type coverage --format json | jq -r '.coverage_percent')
 echo "Coverage: ${COVERAGE}%"
 ```
 
@@ -234,7 +234,7 @@ echo "Coverage: ${COVERAGE}%"
 Export for catalog ingestion:
 
 ```bash
-dcm export --type concepts --format json -o concepts.json
+dbc export --type concepts --format json -o concepts.json
 # Upload to catalog API
 ```
 
@@ -243,7 +243,7 @@ dcm export --type concepts --format json -o concepts.json
 Generate diagram for docs:
 
 ```bash
-dcm export --type diagram --format svg -o docs/assets/conceptual-model.svg
+dbc export --type diagram --format svg -o docs/assets/conceptual-model.svg
 ```
 
 ---
@@ -253,8 +253,8 @@ dcm export --type diagram --format svg -o docs/assets/conceptual-model.svg
 Use `-o` to write to a file instead of stdout:
 
 ```bash
-dcm export --type coverage --format html -o coverage.html
-dcm export --type diagram --format svg -o model.svg
+dbc export --type coverage --format html -o coverage.html
+dbc export --type diagram --format svg -o model.svg
 ```
 
 Without `-o`, output goes to stdout (useful for piping).

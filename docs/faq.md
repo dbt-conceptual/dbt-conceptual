@@ -69,7 +69,7 @@ No. The conceptual model is metadata only — it doesn't affect dbt build, test,
 
 Yes. The conceptual model is just files in your repo. CI validation works in dbt Cloud's CI jobs.
 
-The web UI (`dcm serve`) is for local development — it's not hosted in dbt Cloud.
+The web UI (`dbc serve`) is for local development — it's not hosted in dbt Cloud.
 
 ### What dbt versions are supported?
 
@@ -125,15 +125,15 @@ CI can warn or error when deprecated concepts are used.
 Export to HTML or Markdown:
 
 ```bash
-dcm export --type coverage --format html -o report.html
-dcm export --type diagram --format svg -o model.svg
+dbc export --type coverage --format html -o report.html
+dbc export --type diagram --format svg -o model.svg
 ```
 
 Upload to your wiki manually or automate it.
 
 ### Does it work with Unity Catalog?
 
-Yes. Use `dcm apply --propagate-tags` to write domain and owner to dbt model tags, which flow to Unity Catalog.
+Yes. Use `dbc apply --propagate-tags` to write domain and owner to dbt model tags, which flow to Unity Catalog.
 
 ### Can I import from an existing data dictionary?
 
@@ -145,7 +145,7 @@ There's no built-in import, but the YAML format is simple. Write a script to tra
 
 ### The UI shows no concepts
 
-Run `dcm sync` to load from your dbt project. If you haven't defined any concepts yet, run `dcm init` first.
+Run `dbc sync` to load from your dbt project. If you haven't defined any concepts yet, run `dbc init` first.
 
 ### Validation fails on everything
 
@@ -167,7 +167,7 @@ Check file permissions on `conceptual.yml`. The UI needs write access.
 
 A model references a concept that doesn't exist. Either:
 - Define the concept in `conceptual.yml`
-- Run `dcm sync --create-stubs`
+- Run `dbc sync --create-stubs`
 - Fix the typo in `meta.concept`
 
 ---

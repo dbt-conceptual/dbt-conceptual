@@ -113,7 +113,7 @@ If you tag a model with a concept that doesn't exist, it becomes a **ghost conce
 If you have models tagged with concepts that don't exist yet:
 
 ```bash
-dcm sync --create-stubs
+dbc sync --create-stubs
 ```
 
 This creates stub entries in `conceptual.yml` for any referenced but undefined concepts.
@@ -125,7 +125,7 @@ This creates stub entries in `conceptual.yml` for any referenced but undefined c
 Check that all tags are valid:
 
 ```bash
-dcm validate
+dbc validate
 ```
 
 This catches:
@@ -140,7 +140,7 @@ This catches:
 Find models without concept tags:
 
 ```bash
-dcm orphans
+dbc orphans
 ```
 
 ```
@@ -239,7 +239,7 @@ models:
 If you have many models without tags:
 
 1. **Start with gold layer** — Tag your mart/dimension/fact models first
-2. **Use sync** — `dcm sync --create-stubs` creates concepts for tagged models
+2. **Use sync** — `dbc sync --create-stubs` creates concepts for tagged models
 3. **Work backward** — Add silver layer tags later if desired
 
 See [Adopting in Existing Projects](adoption.md) for a full guide.
@@ -254,4 +254,4 @@ When tagging models:
 - [ ] Concept name is spelled correctly
 - [ ] Business-meaningful models are tagged
 - [ ] Utility models are intentionally skipped
-- [ ] `dcm validate` passes
+- [ ] `dbc validate` passes

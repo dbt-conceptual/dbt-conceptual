@@ -38,7 +38,7 @@ jobs:
         run: pip install dbt-conceptual
       
       - name: Validate conceptual model
-        run: dcm validate
+        run: dbc validate
 ```
 
 ### GitLab CI
@@ -49,7 +49,7 @@ validate-conceptual:
   image: python:3.11
   script:
     - pip install dbt-conceptual
-    - dcm validate
+    - dbc validate
 ```
 
 ---
@@ -64,7 +64,7 @@ See issues without blocking merges:
 
 ```yaml
 - name: Validate (advisory)
-  run: dcm validate
+  run: dbc validate
   continue-on-error: true
 ```
 
@@ -76,7 +76,7 @@ Once you're ready to enforce the standards:
 
 ```yaml
 - name: Validate (enforced)
-  run: dcm validate
+  run: dbc validate
 ```
 
 Exit codes:
@@ -89,7 +89,7 @@ For mature projects where everything should be complete:
 
 ```yaml
 - name: Validate (strict)
-  run: dcm validate --no-drafts
+  run: dbc validate --no-drafts
 ```
 
 This fails if any concepts are still in stub or draft status.
@@ -104,7 +104,7 @@ GitHub Actions supports job summaries — formatted output that appears in the A
 - name: Conceptual model status
   run: |
     echo "## Conceptual Model" >> $GITHUB_STEP_SUMMARY
-    dcm export --type coverage --format markdown >> $GITHUB_STEP_SUMMARY
+    dbc export --type coverage --format markdown >> $GITHUB_STEP_SUMMARY
 ```
 
 This renders coverage as a table directly in the GitHub interface.
@@ -120,7 +120,7 @@ You can show what changed in the conceptual model as part of a PR:
   if: github.event_name == 'pull_request'
   run: |
     echo "## Changes" >> $GITHUB_STEP_SUMMARY
-    dcm diff --base origin/main --format markdown >> $GITHUB_STEP_SUMMARY
+    dbc diff --base origin/main --format markdown >> $GITHUB_STEP_SUMMARY
 ```
 
 Note: This requires fetching the full git history:
@@ -162,18 +162,18 @@ jobs:
         run: pip install dbt-conceptual
 
       - name: Validate
-        run: dcm validate --format markdown >> $GITHUB_STEP_SUMMARY
+        run: dbc validate --format markdown >> $GITHUB_STEP_SUMMARY
 
       - name: Coverage
         run: |
           echo "## Coverage" >> $GITHUB_STEP_SUMMARY
-          dcm export --type coverage --format markdown >> $GITHUB_STEP_SUMMARY
+          dbc export --type coverage --format markdown >> $GITHUB_STEP_SUMMARY
 
       - name: Changes (PR only)
         if: github.event_name == 'pull_request'
         run: |
           echo "## Changes in this PR" >> $GITHUB_STEP_SUMMARY
-          dcm diff --base origin/main --format markdown >> $GITHUB_STEP_SUMMARY
+          dbc diff --base origin/main --format markdown >> $GITHUB_STEP_SUMMARY
 ```
 
 ---
@@ -251,7 +251,7 @@ repos:
     hooks:
       - id: validate-conceptual
         name: Validate conceptual model
-        entry: dcm validate
+        entry: dbc validate
         language: system
         pass_filenames: false
         files: conceptual\.yml$
@@ -267,7 +267,7 @@ If you want to keep coverage reports:
 
 ```yaml
 - name: Generate coverage report
-  run: dcm export --type coverage --format html -o coverage.html
+  run: dbc export --type coverage --format html -o coverage.html
 
 - name: Upload artifact
   uses: actions/upload-artifact@v4

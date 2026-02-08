@@ -463,5 +463,5 @@ The file is validated when loaded. Common issues:
 Run validation anytime with:
 
 ```bash
-dcm validate
+dbc validate
 ```

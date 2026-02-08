@@ -6,10 +6,10 @@ Reference for all validation messages.
 
 ## Overview
 
-When you run `dcm validate`, the tool checks for issues and reports them with codes.
+When you run `dbc validate`, the tool checks for issues and reports them with codes.
 
 ```bash
-dcm validate
+dbc validate
 ```
 
 ```
@@ -160,7 +160,7 @@ vars:
 
 **Fix:** Either:
 - Define the concept in `conceptual.yml`
-- Run `dcm sync --create-stubs` to create a stub
+- Run `dbc sync --create-stubs` to create a stub
 - Fix the typo in the model
 
 **Configure:** This is always an error.
@@ -278,14 +278,14 @@ Fail CI on validation errors:
 
 ```yaml
 - name: Validate
-  run: dcm validate
+  run: dbc validate
 ```
 
 Show warnings but don't fail:
 
 ```yaml
 - name: Validate
-  run: dcm validate
+  run: dbc validate
   continue-on-error: true
 ```
 
@@ -293,5 +293,5 @@ Strict mode (fail on warnings too):
 
 ```yaml
 - name: Validate (strict)
-  run: dcm validate --strict
+  run: dbc validate --strict
 ```

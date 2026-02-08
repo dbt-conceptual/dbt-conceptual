@@ -17,12 +17,12 @@ Get dbt-conceptual installed and ready to use.
 pip install dbt-conceptual
 ```
 
-This installs the `dbt-conceptual` command (and the `dcm` alias).
+This installs the `dbt-conceptual` command (and the `dbc` alias).
 
 ### Verify Installation
 
 ```bash
-dcm --version
+dbc --version
 ```
 
 ---
@@ -77,13 +77,13 @@ pip install -e ".[dev]"
 | Command | Description |
 |---------|-------------|
 | `dbt-conceptual` | Full command name |
-| `dcm` | Short alias |
+| `dbc` | Short alias |
 
 Both work identically:
 
 ```bash
 dbt-conceptual serve
-dcm serve
+dbc serve
 ```
 
 ---

@@ -63,7 +63,7 @@
     
     <text x="90" y="22" font-family="Inter, -apple-system, sans-serif" font-size="12" font-weight="600" fill="white" text-anchor="middle">3. Validate in CI</text>
     
-    <text x="16" y="55" font-family="monospace" font-size="10" fill="#27ae60">dcm validate</text>
+    <text x="16" y="55" font-family="monospace" font-size="10" fill="#27ae60">dbc validate</text>
     <text x="16" y="75" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#888888">• Coverage check</text>
     <text x="16" y="90" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#888888">• Drift detection</text>
   </g>
