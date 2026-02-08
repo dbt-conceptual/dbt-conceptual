@@ -30,11 +30,11 @@ Don't try to tag everything at once. When you're already in a model for other wo
 
 ## Day-to-Day Workflow
 
-**Run `dcm validate` locally before pushing.**
+**Run `dbc validate` locally before pushing.**
 Faster feedback than waiting for CI. Catches issues before they become PR comments.
 
 ```bash
-dcm validate
+dbc validate
 ```
 
 **Add "Concept tagged?" to your PR checklist.**
@@ -47,14 +47,14 @@ Makes progress visible without extra tooling:
 - name: Coverage
   run: |
     echo "## Conceptual Model Coverage" >> $GITHUB_STEP_SUMMARY
-    dcm export --type coverage --format markdown >> $GITHUB_STEP_SUMMARY
+    dbc export --type coverage --format markdown >> $GITHUB_STEP_SUMMARY
 ```
 
-**Use `dcm serve --demo` to explore.**
+**Use `dbc serve --demo` to explore.**
 Want to see the UI without setting up a project? The demo flag loads sample data:
 
 ```bash
-dcm serve --demo
+dbc serve --demo
 ```
 
 ---
@@ -127,4 +127,4 @@ dbt-conceptual doesn't replace the governance office — it makes their job easi
 | Governance asking questions | Share coverage reports, invite them to review PRs |
 | Team not adopting | Add to PR checklist, make it visible |
 | Too many stubs | One domain per sprint until caught up |
-| Want to explore | `dcm serve --demo` |
+| Want to explore | `dbc serve --demo` |

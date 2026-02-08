@@ -39,7 +39,7 @@
     
     <text x="12" y="52" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#333333">Click Sync/Refresh or:</text>
     <rect x="12" y="60" width="150" height="22" rx="4" fill="#f5f5f5"/>
-    <text x="20" y="75" font-family="monospace" font-size="9" fill="#888888">dcm sync --create-stubs</text>
+    <text x="20" y="75" font-family="monospace" font-size="9" fill="#888888">dbc sync --create-stubs</text>
     
     <text x="12" y="100" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#27ae60">✓ 12 concept stubs created</text>
     <text x="12" y="115" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#27ae60">✓ 8 relationship stubs</text>
@@ -60,7 +60,7 @@
     
     <text x="12" y="52" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#333333">Check status:</text>
     <rect x="12" y="60" width="150" height="22" rx="4" fill="#f5f5f5"/>
-    <text x="20" y="75" font-family="monospace" font-size="9" fill="#888888">dcm status</text>
+    <text x="20" y="75" font-family="monospace" font-size="9" fill="#888888">dbc status</text>
     
     <text x="12" y="100" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#888888">Concepts: 12 (0 enriched)</text>
     <text x="12" y="115" font-family="Inter, -apple-system, sans-serif" font-size="10" fill="#e67e22">Coverage: 22%</text>

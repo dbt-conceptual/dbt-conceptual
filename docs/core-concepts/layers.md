@@ -79,7 +79,7 @@ This lets you enforce strict coverage on gold while being lenient on bronze.
 The status command breaks down coverage by layer:
 
 ```bash
-dcm status
+dbc status
 ```
 
 ```

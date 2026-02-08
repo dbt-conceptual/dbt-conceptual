@@ -15,7 +15,7 @@ The Coverage view shows at a glance:
 Access it by clicking **Coverage** in the tab bar, or run:
 
 ```bash
-dcm status
+dbc status
 ```
 
 ---
@@ -119,13 +119,13 @@ Export coverage reports for sharing:
 
 ```bash
 # Markdown (for GitHub, Slack, etc.)
-dcm export --type coverage --format markdown
+dbc export --type coverage --format markdown
 
 # HTML (standalone page)
-dcm export --type coverage --format html -o report.html
+dbc export --type coverage --format html -o report.html
 
 # JSON (for automation)
-dcm export --type coverage --format json
+dbc export --type coverage --format json
 ```
 
 ### Adding to CI
@@ -136,7 +136,7 @@ Include coverage in your GitHub Actions summary:
 - name: Coverage report
   run: |
     echo "## Conceptual Model Coverage" >> $GITHUB_STEP_SUMMARY
-    dcm export --type coverage --format markdown >> $GITHUB_STEP_SUMMARY
+    dbc export --type coverage --format markdown >> $GITHUB_STEP_SUMMARY
 ```
 
 ---

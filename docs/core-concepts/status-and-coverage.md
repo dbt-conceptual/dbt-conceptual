@@ -37,7 +37,7 @@ Referenced but undefined?  → ghost
 Coverage measures how much of your conceptual model is implemented.
 
 ```bash
-dcm status
+dbc status
 ```
 
 ```
@@ -73,7 +73,7 @@ Domains:
 An orphan model is a dbt model without a `meta.concept` tag.
 
 ```bash
-dcm orphans
+dbc orphans
 ```
 
 ```
@@ -118,7 +118,7 @@ Ghosts are validation errors — they indicate something is referenced but not d
 The validate command checks for issues:
 
 ```bash
-dcm validate
+dbc validate
 ```
 
 ```
@@ -162,13 +162,13 @@ Export coverage in various formats:
 
 ```bash
 # Markdown (great for GitHub job summaries)
-dcm export --type coverage --format markdown
+dbc export --type coverage --format markdown
 
 # HTML (standalone report)
-dcm export --type coverage --format html -o coverage.html
+dbc export --type coverage --format html -o coverage.html
 
 # JSON (for automation)
-dcm export --type coverage --format json
+dbc export --type coverage --format json
 ```
 
 ### Markdown Output
@@ -196,7 +196,7 @@ Coverage improves over time. Track it in CI:
 - name: Coverage report
   run: |
     echo "## Conceptual Model Coverage" >> $GITHUB_STEP_SUMMARY
-    dcm export --type coverage --format markdown >> $GITHUB_STEP_SUMMARY
+    dbc export --type coverage --format markdown >> $GITHUB_STEP_SUMMARY
 ```
 
 This adds a coverage summary to every PR, making progress visible.

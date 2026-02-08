@@ -51,7 +51,7 @@ You're declaring: "this model implements the `customer` concept." The concept do
 Run sync to create placeholders for the concepts you've referenced:
 
 ```bash
-dcm sync --create-stubs
+dbc sync --create-stubs
 ```
 
 ```
@@ -63,7 +63,7 @@ Created 3 concept stubs:
   - order (referenced by fct_orders)
   - product (referenced by dim_product)
 
-Run 'dcm status' to see coverage
+Run 'dbc status' to see coverage
 ```
 
 The tool creates stubs in `conceptual.yml` for any concept that's referenced in a `meta.concept` tag but not yet defined. These stubs need a domain and owner to be considered complete.
@@ -73,7 +73,7 @@ The tool creates stubs in `conceptual.yml` for any concept that's referenced in 
 ## Step 3: Check Your Status
 
 ```bash
-dcm status
+dbc status
 ```
 
 ```
@@ -145,7 +145,7 @@ concepts:
 Check your progress:
 
 ```bash
-dcm status
+dbc status
 ```
 
 ```
@@ -173,7 +173,7 @@ Add validation to your CI pipeline:
 
 ```yaml
 - name: Validate conceptual model
-  run: dcm validate
+  run: dbc validate
   continue-on-error: true  # Don't block merges yet
 ```
 
@@ -195,7 +195,7 @@ Set a sustainable pace. Tag more models, create more stubs, enrich them:
 Track progress with:
 
 ```bash
-dcm export --type coverage --format markdown
+dbc export --type coverage --format markdown
 ```
 
 Share this with your team. Visible progress helps maintain momentum.

@@ -17,7 +17,7 @@ pip install dbt-conceptual
 In your dbt project root:
 
 ```bash
-dcm init
+dbc init
 ```
 
 This creates `models/conceptual/conceptual.yml`:
@@ -74,8 +74,8 @@ models:
 ## 5. Sync and Check Status
 
 ```bash
-dcm sync
-dcm status
+dbc sync
+dbc status
 ```
 
 ```
@@ -90,7 +90,7 @@ Coverage: 100%
 ## 6. Launch the UI
 
 ```bash
-dcm serve
+dbc serve
 ```
 
 Open `http://localhost:8050` to see your conceptual model.

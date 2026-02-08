@@ -15,7 +15,7 @@ The canvas is the main view in dbt-conceptual. It displays concepts as nodes and
 Launch it with:
 
 ```bash
-dcm serve
+dbc serve
 ```
 
 Then open `http://localhost:8050` in your browser.
@@ -176,7 +176,7 @@ Type in the search box to filter concepts by name.
 Want to explore without setting up a project?
 
 ```bash
-dcm serve --demo
+dbc serve --demo
 ```
 
 This loads sample data so you can see how the interface works.
@@ -187,7 +187,7 @@ This loads sample data so you can see how the interface works.
 
 | Issue | Solution |
 |-------|----------|
-| Canvas is empty | Run `dcm sync` to load from your project |
+| Canvas is empty | Run `dbc sync` to load from your project |
 | Changes not saving | Check file permissions on `conceptual.yml` |
 | Concepts overlapping | Drag to rearrange, positions are saved |
 | Relationships not showing | Check that both concepts exist |
