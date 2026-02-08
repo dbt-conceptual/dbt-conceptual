@@ -173,7 +173,7 @@ See [Governance Features](../scaling-up/governance.md) for details.
 
 ## Server Settings
 
-CLI options for `dcm serve`:
+CLI options for `dbc serve`:
 
 | Option | Default | Description |
 |--------|---------|-------------|

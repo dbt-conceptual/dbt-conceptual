@@ -9,7 +9,7 @@ A quick guide to get started with the dbt-conceptual web interface.
 From your dbt project directory:
 
 ```bash
-dcm serve
+dbc serve
 ```
 
 Open `http://localhost:8050` in your browser.
@@ -17,7 +17,7 @@ Open `http://localhost:8050` in your browser.
 ### Custom Port
 
 ```bash
-dcm serve --port 3000
+dbc serve --port 3000
 ```
 
 ### Demo Mode
@@ -25,7 +25,7 @@ dcm serve --port 3000
 Explore without a project:
 
 ```bash
-dcm serve --demo
+dbc serve --demo
 ```
 
 This loads sample data so you can see how things work.
@@ -71,7 +71,7 @@ See [Bus Matrix](../web-ui/bus-matrix.md) for details.
 
 ### View Your Model
 
-1. Launch with `dcm serve`
+1. Launch with `dbc serve`
 2. Canvas shows your concepts and relationships
 3. Click a concept to see its properties
 
@@ -96,7 +96,7 @@ See [Bus Matrix](../web-ui/bus-matrix.md) for details.
 
 ### Sync from dbt
 
-1. Click **Sync** in the toolbar (or run `dcm sync`)
+1. Click **Sync** in the toolbar (or run `dbc sync`)
 2. New models with `meta.concept` tags appear
 3. Coverage updates
 
@@ -131,6 +131,6 @@ See [Bus Matrix](../web-ui/bus-matrix.md) for details.
 | Issue | Solution |
 |-------|----------|
 | UI won't load | Check port isn't in use, try `--port 3001` |
-| Canvas is empty | Run `dcm sync` to load from project |
+| Canvas is empty | Run `dbc sync` to load from project |
 | Changes not appearing | Refresh browser, check file permissions |
 | Relationships missing | Verify both concepts exist in `conceptual.yml` |

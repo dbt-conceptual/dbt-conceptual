@@ -17,12 +17,12 @@ dbt-conceptual [OPTIONS] COMMAND
 | `--version` | Show version and exit |
 | `--help` | Show help and exit |
 
-You can also use `dcm` as a shorthand:
+You can also use `dbc` as a shorthand:
 
 ```bash
-dcm status
-dcm validate
-dcm serve
+dbc status
+dbc validate
+dbc serve
 ```
 
 ---
@@ -34,7 +34,7 @@ dcm serve
 Creates a starter `conceptual.yml` in your project.
 
 ```bash
-dcm init [--project-dir PATH]
+dbc init [--project-dir PATH]
 ```
 
 This gives you a template to start from:
@@ -56,7 +56,7 @@ relationships: []
 Shows coverage — how many concepts have implementing models.
 
 ```bash
-dcm status [OPTIONS]
+dbc status [OPTIONS]
 ```
 
 | Option | Description |
@@ -90,7 +90,7 @@ Domains:
 Checks for issues in your conceptual model. Useful in CI.
 
 ```bash
-dcm validate [OPTIONS]
+dbc validate [OPTIONS]
 ```
 
 | Option | Description |
@@ -112,7 +112,7 @@ The `--no-drafts` flag is useful when you want to ensure everything is fully doc
 Discovers dbt models and updates the conceptual model.
 
 ```bash
-dcm sync [OPTIONS]
+dbc sync [OPTIONS]
 ```
 
 | Option | Description |
@@ -130,7 +130,7 @@ The `--create-stubs` option is helpful when adopting dbt-conceptual in an existi
 Lists models that don't have `meta.concept` tags.
 
 ```bash
-dcm orphans [OPTIONS]
+dbc orphans [OPTIONS]
 ```
 
 | Option | Description |
@@ -146,7 +146,7 @@ dcm orphans [OPTIONS]
 Writes metadata from your conceptual model back to dbt model files.
 
 ```bash
-dcm apply [OPTIONS]
+dbc apply [OPTIONS]
 ```
 
 | Option | Description |
@@ -165,7 +165,7 @@ This is useful if you want domain and owner information to flow from your concep
 Exports reports in various formats.
 
 ```bash
-dcm export --type TYPE --format FORMAT [OPTIONS]
+dbc export --type TYPE --format FORMAT [OPTIONS]
 ```
 
 | Option | Description |
@@ -192,13 +192,13 @@ Examples:
 
 ```bash
 # Coverage as markdown (nice for CI job summaries)
-dcm export --type coverage --format markdown
+dbc export --type coverage --format markdown
 
 # Bus matrix as HTML
-dcm export --type bus-matrix --format html -o matrix.html
+dbc export --type bus-matrix --format html -o matrix.html
 
 # SVG diagram
-dcm export --type diagram --format svg -o model.svg
+dbc export --type diagram --format svg -o model.svg
 ```
 
 ---
@@ -208,7 +208,7 @@ dcm export --type diagram --format svg -o model.svg
 Compares your conceptual model against a git reference.
 
 ```bash
-dcm diff --base REF [OPTIONS]
+dbc diff --base REF [OPTIONS]
 ```
 
 | Option | Description |
@@ -221,13 +221,13 @@ Examples:
 
 ```bash
 # Compare against main branch
-dcm diff --base main
+dbc diff --base main
 
 # Markdown output for PR summaries
-dcm diff --base origin/main --format markdown
+dbc diff --base origin/main --format markdown
 
 # JSON for automation
-dcm diff --base HEAD~1 --format json
+dbc diff --base HEAD~1 --format json
 ```
 
 ---
@@ -237,7 +237,7 @@ dcm diff --base HEAD~1 --format json
 Launches the web UI.
 
 ```bash
-dcm serve [OPTIONS]
+dbc serve [OPTIONS]
 ```
 
 | Option | Description |
@@ -251,13 +251,13 @@ The `--demo` flag is useful if you want to explore the UI without setting up a p
 
 ```bash
 # Try it out
-dcm serve --demo
+dbc serve --demo
 
 # Normal usage
-dcm serve
+dbc serve
 
 # Custom port
-dcm serve --port 3000
+dbc serve --port 3000
 ```
 
 ---
@@ -277,20 +277,20 @@ dcm serve --port 3000
 
 **CI validation:**
 ```bash
-dcm validate --format markdown >> $GITHUB_STEP_SUMMARY
+dbc validate --format markdown >> $GITHUB_STEP_SUMMARY
 ```
 
 **Coverage in job summary:**
 ```bash
-dcm export --type coverage --format markdown >> $GITHUB_STEP_SUMMARY
+dbc export --type coverage --format markdown >> $GITHUB_STEP_SUMMARY
 ```
 
 **PR diff:**
 ```bash
-dcm diff --base origin/main --format markdown >> $GITHUB_STEP_SUMMARY
+dbc diff --base origin/main --format markdown >> $GITHUB_STEP_SUMMARY
 ```
 
 **Check for changes in automation:**
 ```bash
-dcm diff --base main --format json | jq '.has_changes'
+dbc diff --base main --format json | jq '.has_changes'
 ```

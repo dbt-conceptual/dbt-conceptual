@@ -127,22 +127,22 @@ pip install dbt-conceptual
 
 ```bash
 # Initialize conceptual model
-dcm init
+dbc init
 # Creates models/conceptual/conceptual.yml
 
 # Define your business concepts (edit the file)
 
 # View coverage
-dcm status
+dbc status
 
 # Launch interactive UI
-dcm serve
+dbc serve
 
 # Validate in CI
-dcm validate
+dbc validate
 
 # Export coverage report
-dcm export --type coverage --format html -o coverage.html
+dbc export --type coverage --format html -o coverage.html
 ```
 
 ---
@@ -228,13 +228,13 @@ models:
 
 ```bash
 # Check everything links up
-dcm validate
+dbc validate
 
 # See coverage
-dcm status
+dbc status
 
 # Open visual editor
-dcm serve
+dbc serve
 ```
 
 ---
@@ -260,7 +260,7 @@ See which concepts are implemented at each layer:
 
 ```bash
 pip install dbt-conceptual[serve]
-dcm serve
+dbc serve
 ```
 
 <!-- ASSET: docs/assets/ui-screenshot.png — Full UI with canvas, selected concept, and property panel -->
@@ -276,7 +276,7 @@ dcm serve
 Want to explore before committing? Run demo mode:
 
 ```bash
-dcm serve --demo
+dbc serve --demo
 ```
 
 Launches the UI with a self-contained example project — four concepts, relationships, and models across bronze/silver/gold layers. No dbt project required. Changes are not persisted; everything resets when you press Ctrl+C.
@@ -294,7 +294,7 @@ Catch drift before it ships:
 # .github/workflows/ci.yml
 - name: Validate conceptual model
   run: |
-    dcm validate --no-drafts --format markdown >> $GITHUB_STEP_SUMMARY
+    dbc validate --no-drafts --format markdown >> $GITHUB_STEP_SUMMARY
 ```
 
 The `--no-drafts` flag fails if any concepts or relationships are incomplete — useful for enforcing coverage standards. Use `--format markdown` to show validation results as a formatted job summary.
@@ -316,7 +316,7 @@ Use `--format markdown` to create rich visual summaries in GitHub Actions:
 # .github/workflows/conceptual-diff.yml
 - name: Show conceptual changes
   run: |
-    dcm diff --base main --format markdown >> $GITHUB_STEP_SUMMARY
+    dbc diff --base main --format markdown >> $GITHUB_STEP_SUMMARY
 ```
 
 The output renders as formatted tables with emoji indicators in the Actions UI.
@@ -346,40 +346,40 @@ See [Validation Guide](docs/validation.md) for resolution steps.
 **Bottom-up:** Already have a dbt project with `meta.concept` tags? Generate stubs:
 
 ```bash
-dcm sync --create-stubs
+dbc sync --create-stubs
 
 # Output:
 # Created 12 concept stubs
 # Created 8 relationship stubs
-# Run 'dcm status' to see what needs enrichment
+# Run 'dbc status' to see what needs enrichment
 ```
 
 ### 📤 Export Formats
 
 ```bash
 # Coverage report
-dcm export --type coverage --format html -o coverage.html
-dcm export --type coverage --format markdown >> $GITHUB_STEP_SUMMARY
-dcm export --type coverage --format json -o coverage.json
+dbc export --type coverage --format html -o coverage.html
+dbc export --type coverage --format markdown >> $GITHUB_STEP_SUMMARY
+dbc export --type coverage --format json -o coverage.json
 
 # Bus matrix
-dcm export --type bus-matrix --format html -o bus-matrix.html
+dbc export --type bus-matrix --format html -o bus-matrix.html
 
 # Status summary
-dcm export --type status --format markdown >> $GITHUB_STEP_SUMMARY
+dbc export --type status --format markdown >> $GITHUB_STEP_SUMMARY
 
 # Orphan models
-dcm export --type orphans --format json | jq '.count'
+dbc export --type orphans --format json | jq '.count'
 
 # Validation results
-dcm export --type validation --format markdown
+dbc export --type validation --format markdown
 
 # Diagram (SVG)
-dcm export --type diagram --format svg -o diagram.svg
+dbc export --type diagram --format svg -o diagram.svg
 
 # Diff against base branch (CI/CD)
-dcm export --type diff --format markdown --base main >> $GITHUB_STEP_SUMMARY
-dcm export --type diff --format json --base origin/main | jq '.has_changes'
+dbc export --type diff --format markdown --base main >> $GITHUB_STEP_SUMMARY
+dbc export --type diff --format json --base origin/main | jq '.has_changes'
 ```
 
 **Export Matrix:**
@@ -397,16 +397,16 @@ dcm export --type diff --format json --base origin/main | jq '.has_changes'
 
 ```bash
 # PR review — what changed?
-dcm export --type diff --format markdown --base main
+dbc export --type diff --format markdown --base main
 
 # CI gate — any validation errors?
-dcm export --type validation --format json | jq -e '.passed'
+dbc export --type validation --format json | jq -e '.passed'
 
 # Dashboard — coverage report
-dcm export --type coverage --format html -o coverage.html
+dbc export --type coverage --format html -o coverage.html
 
 # Documentation — conceptual diagram
-dcm export --type diagram --format svg -o model.svg
+dbc export --type diagram --format svg -o model.svg
 ```
 
 <!-- ASSET: docs/assets/bus-matrix.png — Kimball-style bus matrix showing dimensional coverage -->
@@ -448,17 +448,17 @@ vars:
 
 | Command | Description |
 | ------- | ----------- |
-| `dcm init` | Initialize conceptual.yml |
-| `dcm status` | Show coverage by domain |
-| `dcm orphans` | List untagged models (no meta.concept) |
-| `dcm validate` | Validate model integrity |
-| `dcm validate --no-drafts` | Fail CI if drafts/stubs exist |
-| `dcm sync` | Sync from dbt project |
-| `dcm sync --create-stubs` | Create stubs for undefined concepts |
-| `dcm serve` | Launch web UI |
-| `dcm export --type <type> --format <fmt>` | Export reports (see matrix above) |
-| `dcm diff` | Show changes vs HEAD |
-| `dcm diff --base main` | Show changes vs specified base |
+| `dbc init` | Initialize conceptual.yml |
+| `dbc status` | Show coverage by domain |
+| `dbc orphans` | List untagged models (no meta.concept) |
+| `dbc validate` | Validate model integrity |
+| `dbc validate --no-drafts` | Fail CI if drafts/stubs exist |
+| `dbc sync` | Sync from dbt project |
+| `dbc sync --create-stubs` | Create stubs for undefined concepts |
+| `dbc serve` | Launch web UI |
+| `dbc export --type <type> --format <fmt>` | Export reports (see matrix above) |
+| `dbc diff` | Show changes vs HEAD |
+| `dbc diff --base main` | Show changes vs specified base |
 
 ---
 

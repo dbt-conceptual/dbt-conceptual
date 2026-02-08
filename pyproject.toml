@@ -68,7 +68,7 @@ all = [
 
 [project.scripts]
 dbt-conceptual = "dbt_conceptual.cli:main"
-dcm = "dbt_conceptual.cli:main"
+dbc = "dbt_conceptual.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/dbt-conceptual/dbt-conceptual"

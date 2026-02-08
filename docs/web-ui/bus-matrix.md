@@ -31,8 +31,8 @@ It's a powerful way to see:
 Click **Bus Matrix** in the tab bar, or export directly:
 
 ```bash
-dcm export --type bus-matrix --format html -o matrix.html
-dcm export --type bus-matrix --format markdown
+dbc export --type bus-matrix --format html -o matrix.html
+dbc export --type bus-matrix --format markdown
 ```
 
 ---
@@ -105,7 +105,7 @@ Look for:
 Great for documentation or PR summaries:
 
 ```bash
-dcm export --type bus-matrix --format markdown >> $GITHUB_STEP_SUMMARY
+dbc export --type bus-matrix --format markdown >> $GITHUB_STEP_SUMMARY
 ```
 
 ### HTML
@@ -113,7 +113,7 @@ dcm export --type bus-matrix --format markdown >> $GITHUB_STEP_SUMMARY
 Standalone page with sortable columns:
 
 ```bash
-dcm export --type bus-matrix --format html -o bus-matrix.html
+dbc export --type bus-matrix --format html -o bus-matrix.html
 ```
 
 ### JSON
@@ -121,7 +121,7 @@ dcm export --type bus-matrix --format html -o bus-matrix.html
 For automation or custom tooling:
 
 ```bash
-dcm export --type bus-matrix --format json
+dbc export --type bus-matrix --format json
 ```
 
 ---

@@ -36,7 +36,7 @@ You'll need:
 In your dbt project root, run:
 
 ```bash
-dcm init
+dbc init
 ```
 
 This creates `models/conceptual/conceptual.yml` with a starter template:
@@ -103,7 +103,7 @@ concepts:
 You can check your progress anytime:
 
 ```bash
-dcm status
+dbc status
 ```
 
 ```
@@ -216,7 +216,7 @@ A tip on naming: use verbs that read naturally. "customer places order" flows be
 Launch the web UI to see your model:
 
 ```bash
-dcm serve
+dbc serve
 ```
 
 Open `http://localhost:8050` in your browser. You'll see your concepts as nodes and relationships as edges.
@@ -276,7 +276,7 @@ The `meta.concept` tag is the link between your conceptual vocabulary and your i
 Sync your conceptual model with your dbt project:
 
 ```bash
-dcm sync
+dbc sync
 ```
 
 ```
@@ -293,7 +293,7 @@ Mapped:
 Now check coverage:
 
 ```bash
-dcm status
+dbc status
 ```
 
 ```
@@ -316,7 +316,7 @@ All concepts have implementing models.
 Run validation to check for any issues:
 
 ```bash
-dcm validate
+dbc validate
 ```
 
 ```
@@ -338,12 +338,12 @@ To catch drift automatically, add validation to your CI pipeline:
 ```yaml
 # .github/workflows/ci.yml
 - name: Validate conceptual model
-  run: dcm validate
+  run: dbc validate
 
 - name: Show coverage
   run: |
     echo "## Conceptual Model" >> $GITHUB_STEP_SUMMARY
-    dcm export --type coverage --format markdown >> $GITHUB_STEP_SUMMARY
+    dbc export --type coverage --format markdown >> $GITHUB_STEP_SUMMARY
 ```
 
 Now every PR shows conceptual model coverage. If someone adds a model without tagging it, or references a concept that doesn't exist, the CI run will flag it.

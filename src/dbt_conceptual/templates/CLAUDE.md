@@ -14,11 +14,11 @@ dbt-conceptual (DCM) keeps conceptual data models synchronized with dbt implemen
 
 ### Key Commands
 ```bash
-dcm status              # Show coverage and validation summary
-dcm validate            # Run validation, exit 1 on errors
-dcm orphans             # List models not linked to concepts
-dcm sync --create-stubs # Generate concept stubs from model tags
-dcm serve               # Start web UI at http://localhost:5050
+dbc status              # Show coverage and validation summary
+dbc validate            # Run validation, exit 1 on errors
+dbc orphans             # List models not linked to concepts
+dbc sync --create-stubs # Generate concept stubs from model tags
+dbc serve               # Start web UI at http://localhost:5050
 ```
 
 ---
@@ -28,7 +28,7 @@ dcm serve               # Start web UI at http://localhost:5050
 When helping users with DCM:
 
 1. **Conceptual model is source of truth** - Changes start in `conceptual.yml`, then flow to model tags
-2. **Validate after every change** - Run `dcm validate` after any modification to conceptual.yml or model tags
+2. **Validate after every change** - Run `dbc validate` after any modification to conceptual.yml or model tags
 3. **Status is derived, not set** - Don't manually set status fields; they reflect actual state (has domain? has models?)
 4. **One tag links everything** - `meta.concept` is the only bridge between dbt models and concepts
 5. **Respect the layer model** - Bronze is ignored, Silver/Gold are where coverage matters
@@ -39,7 +39,7 @@ When helping users with DCM:
 
 **Greenfield (new project)**: Define concepts first → tag models → validate
 
-**Brownfield (existing project)**: `dcm sync --create-stubs` → enrich stubs with domain/owner/definition → validate
+**Brownfield (existing project)**: `dbc sync --create-stubs` → enrich stubs with domain/owner/definition → validate
 
 ---
 
@@ -137,16 +137,16 @@ vars:
 
 | Command | Purpose | Exit Codes |
 |---------|---------|------------|
-| `dcm init` | Create initial conceptual.yml | 0=success |
-| `dcm status` | Show coverage summary | 0=success |
-| `dcm validate` | Run validation checks | 0=pass, 1=errors |
-| `dcm orphans` | List untagged models | 0=success |
-| `dcm sync` | Sync manifest to state | 0=success |
-| `dcm apply` | Apply tags to Unity Catalog | 0=success |
-| `dcm export` | Export to various formats | 0=success |
-| `dcm serve` | Start web UI | 0=success |
-| `dcm diff` | Show changes since last sync | 0=no changes, 1=changes |
-| `dcm coverage` | Generate coverage report | 0=success |
+| `dbc init` | Create initial conceptual.yml | 0=success |
+| `dbc status` | Show coverage summary | 0=success |
+| `dbc validate` | Run validation checks | 0=pass, 1=errors |
+| `dbc orphans` | List untagged models | 0=success |
+| `dbc sync` | Sync manifest to state | 0=success |
+| `dbc apply` | Apply tags to Unity Catalog | 0=success |
+| `dbc export` | Export to various formats | 0=success |
+| `dbc serve` | Start web UI | 0=success |
+| `dbc diff` | Show changes since last sync | 0=no changes, 1=changes |
+| `dbc coverage` | Generate coverage report | 0=success |
 
 ### Common Flags
 - `-v, --verbose`: Increase verbosity (-vv for debug)
@@ -223,7 +223,7 @@ models:
 
 3. Validate:
 ```bash
-dcm validate
+dbc validate
 ```
 
 ### Many-to-Many Relationships (Bridge Concepts)
@@ -264,10 +264,10 @@ This pattern:
 ### Brownfield Adoption (Existing Project)
 ```bash
 # 1. Generate stubs from existing model tags
-dcm sync --create-stubs
+dbc sync --create-stubs
 
 # 2. Check what needs enrichment
-dcm status
+dbc status
 
 # 3. Enrich priority concepts (add domain, owner, definition)
 
@@ -278,7 +278,7 @@ dcm status
 ```yaml
 # .github/workflows/pr.yml
 - name: Validate conceptual model
-  run: dcm validate --format github
+  run: dbc validate --format github
 ```
 
 ---
@@ -316,7 +316,7 @@ concepts:
 
 ## Web UI
 
-Start with `dcm serve`:
+Start with `dbc serve`:
 
 | View | URL | Purpose |
 |------|-----|---------|

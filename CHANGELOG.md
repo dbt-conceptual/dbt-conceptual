@@ -141,7 +141,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - 2026-01-14
 
 ### Added
-- Interactive web UI with `dcm serve` command
+- Interactive web UI with `dbc serve` command
 - Visual graph editor with drag-and-drop D3.js force-directed layout
 - Real-time editing and saving to `conceptual.yml`
 - Integrated coverage report view

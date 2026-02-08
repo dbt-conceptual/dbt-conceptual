@@ -13,7 +13,7 @@ dbt-conceptual can feed enterprise data catalogs. The conceptual model stays in 
 Export tags to Unity Catalog:
 
 ```bash
-dcm apply --propagate-tags
+dbc apply --propagate-tags
 ```
 
 This writes domain and owner to dbt model tags, which flow to Unity Catalog via dbt's integration.
@@ -32,7 +32,7 @@ tags:
 Export as JSON for catalog ingestion:
 
 ```bash
-dcm export --type concepts --format json -o concepts.json
+dbc export --type concepts --format json -o concepts.json
 ```
 
 Build a sync script or use the catalog's API to import.
@@ -107,7 +107,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: |
           cd projects/${{ matrix.project }}
-          dcm validate
+          dbc validate
 ```
 
 ### Multi-Repo Pattern
@@ -121,7 +121,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: dcm validate
+      - run: dbc validate
       
   notify-downstream:
     needs: validate
@@ -155,7 +155,7 @@ Notify governance on concept changes:
 - name: Notify on changes
   if: steps.diff.outputs.has_changes == 'true'
   run: |
-    dcm diff --base main --format markdown > changes.md
+    dbc diff --base main --format markdown > changes.md
     # Post to Slack, email, etc.
 ```
 
@@ -204,7 +204,7 @@ Run validation only on changes:
     
 - name: Validate
   if: steps.changes.outputs.changed == 'true'
-  run: dcm validate
+  run: dbc validate
 ```
 
 ---
