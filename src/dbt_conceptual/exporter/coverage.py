@@ -5,6 +5,8 @@ v1.0: Simplified model - single models[] array.
 
 from typing import TextIO
 
+from dbt_conceptual.exporter._stats import calculate_coverage_stats
+from dbt_conceptual.exporter._templates import COVERAGE_CSS, HTML_CLOSE, html_head
 from dbt_conceptual.state import ConceptState, ProjectState
 
 
@@ -15,37 +17,20 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
         state: Project state with concepts and relationships
         output: Text stream to write HTML to
     """
-    # Calculate statistics
-    total_concepts = len(state.concepts)
-    complete_concepts = sum(
-        1 for c in state.concepts.values() if c.status == "complete"
-    )
-    stub_concepts = sum(1 for c in state.concepts.values() if c.status == "stub")
-    draft_concepts = sum(1 for c in state.concepts.values() if c.status == "draft")
+    # Calculate statistics via shared helper
+    stats = calculate_coverage_stats(state)
 
-    concepts_with_models = sum(1 for c in state.concepts.values() if c.models)
-
-    total_relationships = len(state.relationships)
-    complete_relationships = sum(
-        1
-        for r in state.relationships.values()
-        if r.get_status(state.concepts) == "complete"
-    )
-
-    orphan_count = len(state.orphan_models)
-
-    # Calculate completion percentage
-    completion_pct = (
-        int((complete_concepts / total_concepts) * 100) if total_concepts > 0 else 0
-    )
-    model_coverage_pct = (
-        int((concepts_with_models / total_concepts) * 100) if total_concepts > 0 else 0
-    )
-    relationship_pct = (
-        int((complete_relationships / total_relationships) * 100)
-        if total_relationships > 0
-        else 0
-    )
+    completion_pct = stats["concepts"]["completion_percent"]
+    complete_concepts = stats["concepts"]["complete"]
+    total_concepts = stats["concepts"]["total"]
+    stub_concepts = stats["concepts"]["stub"]
+    draft_concepts = stats["concepts"]["draft"]
+    model_coverage_pct = stats["coverage"]["models"]["percent"]
+    concepts_with_models = stats["coverage"]["models"]["count"]
+    relationship_pct = stats["relationships"]["percent"]
+    complete_relationships = stats["relationships"]["complete"]
+    total_relationships = stats["relationships"]["total"]
+    orphan_count = stats["orphans"]
 
     # Group concepts by domain
     domain_groups: dict[str, list[tuple[str, ConceptState]]] = {}
@@ -63,246 +48,8 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
     ]
 
     # Write HTML
-    output.write("""<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>dbt-conceptual Coverage Report</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: #fafaf9;
-            color: #333333;
-            line-height: 1.6;
-            padding: 2rem;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            padding: 2rem;
-        }
-
-        h1 {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-            color: #1a1a1a;
-        }
-
-        .subtitle {
-            color: #666;
-            margin-bottom: 2rem;
-            font-size: 0.9rem;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 3rem;
-        }
-
-        .stat-card {
-            background: #f5f4f2;
-            padding: 1.5rem;
-            border-radius: 6px;
-            border-left: 4px solid #4caf50;
-        }
-
-        .stat-card.warning {
-            border-left-color: #e67e22;
-        }
-
-        .stat-card.error {
-            border-left-color: #dc2626;
-        }
-
-        .stat-label {
-            font-size: 0.875rem;
-            color: #666;
-            margin-bottom: 0.5rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #1a1a1a;
-        }
-
-        .stat-secondary {
-            font-size: 0.875rem;
-            color: #666;
-            margin-top: 0.5rem;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #e8e6e3;
-            border-radius: 4px;
-            overflow: hidden;
-            margin-top: 0.5rem;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: #4caf50;
-            transition: width 0.3s ease;
-        }
-
-        .progress-fill.warning {
-            background: #e67e22;
-        }
-
-        .progress-fill.error {
-            background: #dc2626;
-        }
-
-        section {
-            margin-bottom: 3rem;
-        }
-
-        h2 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            color: #333333;
-            border-bottom: 2px solid #e8e6e3;
-            padding-bottom: 0.5rem;
-        }
-
-        .domain-section {
-            margin-bottom: 2rem;
-        }
-
-        .domain-header {
-            font-size: 1.125rem;
-            font-weight: 600;
-            margin-bottom: 0.75rem;
-            color: #333;
-        }
-
-        .concept-list {
-            display: grid;
-            gap: 0.75rem;
-        }
-
-        .concept-item {
-            background: #f5f4f2;
-            padding: 1rem;
-            border-radius: 4px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .concept-name {
-            font-weight: 500;
-            color: #1a1a1a;
-        }
-
-        .concept-status {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .concept-status.complete {
-            background: #C8E6C9;
-            color: #2E7D32;
-        }
-
-        .concept-status.draft {
-            background: #FFE0B2;
-            color: #E65100;
-        }
-
-        .concept-status.stub {
-            background: #FFCDD2;
-            color: #C62828;
-        }
-
-        .concept-meta {
-            font-size: 0.875rem;
-            color: #666;
-            margin-top: 0.5rem;
-        }
-
-        .attention-list {
-            display: grid;
-            gap: 1rem;
-        }
-
-        .attention-item {
-            background: #fef5eb;
-            border-left: 4px solid #e67e22;
-            padding: 1rem;
-            border-radius: 4px;
-        }
-
-        .attention-item.error {
-            background: #fef2f2;
-            border-left-color: #dc2626;
-        }
-
-        .attention-title {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: #1a1a1a;
-        }
-
-        .attention-detail {
-            font-size: 0.875rem;
-            color: #666;
-        }
-
-        .orphan-list {
-            background: #f5f4f2;
-            padding: 1rem;
-            border-radius: 4px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .orphan-item {
-            padding: 0.5rem;
-            border-bottom: 1px solid #e8e6e3;
-            font-family: 'Courier New', monospace;
-            font-size: 0.875rem;
-        }
-
-        .orphan-item:last-child {
-            border-bottom: none;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: #999;
-        }
-
-        .empty-state-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-    </style>
-</head>
-<body>
+    output.write(html_head("dbt-conceptual Coverage Report", COVERAGE_CSS))
+    output.write("""
     <div class="container">
         <h1>Coverage Report</h1>
         <p class="subtitle">Generated by dbt-conceptual</p>
@@ -513,8 +260,4 @@ def export_coverage(state: ProjectState, output: TextIO) -> None:
         </section>
 """)
 
-    output.write("""
-    </div>
-</body>
-</html>
-""")
+    output.write(HTML_CLOSE)
