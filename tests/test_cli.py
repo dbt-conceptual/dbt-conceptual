@@ -21,7 +21,7 @@ def test_cli_main() -> None:
 
 
 def test_cli_init() -> None:
-    """Test init command creates files."""
+    """Test init command creates both conceptual.yml and adds vars to dbt_project.yml."""
     runner = CliRunner()
 
     with TemporaryDirectory() as tmpdir:
@@ -36,13 +36,26 @@ def test_cli_init() -> None:
         assert result.exit_code == 0
         assert "Initialization complete" in result.output
 
-        # Check conceptual.yml was created in project root
+        # Check conceptual.yml was created (clean, no config section)
         conceptual_file = tmppath / "conceptual.yml"
         assert conceptual_file.exists()
+        content = conceptual_file.read_text()
+        assert "config:" not in content
+        assert "domains:" in content
+        assert "concepts:" in content
+        assert "relationships:" in content
+
+        # Check dbt_project.yml now has vars.dbt_conceptual
+        with open(tmppath / "dbt_project.yml") as f:
+            dbt_data = yaml.safe_load(f)
+        assert "vars" in dbt_data
+        assert "dbt_conceptual" in dbt_data["vars"]
+        assert "scan" in dbt_data["vars"]["dbt_conceptual"]
+        assert "validation" in dbt_data["vars"]["dbt_conceptual"]
 
 
 def test_cli_init_already_exists() -> None:
-    """Test init command when files already exist."""
+    """Test init command when conceptual.yml already exists."""
     runner = CliRunner()
 
     with TemporaryDirectory() as tmpdir:
@@ -58,6 +71,78 @@ def test_cli_init_already_exists() -> None:
 
         assert result.exit_code == 0
         assert "already exists" in result.output
+
+
+def test_cli_init_force_overwrites() -> None:
+    """Test init --force overwrites existing conceptual.yml."""
+    runner = CliRunner()
+
+    with TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        # Create dbt_project.yml
+        with open(tmppath / "dbt_project.yml", "w") as f:
+            yaml.dump({"name": "test"}, f)
+
+        # Create existing conceptual.yml with custom content
+        conceptual_file = tmppath / "conceptual.yml"
+        conceptual_file.write_text("custom: content\n")
+
+        result = runner.invoke(init, ["--project-dir", str(tmppath), "--force"])
+
+        assert result.exit_code == 0
+        assert "Overwrote" in result.output
+
+        # Content should be the new template
+        content = conceptual_file.read_text()
+        assert "domains:" in content
+        assert "custom: content" not in content
+
+
+def test_cli_init_merges_existing_vars() -> None:
+    """Test init merges with existing vars in dbt_project.yml."""
+    runner = CliRunner()
+
+    with TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        # Create dbt_project.yml with existing vars
+        with open(tmppath / "dbt_project.yml", "w") as f:
+            yaml.dump({"name": "test", "vars": {"other_tool": {"enabled": True}}}, f)
+
+        result = runner.invoke(init, ["--project-dir", str(tmppath)])
+
+        assert result.exit_code == 0
+        assert "Added vars.dbt_conceptual" in result.output
+
+        # Both vars should exist
+        with open(tmppath / "dbt_project.yml") as f:
+            dbt_data = yaml.safe_load(f)
+        assert "other_tool" in dbt_data["vars"]
+        assert "dbt_conceptual" in dbt_data["vars"]
+
+
+def test_cli_init_skips_existing_dbt_conceptual_vars() -> None:
+    """Test init skips if vars.dbt_conceptual already exists."""
+    runner = CliRunner()
+
+    with TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        # Create dbt_project.yml with existing dbt_conceptual vars
+        existing_config = {"scan": {"gold": ["custom/**/*.yml"]}}
+        with open(tmppath / "dbt_project.yml", "w") as f:
+            yaml.dump({"name": "test", "vars": {"dbt_conceptual": existing_config}}, f)
+
+        result = runner.invoke(init, ["--project-dir", str(tmppath)])
+
+        assert result.exit_code == 0
+        assert "already exists in dbt_project.yml" in result.output
+
+        # Should NOT overwrite the existing config
+        with open(tmppath / "dbt_project.yml") as f:
+            dbt_data = yaml.safe_load(f)
+        assert dbt_data["vars"]["dbt_conceptual"]["scan"]["gold"] == ["custom/**/*.yml"]
 
 
 def test_cli_status_no_conceptual_file() -> None:

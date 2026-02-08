@@ -510,41 +510,40 @@ def _output_human_format(
     default=None,
     help="Path to dbt project directory (default: current directory)",
 )
-def init(project_dir: Optional[Path]) -> None:
-    """Initialize dbt-conceptual in a dbt project."""
+@click.option(
+    "--force",
+    is_flag=True,
+    default=False,
+    help="Overwrite existing conceptual.yml",
+)
+def init(project_dir: Optional[Path], force: bool) -> None:
+    """Initialize dbt-conceptual in a dbt project.
+
+    Creates conceptual.yml (model template) and adds configuration
+    to dbt_project.yml under vars.dbt_conceptual.
+    """
+    import yaml
+
     if project_dir is None:
         project_dir = Path.cwd()
 
     # Check if dbt_project.yml exists
-    dbt_project = project_dir / "dbt_project.yml"
-    if not dbt_project.exists():
+    dbt_project_path = project_dir / "dbt_project.yml"
+    if not dbt_project_path.exists():
         console.print(f"[red]Error: dbt_project.yml not found in {project_dir}[/red]")
         console.print("Make sure you're in a dbt project directory.")
         raise click.Abort()
 
-    # Create conceptual.yml in project root
+    # 1. Create/update conceptual.yml (clean template, no config section)
     conceptual_file = project_dir / "conceptual.yml"
-    if conceptual_file.exists():
+    if conceptual_file.exists() and not force:
         console.print(
             f"[yellow]conceptual.yml already exists at {conceptual_file}[/yellow]"
         )
+        console.print("[dim]Use --force to overwrite[/dim]")
     else:
-        template = """# dbt-conceptual configuration
-# All configuration lives in this file.
-
-config:
-  scan:
-    gold:
-      - models/marts/**/*.yml
-
-  validation:
-    defaults:
-      orphan_models: warn
-      unimplemented_concepts: warn
-      missing_definitions: ignore
-    # gold:
-    #   orphan_models: error
-    #   missing_definitions: warn
+        template = """# dbt-conceptual: Conceptual Model Definition
+# Configuration lives in dbt_project.yml under vars.dbt_conceptual.
 
 domains:
   # Define your domains here
@@ -574,7 +573,40 @@ relationships:
         with open(conceptual_file, "w") as f:
             f.write(template)
 
-        console.print(f"[green]✓[/green] Created {conceptual_file}")
+        if force:
+            console.print(f"[green]✓[/green] Overwrote {conceptual_file}")
+        else:
+            console.print(f"[green]✓[/green] Created {conceptual_file}")
+
+    # 2. Add vars.dbt_conceptual to dbt_project.yml (merge, don't overwrite)
+    with open(dbt_project_path) as f:
+        dbt_data = yaml.safe_load(f) or {}
+
+    dbt_conceptual_block = {
+        "scan": {
+            "gold": ["models/marts/**/*.yml"],
+        },
+        "validation": {
+            "orphan_models": "warn",
+            "unimplemented_concepts": "warn",
+            "missing_definitions": "ignore",
+        },
+    }
+
+    vars_section = dbt_data.get("vars")
+    if isinstance(vars_section, dict) and "dbt_conceptual" in vars_section:
+        console.print(
+            "[yellow]vars.dbt_conceptual already exists in dbt_project.yml, skipping[/yellow]"
+        )
+    else:
+        if not isinstance(vars_section, dict):
+            dbt_data["vars"] = {}
+        dbt_data["vars"]["dbt_conceptual"] = dbt_conceptual_block
+
+        with open(dbt_project_path, "w") as f:
+            yaml.dump(dbt_data, f, default_flow_style=False, sort_keys=False)
+
+        console.print("[green]✓[/green] Added vars.dbt_conceptual to dbt_project.yml")
 
     console.print("\n[green bold]Initialization complete![/green bold]")
     console.print("\nNext steps:")

@@ -22,9 +22,13 @@ model-paths: ["models"]
 
 vars:
   dbt_conceptual:
-    conceptual_path: "."
-    silver_paths: ["models/silver"]
-    gold_paths: ["models/gold"]
+    scan:
+      gold:
+        - "models/gold/**/*.yml"
+    validation:
+      orphan_models: warn
+      unimplemented_concepts: warn
+      missing_definitions: ignore
 """.strip()
 
 CONCEPTUAL_YML = """
