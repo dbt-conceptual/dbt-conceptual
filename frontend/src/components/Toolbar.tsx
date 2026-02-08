@@ -4,11 +4,7 @@ import { SearchBar } from './SearchBar';
 import { LogoMark } from './LogoMark';
 import { useStore } from '../store';
 
-interface ToolbarProps {
-  onNavigateToNode?: (id: string, type: 'concept' | 'relationship') => void;
-}
-
-export function Toolbar({ onNavigateToNode }: ToolbarProps) {
+export function Toolbar() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { isLoading, isSyncing } = useStore();
 
@@ -29,7 +25,7 @@ export function Toolbar({ onNavigateToNode }: ToolbarProps) {
           </div>
         </div>
         <div className="toolbar-center">
-          <SearchBar onNavigate={onNavigateToNode} />
+          <SearchBar />
         </div>
         <div className="toolbar-actions">
           <button

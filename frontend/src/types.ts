@@ -1,12 +1,10 @@
 // TypeScript types for dbt-conceptual
 // Based on Flask API contract and spec-application.md Section 3
 
-export type ConceptStatus = 'stub' | 'draft' | 'complete' | 'deprecated';
 export type RelationshipStatus = 'stub' | 'draft' | 'complete';
 export type Cardinality = '1:1' | '1:N' | 'N:M';
 
 // Validation types
-export type ValidationStatus = 'valid' | 'warning' | 'error';
 export type MessageSeverity = 'error' | 'warning' | 'info';
 
 export interface Message {
@@ -15,15 +13,6 @@ export interface Message {
   text: string;
   elementType?: 'concept' | 'relationship' | 'domain';
   elementId?: string;
-}
-
-export interface ValidationState {
-  messages: Message[];
-  counts: {
-    error: number;
-    warning: number;
-    info: number;
-  };
 }
 
 export interface Domain {
@@ -38,7 +27,7 @@ export interface Concept {
   domain?: string;
   owner?: string;
   definition?: string;
-  status: ConceptStatus; // Derived at runtime
+  status: 'stub' | 'draft' | 'complete' | 'deprecated'; // Derived at runtime
   color?: string;
   replaced_by?: string;
   bronze_models: string[];
@@ -47,7 +36,7 @@ export interface Concept {
   inferred_models: string[]; // Models discovered via lineage (not explicitly tagged)
   // Validation fields
   isGhost: boolean;
-  validationStatus: ValidationStatus;
+  validationStatus: 'valid' | 'warning' | 'error';
   validationMessages: string[];
 }
 
@@ -64,7 +53,7 @@ export interface Relationship {
   status: RelationshipStatus; // Derived at runtime
   realized_by: string[];
   // Validation fields
-  validationStatus: ValidationStatus;
+  validationStatus: 'valid' | 'warning' | 'error';
   validationMessages: string[];
 }
 
@@ -90,38 +79,3 @@ export interface Settings {
   };
   conceptual_path: string;
 }
-
-export interface SyncResponse {
-  success: boolean;
-  messages: Message[];
-  counts: {
-    error: number;
-    warning: number;
-    info: number;
-  };
-  ghostConcepts: string[];
-  state: ProjectState;
-}
-
-// React Flow types
-export interface ConceptNode {
-  id: string;
-  type: 'concept';
-  position: Position;
-  data: {
-    concept: Concept;
-  };
-}
-
-export interface RelationshipEdge {
-  id: string;
-  type: 'relationship';
-  source: string;
-  target: string;
-  data: {
-    relationship: Relationship;
-  };
-}
-
-// Tool types
-export type Tool = 'select' | 'concept' | 'relationship';
