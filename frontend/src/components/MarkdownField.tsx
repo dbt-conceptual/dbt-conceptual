@@ -131,7 +131,7 @@ export function MarkdownField({
             }}
             role="button"
             tabIndex={0}
-            aria-label={isEmpty ? `Edit ${label || 'field'}` : `Edit ${label || 'field'}: click to modify`}
+            aria-label={isEmpty ? `Edit ${label || 'field'}` : `Edit ${label || 'field'}: activate to modify`}
           >
             {isEmpty ? (
               <span className="markdown-field-placeholder">{placeholder}</span>

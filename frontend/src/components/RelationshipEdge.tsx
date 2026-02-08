@@ -90,11 +90,10 @@ export const RelationshipEdge = memo(({
         strokeDasharray={strokeDasharray}
         fill="none"
         markerEnd={markerEnd}
-        aria-label={edgeAriaLabel}
       />
 
       {/* Label */}
-      <g transform={`translate(${labelX}, ${labelY})`} role="group" aria-label={edgeAriaLabel}>
+      <g transform={`translate(${labelX}, ${labelY})`} role="group">
         <foreignObject
           width={200}
           height={60}
