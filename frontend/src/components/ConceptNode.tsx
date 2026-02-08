@@ -19,7 +19,7 @@ export const ConceptNode = memo(({ data }: ConceptNodeProps) => {
   // Get domain color if concept has a domain
   const domain: Domain | undefined = concept.domain ? domains[concept.domain] : undefined;
   // Use concept's own color if set, otherwise inherit from domain, otherwise default
-  const domainColor = concept.color || domain?.color || 'var(--color-neutral-300)';
+  const domainColor = concept.color || domain?.color || 'var(--text-secondary)';
 
   // Validation status
   const isGhost = concept.isGhost;
@@ -66,12 +66,12 @@ export const ConceptNode = memo(({ data }: ConceptNodeProps) => {
       <Handle
         type="target"
         position={Position.Left}
-        style={{ background: 'var(--color-neutral-400)' }}
+        style={{ background: 'var(--text-secondary)' }}
       />
       <Handle
         type="source"
         position={Position.Right}
-        style={{ background: 'var(--color-neutral-400)' }}
+        style={{ background: 'var(--text-secondary)' }}
       />
 
       {/* Header with name only - status shown via border style */}
