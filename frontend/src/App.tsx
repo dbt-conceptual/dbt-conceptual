@@ -7,9 +7,9 @@ import './tokens.css';
 
 function App() {
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
+    <div className="app-root">
       <Toolbar />
-      <div style={{ display: 'flex', height: '100%', paddingTop: '48px' }}>
+      <div className="app-main">
         <MessagesPanel />
         <ErrorBoundary>
           <Canvas />

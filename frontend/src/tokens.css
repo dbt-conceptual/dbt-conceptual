@@ -23,7 +23,9 @@
 
   /* === Validation Colors === */
   --status-error: #dc2626;
+  --status-error-dark: #c0392b;
   --status-error-light: #fef2f2;
+  --status-error-border: #fccfcf;
   --status-warning: #d97706;
   --status-warning-light: #fffbeb;
   --status-info: #2563eb;
@@ -135,6 +137,34 @@ code, pre {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+}
+
+.app-root {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+
+.app-main {
+  display: flex;
+  height: 100%;
+  padding-top: 48px;
+}
+
+.canvas-container {
+  flex: 1;
+  height: 100vh;
+}
+
+.canvas-container--blocked {
+  flex: 1;
+  height: 100vh;
+  position: relative;
+}
+
+.message-item--empty {
+  justify-content: center;
+  color: var(--text-muted);
 }
 
 /* === ConceptNode Component === */
@@ -634,7 +664,7 @@ code, pre {
 }
 
 .property-save-btn:disabled {
-  background: var(--color-neutral-300, #ccc);
+  background: var(--text-muted);
   color: var(--text-muted);
   cursor: not-allowed;
   opacity: 0.6;
@@ -892,7 +922,7 @@ code, pre {
   font-size: 0.9em;
   background: var(--bg-surface);
   padding: 0.1em 0.3em;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
 }
 
@@ -973,7 +1003,7 @@ code, pre {
   font-size: 0.9em;
   background: var(--bg-surface);
   padding: 0.1em 0.4em;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
 }
 
@@ -1237,9 +1267,9 @@ code, pre {
 
 .settings-error {
   padding: var(--space-4);
-  background: #fee;
-  color: #c00;
-  border: 1px solid #fcc;
+  background: var(--status-error-light);
+  color: var(--status-error);
+  border: 1px solid var(--status-error-border);
   border-radius: var(--radius-sm);
   margin-bottom: var(--space-6);
   font-size: var(--font-size-sm);
@@ -1335,8 +1365,8 @@ code, pre {
 }
 
 .settings-remove-btn:hover {
-  background: #fee;
-  color: #c00;
+  background: var(--status-error-light);
+  color: var(--status-error);
 }
 
 .settings-path-group {
@@ -1910,7 +1940,7 @@ code, pre {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, var(--bg-page) 0%, #e8e8ec 100%);
+  background: linear-gradient(135deg, var(--bg-page) 0%, var(--border) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1994,7 +2024,7 @@ code, pre {
 .confirm-dialog-btn.tertiary {
   background: transparent;
   border: 1px solid transparent;
-  color: var(--text-tertiary);
+  color: var(--text-muted);
 }
 
 .confirm-dialog-btn.tertiary:hover {
@@ -2014,14 +2044,14 @@ code, pre {
 }
 
 .confirm-dialog-btn.danger {
-  background: var(--color-error);
-  border: 1px solid var(--color-error);
+  background: var(--status-error);
+  border: 1px solid var(--status-error);
   color: white;
 }
 
 .confirm-dialog-btn.danger:hover {
-  background: #c0392b;
-  border-color: #c0392b;
+  background: var(--status-error-dark);
+  border-color: var(--status-error-dark);
 }
 
 /* Error Boundary */
@@ -2031,7 +2061,7 @@ code, pre {
   justify-content: center;
   height: 100%;
   width: 100%;
-  background: var(--bg-secondary);
+  background: var(--bg-surface-alt);
 }
 
 .error-boundary-content {
@@ -2041,7 +2071,7 @@ code, pre {
 }
 
 .error-boundary-content h2 {
-  color: var(--color-error);
+  color: var(--status-error);
   margin-bottom: var(--space-3);
 }
 
@@ -2056,11 +2086,11 @@ code, pre {
 }
 
 .error-boundary-content pre {
-  background: var(--bg-primary);
+  background: var(--bg-surface);
   padding: var(--space-3);
   border-radius: var(--radius-md);
   overflow-x: auto;
-  font-size: var(--text-sm);
+  font-size: var(--font-size-sm);
 }
 
 .error-boundary-content button {

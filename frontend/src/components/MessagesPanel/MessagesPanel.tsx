@@ -184,7 +184,7 @@ export function MessagesPanel() {
 
       <div className="messages-list">
         {filteredMessages.length === 0 ? (
-          <div className="message-item" style={{ justifyContent: 'center', color: 'var(--text-muted)' }}>
+          <div className="message-item message-item--empty">
             {messages.length === 0 ? 'Click sync to validate' : 'No messages match filters'}
           </div>
         ) : (
