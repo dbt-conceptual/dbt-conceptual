@@ -4,12 +4,13 @@ Configuration is loaded from dbt_project.yml vars.dbt_conceptual block,
 with legacy fallback to conceptual.yml config section.
 """
 
+from __future__ import annotations
+
 import fnmatch
 import warnings
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 import yaml
 
@@ -129,9 +130,9 @@ def _validate_validation_rules(data: dict, context: str) -> None:
 class LayerValidationConfig:
     """Layer-specific validation overrides."""
 
-    orphan_models: Optional[RuleSeverity] = None
-    unimplemented_concepts: Optional[RuleSeverity] = None
-    missing_definitions: Optional[RuleSeverity] = None
+    orphan_models: RuleSeverity | None = None
+    unimplemented_concepts: RuleSeverity | None = None
+    missing_definitions: RuleSeverity | None = None
 
 
 @dataclass
@@ -146,7 +147,7 @@ class ValidationConfig:
     # Layer-specific overrides
     gold: LayerValidationConfig = field(default_factory=LayerValidationConfig)
 
-    def get_severity(self, rule: str, layer: Optional[str] = None) -> RuleSeverity:
+    def get_severity(self, rule: str, layer: str | None = None) -> RuleSeverity:
         """Get effective severity for a rule, considering layer overrides.
 
         Args:
@@ -161,7 +162,7 @@ class ValidationConfig:
 
         # Check for layer override
         if layer == "gold" and self.gold:
-            layer_override: Optional[RuleSeverity] = getattr(self.gold, rule, None)
+            layer_override: RuleSeverity | None = getattr(self.gold, rule, None)
             if layer_override is not None:
                 return layer_override
 
@@ -198,9 +199,9 @@ class Config:
     @classmethod
     def load(
         cls,
-        project_dir: Optional[Path] = None,
-        gold_paths: Optional[list] = None,
-    ) -> "Config":
+        project_dir: Path | None = None,
+        gold_paths: list | None = None,
+    ) -> Config:
         """Load configuration with precedence: CLI > dbt_project.yml > legacy > defaults.
 
         Priority:
@@ -342,7 +343,12 @@ class Config:
             if rule_name in data:
                 severity_str = str(data[rule_name]).lower()
                 if severity_str in severity_map:
-                    setattr(config, rule_name, severity_map[severity_str])
+                    if rule_name == "orphan_models":
+                        config.orphan_models = severity_map[severity_str]
+                    elif rule_name == "unimplemented_concepts":
+                        config.unimplemented_concepts = severity_map[severity_str]
+                    elif rule_name == "missing_definitions":
+                        config.missing_definitions = severity_map[severity_str]
 
         return config
 
@@ -367,7 +373,12 @@ class Config:
             if rule_name in data:
                 severity_str = str(data[rule_name]).lower()
                 if severity_str in severity_map:
-                    setattr(config, rule_name, severity_map[severity_str])
+                    if rule_name == "orphan_models":
+                        config.orphan_models = severity_map[severity_str]
+                    elif rule_name == "unimplemented_concepts":
+                        config.unimplemented_concepts = severity_map[severity_str]
+                    elif rule_name == "missing_definitions":
+                        config.missing_definitions = severity_map[severity_str]
 
         return config
 
@@ -446,7 +457,12 @@ class Config:
             if rule_name in defaults:
                 severity_str = str(defaults[rule_name]).lower()
                 if severity_str in severity_map:
-                    setattr(config, rule_name, severity_map[severity_str])
+                    if rule_name == "orphan_models":
+                        config.orphan_models = severity_map[severity_str]
+                    elif rule_name == "unimplemented_concepts":
+                        config.unimplemented_concepts = severity_map[severity_str]
+                    elif rule_name == "missing_definitions":
+                        config.missing_definitions = severity_map[severity_str]
 
         # Parse gold layer overrides
         gold_data = data.get("gold", {})
@@ -460,12 +476,19 @@ class Config:
                 if rule_name in gold_data:
                     severity_str = str(gold_data[rule_name]).lower()
                     if severity_str in severity_map:
-                        setattr(gold_config, rule_name, severity_map[severity_str])
+                        if rule_name == "orphan_models":
+                            gold_config.orphan_models = severity_map[severity_str]
+                        elif rule_name == "unimplemented_concepts":
+                            gold_config.unimplemented_concepts = severity_map[
+                                severity_str
+                            ]
+                        elif rule_name == "missing_definitions":
+                            gold_config.missing_definitions = severity_map[severity_str]
             config.gold = gold_config
 
         return config
 
-    def get_layer(self, model_path: str) -> Optional[str]:
+    def get_layer(self, model_path: str) -> str | None:
         """Detect layer from path.
 
         For v1.0, only gold layer is supported.
