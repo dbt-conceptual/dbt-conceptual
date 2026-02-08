@@ -33,8 +33,8 @@ class TestCreateDemoProject:
             assert data["name"] == "dbt_conceptual_demo"
             assert "vars" in data
             assert "dbt_conceptual" in data["vars"]
-            assert "silver_paths" in data["vars"]["dbt_conceptual"]
-            assert "gold_paths" in data["vars"]["dbt_conceptual"]
+            assert "scan" in data["vars"]["dbt_conceptual"]
+            assert "gold" in data["vars"]["dbt_conceptual"]["scan"]
         finally:
             shutil.rmtree(demo_dir, ignore_errors=True)
 
