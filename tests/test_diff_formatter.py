@@ -199,14 +199,12 @@ class TestFormatHuman:
 class TestFormatGithub:
     """Tests for format_github function."""
 
-    def test_no_changes(self, capsys) -> None:  # type: ignore
-        """Test format_github with no changes."""
+    def test_no_changes(self) -> None:
+        """Test format_github with no changes returns notice string."""
         diff = ConceptualDiff()
         result = format_github(diff)
 
-        assert result == ""
-        captured = capsys.readouterr()
-        assert "::notice title=Conceptual Model::No changes detected" in captured.out
+        assert result == "::notice title=Conceptual Model::No changes detected"
 
     def test_domain_added(self) -> None:
         """Test format_github with added domain."""

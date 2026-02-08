@@ -3,16 +3,31 @@
 v1.0: Only scans gold layer paths for models.
 """
 
-import fnmatch
 import logging
 from collections.abc import Iterator
 from pathlib import Path
+from typing import Any, TypedDict
 
 import yaml
 
 from dbt_conceptual.config import Config
 
 logger = logging.getLogger(__name__)
+
+
+class ScannedModel(TypedDict):
+    """Typed structure for a model extracted from a dbt schema file.
+
+    All keys are always present in the output of extract_models_from_schema.
+    """
+
+    name: str
+    description: Any  # str or None
+    meta: dict
+    path: str
+    file: str
+    tags: list
+    databricks_tags: dict
 
 
 class DbtProjectScanner:
@@ -58,13 +73,12 @@ class DbtProjectScanner:
         Returns:
             Parsed YAML content as a dictionary
         """
-        with open(schema_file) as f:
-            content = yaml.safe_load(f)
-            return content or {}
+        content = yaml.safe_load(schema_file.read_text())
+        return content or {}
 
     def extract_models_from_schema(
         self, schema_data: dict, file_path: Path
-    ) -> list[dict]:
+    ) -> list[ScannedModel]:
         """Extract model definitions from a parsed schema file.
 
         Args:
@@ -72,9 +86,9 @@ class DbtProjectScanner:
             file_path: Path to the schema file (for computing relative paths)
 
         Returns:
-            List of model dictionaries with name, meta, and path information
+            List of ScannedModel dicts with name, meta, and path information
         """
-        models: list[dict] = []
+        models: list[ScannedModel] = []
         if "models" not in schema_data:
             return models
 
@@ -107,26 +121,26 @@ class DbtProjectScanner:
                 databricks_tags = {}
 
             models.append(
-                {
-                    "name": model_name,
-                    "description": description,
-                    "meta": meta,
-                    "path": str(rel_path),
-                    "file": str(file_path),
-                    "tags": tags,
-                    "databricks_tags": databricks_tags,
-                }
+                ScannedModel(
+                    name=model_name,
+                    description=description,
+                    meta=meta,
+                    path=str(rel_path),
+                    file=str(file_path),
+                    tags=tags,
+                    databricks_tags=databricks_tags,
+                )
             )
 
         return models
 
-    def scan(self) -> list[dict]:
+    def scan(self) -> list[ScannedModel]:
         """Scan the dbt project for models in gold layer paths.
 
         Returns:
-            List of all models found with their metadata
+            List of all ScannedModel dicts found with their metadata
         """
-        all_models = []
+        all_models: list[ScannedModel] = []
         seen_files: set[Path] = set()
 
         for schema_file in self.find_schema_files():
@@ -142,25 +156,9 @@ class DbtProjectScanner:
                 all_models.extend(models)
             except yaml.YAMLError as e:
                 logger.warning("Failed to parse %s: %s", schema_file, e)
-            except Exception as e:
-                logger.warning("Error processing %s: %s", schema_file, e)
+            except OSError as e:
+                logger.warning("Failed to read %s: %s", schema_file, e)
+            except (KeyError, TypeError, ValueError) as e:
+                logger.warning("Malformed schema in %s: %s", schema_file, e)
 
         return all_models
-
-    def _matches_gold_paths(self, path: str) -> bool:
-        """Check if a path matches any gold layer pattern.
-
-        Args:
-            path: Path to check
-
-        Returns:
-            True if path matches a gold pattern
-        """
-        for pattern in self.config.gold_paths:
-            if fnmatch.fnmatch(path, pattern):
-                return True
-            # Also check prefix match for non-glob portions
-            base_pattern = pattern.split("*")[0].rstrip("/")
-            if base_pattern and path.startswith(base_pattern):
-                return True
-        return False
