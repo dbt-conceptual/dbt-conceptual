@@ -21,7 +21,7 @@ import sys
 from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional, TextIO
+from typing import Callable, Optional, TextIO
 
 import click
 import yaml
@@ -41,27 +41,9 @@ from dbt_conceptual.git import (
 )
 from dbt_conceptual.parser import StateBuilder
 from dbt_conceptual.state import ConceptState, ProjectState
-from dbt_conceptual.validator import Severity, Validator
+from dbt_conceptual.validator import Severity, ValidationIssue, Validator
 
 console = Console()
-
-# Global quiet flag - set by main() based on --quiet option
-_quiet_mode = False
-
-
-def _print(message: str, style: Optional[str] = None) -> None:
-    """Print message unless quiet mode is enabled.
-
-    Args:
-        message: Message to print
-        style: Optional rich style (e.g., "green", "red")
-    """
-    if _quiet_mode:
-        return
-    if style:
-        console.print(f"[{style}]{message}[/{style}]")
-    else:
-        console.print(message)
 
 
 def _configure_logging(verbose: int, quiet: bool) -> None:
@@ -99,8 +81,6 @@ def _configure_logging(verbose: int, quiet: bool) -> None:
 @click.pass_context
 def main(ctx: click.Context, verbose: int, quiet: bool) -> None:
     """dbt-conceptual: Bridge the gap between conceptual models and your lakehouse."""
-    global _quiet_mode
-    _quiet_mode = quiet
     ctx.ensure_object(dict)
     ctx.obj["verbose"] = verbose
     ctx.obj["quiet"] = quiet
@@ -160,12 +140,12 @@ def status(
     else:
         for _rel_id, rel in state.relationships.items():
             status = rel.get_status(state.concepts)
-            status_icon = "✓" if status == "complete" else "○"
+            status_icon = "\u2713" if status == "complete" else "\u25cb"
             status_color = "green" if status == "complete" else "yellow"
 
             console.print(
                 f"  [{status_color}]{status_icon}[/{status_color}] "
-                f"{rel.name} ({rel.from_concept} → {rel.to_concept})"
+                f"{rel.name} ({rel.from_concept} \u2192 {rel.to_concept})"
             )
 
     # Display orphan models
@@ -202,7 +182,7 @@ def status(
                 missing.append("definition")
 
             console.print(
-                f"  • {concept_id} [{concept.status}] - missing: {', '.join(missing)}"
+                f"  \u2022 {concept_id} [{concept.status}] - missing: {', '.join(missing)}"
             )
         console.print("\n[dim]Edit conceptual.yml to add missing attributes[/dim]")
 
@@ -214,13 +194,13 @@ def _print_concept_status(concept_id: str, concept: ConceptState) -> None:
 
     # Status icon
     if concept.status == "complete":
-        status_icon = "✓"
+        status_icon = "\u2713"
         status_color = "green"
     elif concept.status == "stub":
-        status_icon = "⚠"
+        status_icon = "\u26a0"
         status_color = "yellow"
     else:
-        status_icon = "◐"
+        status_icon = "\u25d0"
         status_color = "blue"
 
     # Model count badge
@@ -268,7 +248,7 @@ def orphans(
 
     # Display orphan models
     if not state.orphan_models:
-        console.print("[green]✓ No orphan models found![/green]")
+        console.print("[green]\u2713 No orphan models found![/green]")
         console.print("\nAll models have conceptual tags (meta.concept).")
         return
 
@@ -277,7 +257,7 @@ def orphans(
     console.print("[yellow]These models have no meta.concept tag:[/yellow]\n")
 
     for model in sorted(state.orphan_models, key=lambda m: m.name):
-        console.print(f"  • {model.name}")
+        console.print(f"  \u2022 {model.name}")
 
     console.print(
         "\n[dim]Next steps:[/dim]"
@@ -347,7 +327,7 @@ def validate(
 def _output_github_format(
     config: Config,
     validator: Validator,
-    issues: list,
+    issues: list[ValidationIssue],
 ) -> None:
     """Output validation results in GitHub Actions annotation format."""
     conceptual_file = str(config.conceptual_file)
@@ -374,25 +354,25 @@ def _output_github_format(
 def _output_markdown_format(
     config: Config,
     validator: Validator,
-    issues: list,
+    issues: list[ValidationIssue],
 ) -> None:
     """Output validation results in GitHub-flavored markdown format."""
     summary = validator.get_summary()
 
     if validator.has_errors():
-        print("## ❌ Validation Failed\n")
+        print("## \u274c Validation Failed\n")
     else:
-        print("## ✅ Validation Passed\n")
+        print("## \u2705 Validation Passed\n")
 
     # Summary table
     print("| | Count |")
     print("|---|-----|")
     if summary["errors"]:
-        print(f"| 🔴 Errors | {summary['errors']} |")
+        print(f"| \U0001f534 Errors | {summary['errors']} |")
     if summary["warnings"]:
-        print(f"| 🟡 Warnings | {summary['warnings']} |")
+        print(f"| \U0001f7e1 Warnings | {summary['warnings']} |")
     if summary["info"]:
-        print(f"| ℹ️  Info | {summary['info']} |")
+        print(f"| \u2139\ufe0f  Info | {summary['info']} |")
     print()
 
     # Group issues by severity
@@ -404,7 +384,7 @@ def _output_markdown_format(
     if errors:
         print("### Errors\n")
         for issue in errors:
-            print(f"> **{issue.code}** — {issue.message}")
+            print(f"> **{issue.code}** \u2014 {issue.message}")
             print(">")
         print()
 
@@ -412,7 +392,7 @@ def _output_markdown_format(
     if warnings:
         print("### Warnings\n")
         for issue in warnings:
-            print(f"> **{issue.code}** — {issue.message}")
+            print(f"> **{issue.code}** \u2014 {issue.message}")
             print(">")
         print()
 
@@ -420,7 +400,7 @@ def _output_markdown_format(
     if infos:
         print("### Info\n")
         for issue in infos:
-            print(f"> **{issue.code}** — {issue.message}")
+            print(f"> **{issue.code}** \u2014 {issue.message}")
             print(">")
         print()
 
@@ -429,7 +409,7 @@ def _output_human_format(
     config: Config,
     state: ProjectState,
     validator: Validator,
-    issues: list,
+    issues: list[ValidationIssue],
 ) -> None:
     """Output validation results in human-readable format."""
     # Display concept coverage
@@ -446,13 +426,13 @@ def _output_human_format(
 
         # Status indicator
         if concept.status == "complete":
-            status = "● complete"
+            status = "\u25cf complete"
             color = "green"
         elif concept.status == "stub":
-            status = "◐ stub"
+            status = "\u25d0 stub"
             color = "yellow"
         else:
-            status = f"◐ {concept.status}"
+            status = f"\u25d0 {concept.status}"
             color = "blue"
 
         console.print(f"  status: [{color}]{status}[/{color}]")
@@ -465,9 +445,9 @@ def _output_human_format(
         console.print(f"\n{rel_id}")
         rel_status = rel.get_status(state.concepts)
         if rel_status == "complete":
-            console.print(f"  [green]✓[/green] {rel.cardinality}")
+            console.print(f"  [green]\u2713[/green] {rel.cardinality}")
         else:
-            console.print("  [yellow]○ stub[/yellow]")
+            console.print("  [yellow]\u25cb stub[/yellow]")
 
     # Display validation issues
     if issues:
@@ -480,17 +460,17 @@ def _output_human_format(
         infos = [i for i in issues if i.severity == Severity.INFO]
 
         if errors:
-            console.print("\n[red bold]✗ ERRORS[/red bold]")
+            console.print("\n[red bold]\u2717 ERRORS[/red bold]")
             for issue in errors:
                 console.print(f"  [{issue.code}] {issue.message}")
 
         if warnings:
-            console.print("\n[yellow bold]⚠ WARNINGS[/yellow bold]")
+            console.print("\n[yellow bold]\u26a0 WARNINGS[/yellow bold]")
             for issue in warnings:
                 console.print(f"  [{issue.code}] {issue.message}")
 
         if infos:
-            console.print("\n[blue bold]ℹ INFO[/blue bold]")
+            console.print("\n[blue bold]\u2139 INFO[/blue bold]")
             for issue in infos:
                 console.print(f"  [{issue.code}] {issue.message}")
 
@@ -572,9 +552,9 @@ relationships:
         conceptual_file.write_text(template)
 
         if force:
-            console.print(f"[green]✓[/green] Overwrote {conceptual_file}")
+            console.print(f"[green]\u2713[/green] Overwrote {conceptual_file}")
         else:
-            console.print(f"[green]✓[/green] Created {conceptual_file}")
+            console.print(f"[green]\u2713[/green] Created {conceptual_file}")
 
     # 2. Add vars.dbt_conceptual to dbt_project.yml (merge, don't overwrite)
     dbt_data = yaml.safe_load(dbt_project_path.read_text()) or {}
@@ -604,7 +584,9 @@ relationships:
             yaml.dump(dbt_data, default_flow_style=False, sort_keys=False)
         )
 
-        console.print("[green]✓[/green] Added vars.dbt_conceptual to dbt_project.yml")
+        console.print(
+            "[green]\u2713[/green] Added vars.dbt_conceptual to dbt_project.yml"
+        )
 
     console.print("\n[green bold]Initialization complete![/green bold]")
     console.print("\nNext steps:")
@@ -729,7 +711,9 @@ def sync(project_dir: Optional[Path], create_stubs: bool, model: Optional[str]) 
         yaml.dump(conceptual_data, default_flow_style=False, sort_keys=False)
     )
 
-    console.print(f"\n[green]✓ Created {len(stubs_created)} stub concept(s):[/green]")
+    console.print(
+        f"\n[green]\u2713 Created {len(stubs_created)} stub concept(s):[/green]"
+    )
     for model_name, concept_id in stubs_created:
         console.print(f"  - {concept_id} (from {model_name})")
 
@@ -766,6 +750,216 @@ def _validate_export_combination(export_type: str, export_format: str) -> None:
         for t, formats in EXPORT_MATRIX.items():
             console.print(f"  {t}: {', '.join(sorted(formats))}")
         raise click.Abort()
+
+
+def _export_diagram(
+    export_format: str,
+    state: ProjectState,
+    out: TextIO,
+    **kwargs: object,
+) -> None:
+    """Handle diagram export.
+
+    Args:
+        export_format: Output format (svg)
+        state: Project state containing concepts and relationships
+        out: Output stream to write to
+        **kwargs: Unused keyword arguments from dispatch
+    """
+    from dbt_conceptual.exporter import export_diagram_svg
+
+    if export_format == "svg":
+        export_diagram_svg(state, out)
+
+
+def _export_coverage(
+    export_format: str,
+    state: ProjectState,
+    out: TextIO,
+    **kwargs: object,
+) -> None:
+    """Handle coverage export.
+
+    Args:
+        export_format: Output format (html, markdown, or json)
+        state: Project state containing concepts and relationships
+        out: Output stream to write to
+        **kwargs: Unused keyword arguments from dispatch
+    """
+    from dbt_conceptual.exporter import (
+        export_coverage,
+        export_coverage_json,
+        export_coverage_markdown,
+    )
+
+    if export_format == "html":
+        export_coverage(state, out)
+    elif export_format == "markdown":
+        export_coverage_markdown(state, out)
+    elif export_format == "json":
+        export_coverage_json(state, out)
+
+
+def _export_bus_matrix(
+    export_format: str,
+    state: ProjectState,
+    out: TextIO,
+    **kwargs: object,
+) -> None:
+    """Handle bus-matrix export.
+
+    Args:
+        export_format: Output format (html, markdown, or json)
+        state: Project state containing concepts and relationships
+        out: Output stream to write to
+        **kwargs: Unused keyword arguments from dispatch
+    """
+    from dbt_conceptual.exporter import (
+        export_bus_matrix,
+        export_bus_matrix_json,
+        export_bus_matrix_markdown,
+    )
+
+    if export_format == "html":
+        export_bus_matrix(state, out)
+    elif export_format == "markdown":
+        export_bus_matrix_markdown(state, out)
+    elif export_format == "json":
+        export_bus_matrix_json(state, out)
+
+
+def _export_status(
+    export_format: str,
+    state: ProjectState,
+    out: TextIO,
+    **kwargs: object,
+) -> None:
+    """Handle status export.
+
+    Args:
+        export_format: Output format (markdown or json)
+        state: Project state containing concepts and relationships
+        out: Output stream to write to
+        **kwargs: Unused keyword arguments from dispatch
+    """
+    from dbt_conceptual.exporter import export_status_json, export_status_markdown
+
+    if export_format == "markdown":
+        export_status_markdown(state, out)
+    elif export_format == "json":
+        export_status_json(state, out)
+
+
+def _export_orphans(
+    export_format: str,
+    state: ProjectState,
+    out: TextIO,
+    **kwargs: object,
+) -> None:
+    """Handle orphans export.
+
+    Args:
+        export_format: Output format (markdown or json)
+        state: Project state containing concepts and relationships
+        out: Output stream to write to
+        **kwargs: Unused keyword arguments from dispatch
+    """
+    from dbt_conceptual.exporter import export_orphans_json, export_orphans_markdown
+
+    if export_format == "markdown":
+        export_orphans_markdown(state, out)
+    elif export_format == "json":
+        export_orphans_json(state, out)
+
+
+def _export_validation(
+    export_format: str,
+    state: ProjectState,
+    config: Config,
+    no_drafts: bool,
+    out: TextIO,
+    **kwargs: object,
+) -> None:
+    """Handle validation export.
+
+    Args:
+        export_format: Output format (markdown or json)
+        state: Project state containing concepts and relationships
+        config: Project configuration
+        no_drafts: If True, treat stub/draft concepts as errors
+        out: Output stream to write to
+        **kwargs: Unused keyword arguments from dispatch
+    """
+    from dbt_conceptual.exporter import (
+        export_validation_json,
+        export_validation_markdown,
+    )
+
+    validator = Validator(config, state, no_drafts=no_drafts)
+    issues = validator.validate()
+    if export_format == "markdown":
+        export_validation_markdown(validator, issues, out)
+    elif export_format == "json":
+        export_validation_json(validator, issues, out)
+
+
+def _export_diff(
+    export_format: str,
+    config: Config,
+    base: Optional[str],
+    out: TextIO,
+    **kwargs: object,
+) -> None:
+    """Handle diff export.
+
+    Computes the conceptual model diff against a base git ref and writes
+    the result in the requested format.
+
+    Args:
+        export_format: Output format (markdown or json)
+        config: Project configuration
+        base: Base git ref to compare against
+        out: Output stream to write to
+        **kwargs: Unused keyword arguments from dispatch
+    """
+    from dbt_conceptual.diff_formatter import format_json, format_markdown
+
+    try:
+        diff_result = compute_diff_from_ref(config, base)  # type: ignore[arg-type]
+    except GitNotFoundError:
+        console.print("[red]Error: git not found. This command requires git.[/red]")
+        raise click.Abort() from None
+    except NotAGitRepoError:
+        console.print("[red]Error: Not a git repository[/red]")
+        raise click.Abort() from None
+    except RefNotFoundError as e:
+        console.print(
+            f"[red]Error: Could not find conceptual.yml at ref '{e.ref}'[/red]"
+        )
+        if e.stderr:
+            console.print(f"[dim]{e.stderr}[/dim]")
+        raise click.Abort() from None
+
+    if export_format == "markdown":
+        out.write(format_markdown(diff_result))
+        out.write("\n")
+    elif export_format == "json":
+        out.write(format_json(diff_result))
+        out.write("\n")
+
+
+# Registry mapping export type names to their handler functions.
+# Each handler accepts keyword arguments: export_format, state, config,
+# no_drafts, base, and out.
+_EXPORT_HANDLERS: dict[str, Callable[..., None]] = {
+    "diagram": _export_diagram,
+    "coverage": _export_coverage,
+    "bus-matrix": _export_bus_matrix,
+    "status": _export_status,
+    "orphans": _export_orphans,
+    "validation": _export_validation,
+    "diff": _export_diff,
+}
 
 
 @main.command()
@@ -851,22 +1045,6 @@ def export(
         dbt-conceptual export --type diagram --format svg -o diagram.svg
         dbt-conceptual export --type diff --format markdown --base main
     """
-    from dbt_conceptual.exporter import (
-        export_bus_matrix,
-        export_bus_matrix_json,
-        export_bus_matrix_markdown,
-        export_coverage,
-        export_coverage_json,
-        export_coverage_markdown,
-        export_diagram_svg,
-        export_orphans_json,
-        export_orphans_markdown,
-        export_status_json,
-        export_status_markdown,
-        export_validation_json,
-        export_validation_markdown,
-    )
-
     # Validate type/format combination
     _validate_export_combination(export_type, export_format)
 
@@ -902,81 +1080,21 @@ def export(
         )
         click.echo("Consider using -o to write to a file.", err=True)
 
-    # Export based on type and format (context manager ensures file is closed)
+    # Dispatch to the appropriate export handler
     try:
         with _get_output_stream(output) as out:
-            if export_type == "diagram":
-                if export_format == "svg":
-                    export_diagram_svg(state, out)
-
-            elif export_type == "coverage":
-                if export_format == "html":
-                    export_coverage(state, out)
-                elif export_format == "markdown":
-                    export_coverage_markdown(state, out)
-                elif export_format == "json":
-                    export_coverage_json(state, out)
-
-            elif export_type == "bus-matrix":
-                if export_format == "html":
-                    export_bus_matrix(state, out)
-                elif export_format == "markdown":
-                    export_bus_matrix_markdown(state, out)
-                elif export_format == "json":
-                    export_bus_matrix_json(state, out)
-
-            elif export_type == "status":
-                if export_format == "markdown":
-                    export_status_markdown(state, out)
-                elif export_format == "json":
-                    export_status_json(state, out)
-
-            elif export_type == "orphans":
-                if export_format == "markdown":
-                    export_orphans_markdown(state, out)
-                elif export_format == "json":
-                    export_orphans_json(state, out)
-
-            elif export_type == "validation":
-                validator = Validator(config, state, no_drafts=no_drafts)
-                issues = validator.validate()
-                if export_format == "markdown":
-                    export_validation_markdown(validator, issues, out)
-                elif export_format == "json":
-                    export_validation_json(validator, issues, out)
-
-            elif export_type == "diff":
-                # Diff requires computing against base ref
-                try:
-                    diff_result = compute_diff_from_ref(config, base)  # type: ignore
-                except GitNotFoundError:
-                    console.print(
-                        "[red]Error: git not found. This command requires git.[/red]"
-                    )
-                    raise click.Abort() from None
-                except NotAGitRepoError:
-                    console.print("[red]Error: Not a git repository[/red]")
-                    raise click.Abort() from None
-                except RefNotFoundError as e:
-                    console.print(
-                        f"[red]Error: Could not find conceptual.yml at ref '{e.ref}'[/red]"
-                    )
-                    if e.stderr:
-                        console.print(f"[dim]{e.stderr}[/dim]")
-                    raise click.Abort() from None
-                if export_format == "markdown":
-                    from dbt_conceptual.diff_formatter import format_markdown
-
-                    out.write(format_markdown(diff_result))
-                    out.write("\n")
-                elif export_format == "json":
-                    from dbt_conceptual.diff_formatter import format_json
-
-                    out.write(format_json(diff_result))
-                    out.write("\n")
+            handler = _EXPORT_HANDLERS[export_type]
+            handler(
+                export_format=export_format,
+                state=state,
+                config=config,
+                no_drafts=no_drafts,
+                base=base,
+                out=out,
+            )
 
         if output:
-            console.print(f"[green]✓ Exported to {output}[/green]")
+            console.print(f"[green]\u2713 Exported to {output}[/green]")
 
     except Exception as e:
         console.print(f"[red]Error during export: {e}[/red]")
@@ -1069,7 +1187,7 @@ def serve(project_dir: Optional[Path], host: str, port: int, demo: bool) -> None
         from dbt_conceptual.demo import create_demo_project
 
         demo_dir = create_demo_project()
-        console.print("[magenta]🎭 DEMO MODE[/magenta]")
+        console.print("[magenta]\U0001f3ad DEMO MODE[/magenta]")
         console.print(f"[dim]Demo project created at: {demo_dir}[/dim]")
         console.print("[dim]Changes will not be persisted after exit.[/dim]\n")
 
