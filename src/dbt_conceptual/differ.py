@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, TypeVar
 
 from .state import ConceptState, DomainState, ProjectState, RelationshipState
 
@@ -63,38 +64,52 @@ class ConceptualDiff:
         )
 
 
-def _compare_concepts(
-    old: ConceptState | None, new: ConceptState | None, key: str
-) -> ConceptChange | None:
-    """Compare two concept states and return changes if any.
+# TypeVar for the state types (ConceptState, RelationshipState, DomainState)
+_S = TypeVar("_S")
+# TypeVar for the change types (ConceptChange, RelationshipChange, DomainChange)
+_C = TypeVar("_C")
+
+
+def _compare_entities(
+    old: _S | None,
+    new: _S | None,
+    key: str,
+    compare_fields: Sequence[str],
+    change_cls: type[_C],
+) -> _C | None:
+    """Compare two entity states and return a change if any differences exist.
+
+    This is a generic compare function that works for concepts, relationships,
+    and domains by accepting the list of fields to compare and the change
+    dataclass to construct.
 
     Args:
-        old: Old concept state (None if concept was added)
-        new: New concept state (None if concept was removed)
-        key: Concept key
+        old: Old entity state (None if entity was added).
+        new: New entity state (None if entity was removed).
+        key: Entity key identifier.
+        compare_fields: Attribute names to compare for modification detection.
+        change_cls: The Change dataclass to instantiate (e.g. ConceptChange).
 
     Returns:
-        ConceptChange if there are differences, None otherwise
+        A change instance if there are differences, None otherwise.
     """
     if old is None and new is not None:
-        return ConceptChange(key=key, change_type="added", new_value=new)
+        return change_cls(key=key, change_type="added", new_value=new)  # type: ignore[call-arg]
     if old is not None and new is None:
-        return ConceptChange(key=key, change_type="removed", old_value=old)
+        return change_cls(key=key, change_type="removed", old_value=old)  # type: ignore[call-arg]
 
     if old is None or new is None:
         return None
 
-    # Compare fields that matter for conceptual model (exclude derived runtime fields)
-    # v1.0: removed replaced_by
-    modified_fields = {}
-    for attr in ["name", "domain", "owner", "definition", "color"]:
+    modified_fields: dict[str, tuple[Any, Any]] = {}
+    for attr in compare_fields:
         old_val = getattr(old, attr)
         new_val = getattr(new, attr)
         if old_val != new_val:
             modified_fields[attr] = (old_val, new_val)
 
     if modified_fields:
-        return ConceptChange(
+        return change_cls(  # type: ignore[call-arg]
             key=key,
             change_type="modified",
             old_value=old,
@@ -105,132 +120,74 @@ def _compare_concepts(
     return None
 
 
-def _compare_relationships(
-    old: RelationshipState | None, new: RelationshipState | None, key: str
-) -> RelationshipChange | None:
-    """Compare two relationship states and return changes if any.
-
-    Args:
-        old: Old relationship state (None if relationship was added)
-        new: New relationship state (None if relationship was removed)
-        key: Relationship key
-
-    Returns:
-        RelationshipChange if there are differences, None otherwise
-    """
-    if old is None and new is not None:
-        return RelationshipChange(key=key, change_type="added", new_value=new)
-    if old is not None and new is None:
-        return RelationshipChange(key=key, change_type="removed", old_value=old)
-
-    if old is None or new is None:
-        return None
-
-    # Compare fields (exclude derived runtime fields)
-    # v1.0: removed custom_name and domains
-    modified_fields = {}
-    for attr in [
-        "verb",
-        "from_concept",
-        "to_concept",
-        "cardinality",
-        "definition",
-        "owner",
-    ]:
-        old_val = getattr(old, attr)
-        new_val = getattr(new, attr)
-        if old_val != new_val:
-            modified_fields[attr] = (old_val, new_val)
-
-    if modified_fields:
-        return RelationshipChange(
-            key=key,
-            change_type="modified",
-            old_value=old,
-            new_value=new,
-            modified_fields=modified_fields,
-        )
-
-    return None
-
-
-def _compare_domains(
-    old: DomainState | None, new: DomainState | None, key: str
-) -> DomainChange | None:
-    """Compare two domain states and return changes if any.
-
-    Args:
-        old: Old domain state (None if domain was added)
-        new: New domain state (None if domain was removed)
-        key: Domain key
-
-    Returns:
-        DomainChange if there are differences, None otherwise
-    """
-    if old is None and new is not None:
-        return DomainChange(key=key, change_type="added", new_value=new)
-    if old is not None and new is None:
-        return DomainChange(key=key, change_type="removed", old_value=old)
-
-    if old is None or new is None:
-        return None
-
-    # Compare fields
-    modified_fields = {}
-    for attr in ["name", "display_name", "color"]:
-        old_val = getattr(old, attr)
-        new_val = getattr(new, attr)
-        if old_val != new_val:
-            modified_fields[attr] = (old_val, new_val)
-
-    if modified_fields:
-        return DomainChange(
-            key=key,
-            change_type="modified",
-            old_value=old,
-            new_value=new,
-            modified_fields=modified_fields,
-        )
-
-    return None
+# Field lists for each entity type -- these define which attributes are compared
+# when detecting modifications (excludes derived/runtime fields).
+_CONCEPT_COMPARE_FIELDS: Sequence[str] = (
+    "name",
+    "domain",
+    "owner",
+    "definition",
+    "color",
+)
+_RELATIONSHIP_COMPARE_FIELDS: Sequence[str] = (
+    "verb",
+    "from_concept",
+    "to_concept",
+    "cardinality",
+    "definition",
+    "owner",
+)
+_DOMAIN_COMPARE_FIELDS: Sequence[str] = ("name", "display_name", "color")
 
 
 def compute_diff(base: ProjectState, current: ProjectState) -> ConceptualDiff:
     """Compute the diff between two project states.
 
     Args:
-        base: Base project state (e.g., from main branch)
-        current: Current project state (e.g., from feature branch)
+        base: Base project state (e.g., from main branch).
+        current: Current project state (e.g., from feature branch).
 
     Returns:
-        ConceptualDiff containing all changes
+        ConceptualDiff containing all changes.
     """
     diff = ConceptualDiff()
 
     # Compare concepts
     all_concept_keys = set(base.concepts.keys()) | set(current.concepts.keys())
     for key in sorted(all_concept_keys):
-        old_concept = base.concepts.get(key)
-        new_concept = current.concepts.get(key)
-        concept_change = _compare_concepts(old_concept, new_concept, key)
+        concept_change = _compare_entities(
+            base.concepts.get(key),
+            current.concepts.get(key),
+            key,
+            _CONCEPT_COMPARE_FIELDS,
+            ConceptChange,
+        )
         if concept_change:
             diff.concept_changes.append(concept_change)
 
     # Compare relationships
     all_rel_keys = set(base.relationships.keys()) | set(current.relationships.keys())
     for key in sorted(all_rel_keys):
-        old_rel = base.relationships.get(key)
-        new_rel = current.relationships.get(key)
-        rel_change = _compare_relationships(old_rel, new_rel, key)
+        rel_change = _compare_entities(
+            base.relationships.get(key),
+            current.relationships.get(key),
+            key,
+            _RELATIONSHIP_COMPARE_FIELDS,
+            RelationshipChange,
+        )
         if rel_change:
             diff.relationship_changes.append(rel_change)
 
     # Compare domains
     all_domain_keys = set(base.domains.keys()) | set(current.domains.keys())
     for key in sorted(all_domain_keys):
-        old_domain = base.domains.get(key)
-        new_domain = current.domains.get(key)
-        domain_change = _compare_domains(old_domain, new_domain, key)
+        domain_change = _compare_entities(
+            base.domains.get(key),
+            current.domains.get(key),
+            key,
+            _DOMAIN_COMPARE_FIELDS,
+            DomainChange,
+        )
         if domain_change:
             diff.domain_changes.append(domain_change)
 
