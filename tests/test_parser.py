@@ -6,6 +6,7 @@ v1.0: Simplified model - conceptual.yml in project root, flat models list.
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import pytest
 import yaml
 
 from dbt_conceptual.config import Config
@@ -491,3 +492,164 @@ def test_relationship_cardinality_validation() -> None:
         assert state.relationships["customer:has:address"].cardinality == "1:1"
         # Invalid cardinality should default to 1:N
         assert state.relationships["order:invalid:address"].cardinality == "1:N"
+
+
+def test_parse_relationships_as_dict_raises_error() -> None:
+    """Test that relationships written as a dict instead of a list raises ValueError."""
+    with TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        with open(tmppath / "dbt_project.yml", "w") as f:
+            yaml.dump({"name": "test"}, f)
+
+        # Malformed: relationships as dict instead of list
+        conceptual_data = {
+            "version": 1,
+            "concepts": {"customer": {"name": "Customer"}},
+            "relationships": {
+                "places": {"from": "customer", "to": "order"},
+            },
+        }
+
+        with open(tmppath / "conceptual.yml", "w") as f:
+            yaml.dump(conceptual_data, f)
+
+        config = Config.load(project_dir=tmppath)
+        parser = ConceptualModelParser(config)
+
+        with pytest.raises(ValueError, match="'relationships' must be a list"):
+            parser.parse()
+
+
+def test_parse_relationship_missing_from_key_raises_error() -> None:
+    """Test that a relationship missing the 'from' key raises ValueError."""
+    with TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        with open(tmppath / "dbt_project.yml", "w") as f:
+            yaml.dump({"name": "test"}, f)
+
+        conceptual_data = {
+            "version": 1,
+            "concepts": {"customer": {"name": "Customer"}},
+            "relationships": [
+                {"verb": "places", "to": "order"},  # Missing 'from'
+            ],
+        }
+
+        with open(tmppath / "conceptual.yml", "w") as f:
+            yaml.dump(conceptual_data, f)
+
+        config = Config.load(project_dir=tmppath)
+        parser = ConceptualModelParser(config)
+
+        with pytest.raises(ValueError, match="missing required key 'from'"):
+            parser.parse()
+
+
+def test_parse_relationship_missing_to_key_raises_error() -> None:
+    """Test that a relationship missing the 'to' key raises ValueError."""
+    with TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        with open(tmppath / "dbt_project.yml", "w") as f:
+            yaml.dump({"name": "test"}, f)
+
+        conceptual_data = {
+            "version": 1,
+            "concepts": {"customer": {"name": "Customer"}},
+            "relationships": [
+                {"verb": "places", "from": "customer"},  # Missing 'to'
+            ],
+        }
+
+        with open(tmppath / "conceptual.yml", "w") as f:
+            yaml.dump(conceptual_data, f)
+
+        config = Config.load(project_dir=tmppath)
+        parser = ConceptualModelParser(config)
+
+        with pytest.raises(ValueError, match="missing required key 'to'"):
+            parser.parse()
+
+
+def test_parse_relationship_not_a_mapping_raises_error() -> None:
+    """Test that a relationship entry that is not a dict raises ValueError."""
+    with TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        with open(tmppath / "dbt_project.yml", "w") as f:
+            yaml.dump({"name": "test"}, f)
+
+        # Relationship entries are strings instead of dicts
+        conceptual_data = {
+            "version": 1,
+            "concepts": {"customer": {"name": "Customer"}},
+            "relationships": ["customer places order"],
+        }
+
+        with open(tmppath / "conceptual.yml", "w") as f:
+            yaml.dump(conceptual_data, f)
+
+        config = Config.load(project_dir=tmppath)
+        parser = ConceptualModelParser(config)
+
+        with pytest.raises(ValueError, match="must be a mapping"):
+            parser.parse()
+
+
+def test_parse_relationship_missing_both_keys_raises_error() -> None:
+    """Test that a relationship missing both 'from' and 'to' raises ValueError."""
+    with TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        with open(tmppath / "dbt_project.yml", "w") as f:
+            yaml.dump({"name": "test"}, f)
+
+        conceptual_data = {
+            "version": 1,
+            "concepts": {"customer": {"name": "Customer"}},
+            "relationships": [
+                {"verb": "places"},  # Missing both 'from' and 'to'
+            ],
+        }
+
+        with open(tmppath / "conceptual.yml", "w") as f:
+            yaml.dump(conceptual_data, f)
+
+        config = Config.load(project_dir=tmppath)
+        parser = ConceptualModelParser(config)
+
+        # Should raise on the first missing key it encounters ('from')
+        with pytest.raises(ValueError, match="missing required key 'from'"):
+            parser.parse()
+
+
+def test_parse_relationship_error_includes_index() -> None:
+    """Test that relationship parse errors include the index for debugging."""
+    with TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        with open(tmppath / "dbt_project.yml", "w") as f:
+            yaml.dump({"name": "test"}, f)
+
+        conceptual_data = {
+            "version": 1,
+            "concepts": {
+                "customer": {"name": "Customer"},
+                "order": {"name": "Order"},
+            },
+            "relationships": [
+                {"verb": "places", "from": "customer", "to": "order"},  # Valid
+                {"verb": "has"},  # Invalid at index 1
+            ],
+        }
+
+        with open(tmppath / "conceptual.yml", "w") as f:
+            yaml.dump(conceptual_data, f)
+
+        config = Config.load(project_dir=tmppath)
+        parser = ConceptualModelParser(config)
+
+        with pytest.raises(ValueError, match="at index 1"):
+            parser.parse()
