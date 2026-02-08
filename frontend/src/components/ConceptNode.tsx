@@ -40,10 +40,22 @@ export const ConceptNode = memo(({ data }: ConceptNodeProps) => {
   if (validationStatus === 'error') classNames.push('error');
   if (validationStatus === 'warning') classNames.push('warning');
 
+  // Build descriptive aria-label
+  const ariaLabelParts = [`Concept: ${concept.name}`];
+  if (isGhost) {
+    ariaLabelParts.push('(undefined reference)');
+  } else {
+    if (concept.domain) ariaLabelParts.push(`domain: ${concept.domain}`);
+    ariaLabelParts.push(`${totalModels} model${totalModels !== 1 ? 's' : ''}`);
+    if (concept.status) ariaLabelParts.push(`status: ${concept.status}`);
+    if (validationStatus !== 'valid') ariaLabelParts.push(`validation: ${validationStatus}`);
+  }
+
   return (
     <div
       className={classNames.join(' ')}
       style={isGhost ? undefined : { borderLeftColor: domainColor }}
+      aria-label={ariaLabelParts.join(', ')}
     >
       {/* Validation badge (also shown for stubs as warning) */}
       {hasValidationBadge && (

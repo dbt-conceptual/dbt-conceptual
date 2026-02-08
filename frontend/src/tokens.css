@@ -1926,17 +1926,19 @@ code, pre {
 }
 
 /* === Confirm Dialog === */
-.confirm-dialog-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+.confirm-dialog-native {
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 0;
+  max-width: 400px;
+  min-width: 320px;
+  box-shadow: var(--shadow-lg);
+  background: transparent;
+}
+
+.confirm-dialog-native::backdrop {
   background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
+  backdrop-filter: blur(4px);
 }
 
 .confirm-dialog {

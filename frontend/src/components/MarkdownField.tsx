@@ -123,6 +123,15 @@ export function MarkdownField({
           <div
             className={`markdown-field-preview ${isEmpty ? 'empty' : ''}`}
             onClick={handleEdit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleEdit();
+              }
+            }}
+            role="button"
+            tabIndex={0}
+            aria-label={isEmpty ? `Edit ${label || 'field'}` : `Edit ${label || 'field'}: click to modify`}
           >
             {isEmpty ? (
               <span className="markdown-field-placeholder">{placeholder}</span>
