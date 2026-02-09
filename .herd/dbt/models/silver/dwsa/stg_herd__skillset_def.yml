@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: stg_herd__skillset_def
+    description: "Staging model for skillset definitions"
+    config:
+      meta:
+        concept: skillset
+        layer: staging
+    columns:
+      - name: skillset_code
+        description: "Primary key - unique skillset identifier"
+        tests:
+          - unique
+          - not_null

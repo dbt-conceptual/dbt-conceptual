@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: stg_herd__personality_def
+    description: "Staging model for personality definitions"
+    config:
+      meta:
+        concept: personality
+        layer: staging
+    columns:
+      - name: personality_code
+        description: "Primary key - unique personality identifier"
+        tests:
+          - unique
+          - not_null

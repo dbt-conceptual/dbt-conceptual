@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: stg_herd__craft_version
+    description: "Staging model for versioned craft content (immutable)"
+    config:
+      meta:
+        concept: craft
+        layer: staging
+    columns:
+      - name: craft_version_code
+        description: "Primary key - unique craft version identifier"
+        tests:
+          - unique
+          - not_null
+      - name: craft_code
+        description: "Foreign key to craft_def"
+        tests:
+          - not_null

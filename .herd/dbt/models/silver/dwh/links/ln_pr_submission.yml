@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: ln_pr_submission
+    description: "Transactional link - PR created for a ticket"
+    config:
+      meta:
+        concept: pull_request
+        layer: link
+    columns:
+      - name: pr_submission_tk
+        description: "Link technical key"
+        tests:
+          - unique
+          - not_null
+      - name: pull_request_tk
+        description: "Foreign key to h_pull_request"
+        tests:
+          - not_null
+      - name: ticket_tk
+        description: "Foreign key to h_ticket"
+        tests:
+          - not_null
+      - name: agent_tk
+        description: "Foreign key to h_agent (creator)"
+        tests:
+          - not_null

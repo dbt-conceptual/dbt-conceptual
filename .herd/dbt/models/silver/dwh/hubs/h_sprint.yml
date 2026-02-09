@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: h_sprint
+    description: "Hub for Sprint business key"
+    config:
+      meta:
+        concept: sprint
+        layer: hub
+    columns:
+      - name: sprint_tk
+        description: "Technical key (SHA1 of sprint_code)"
+        tests:
+          - unique
+          - not_null
+      - name: sprint_code
+        description: "Business key for sprint"
+        tests:
+          - not_null

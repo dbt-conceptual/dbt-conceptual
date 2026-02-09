@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: dim_project
+    description: "Project dimension (Type 1) - current state only"
+    config:
+      meta:
+        concept: project
+        layer: dimension
+    columns:
+      - name: project_sk
+        description: "Project surrogate key (aliased from project_tk)"
+        tests:
+          - unique
+          - not_null
+      - name: project_code
+        description: "Project business key"

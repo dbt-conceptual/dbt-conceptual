@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: stg_herd__pr_def
+    description: "Staging model for pull request definitions"
+    config:
+      meta:
+        concept: pull_request
+        layer: staging
+    columns:
+      - name: pr_code
+        description: "Primary key - unique PR identifier"
+        tests:
+          - unique
+          - not_null
+      - name: ticket_code
+        description: "Foreign key to ticket_def"
+      - name: creator_agent_instance_code
+        description: "Foreign key to agent_instance"

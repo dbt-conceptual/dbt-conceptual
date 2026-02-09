@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: fact_agent_instance_work
+    description: "Agent instance work fact - tracks work performed by agent instances"
+    config:
+      meta:
+        concept: agent_instance
+        layer: fact
+    columns:
+      - name: agent_instance_tk
+        description: "Agent instance technical key"
+        tests:
+          - unique
+          - not_null
+      - name: agent_sk
+        description: "Agent dimension surrogate key (Type 2 SCD)"
+      - name: ticket_sk
+        description: "Ticket dimension surrogate key (Type 2 SCD)"
+      - name: model_sk
+        description: "Model dimension surrogate key (Type 1)"
+      - name: instance_duration_minutes
+        description: "Duration of agent instance in minutes"
+      - name: lifecycle_event_count
+        description: "Count of lifecycle events for this instance"
+      - name: ticket_activity_count
+        description: "Count of ticket activities for this instance"
+      - name: pr_activity_count
+        description: "Count of PR activities for this instance"

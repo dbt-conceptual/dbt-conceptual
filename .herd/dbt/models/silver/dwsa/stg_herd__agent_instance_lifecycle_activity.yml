@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: stg_herd__agent_instance_lifecycle_activity
+    description: "Staging model for agent instance lifecycle events"
+    config:
+      meta:
+        concept: agent_instance
+        layer: staging
+    columns:
+      - name: agent_instance_code
+        description: "Foreign key to agent_instance"
+        tests:
+          - not_null
+      - name: lifecycle_event_type
+        description: "Type of lifecycle event"
+        tests:
+          - not_null

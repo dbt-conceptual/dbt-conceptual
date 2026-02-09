@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: dim_pull_request
+    description: "Pull request dimension (Type 1) - current state only"
+    config:
+      meta:
+        concept: pull_request
+        layer: dimension
+    columns:
+      - name: pull_request_sk
+        description: "Pull request surrogate key (aliased from pull_request_tk)"
+        tests:
+          - unique
+          - not_null
+      - name: pr_code
+        description: "Pull request business key"

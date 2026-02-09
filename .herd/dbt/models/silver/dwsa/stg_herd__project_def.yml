@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: stg_herd__project_def
+    description: "Staging model for project definitions"
+    config:
+      meta:
+        concept: project
+        layer: staging
+    columns:
+      - name: project_code
+        description: "Primary key - unique project identifier"
+        tests:
+          - unique
+          - not_null
+      - name: initiative_code
+        description: "Foreign key to initiative_def"
+        tests:
+          - not_null

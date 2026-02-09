@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: fact_sprint_burndown
+    description: "Sprint burndown fact - tracks ticket progress within sprints"
+    config:
+      meta:
+        concept: sprint
+        layer: fact
+    columns:
+      - name: ticket_tk
+        description: "Ticket technical key"
+        tests:
+          - not_null
+      - name: ticket_sk
+        description: "Ticket dimension surrogate key (Type 2 SCD)"
+      - name: sprint_sk
+        description: "Sprint dimension surrogate key (Type 2 SCD)"
+      - name: sprint_code
+        description: "Sprint business key"
+      - name: ticket_status
+        description: "Ticket status at this event"
+      - name: event_ts
+        description: "Timestamp of status change event"
+      - name: event_sequence
+        description: "Sequence number of event within sprint"
+      - name: ticket_completed_at
+        description: "Timestamp when ticket was completed in this sprint"

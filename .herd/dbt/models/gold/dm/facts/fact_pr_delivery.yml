@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: fact_pr_delivery
+    description: "PR delivery fact - tracks pull request delivery metrics"
+    config:
+      meta:
+        concept: pull_request
+        layer: fact
+    columns:
+      - name: pr_submission_tk
+        description: "PR submission technical key"
+        tests:
+          - unique
+          - not_null
+      - name: pull_request_sk
+        description: "Pull request dimension surrogate key (Type 1)"
+      - name: ticket_sk
+        description: "Ticket dimension surrogate key (Type 2 SCD)"
+      - name: agent_sk
+        description: "Agent dimension surrogate key (Type 2 SCD)"
+      - name: pr_lines_added
+        description: "Number of lines added in PR"
+      - name: pr_lines_deleted
+        description: "Number of lines deleted in PR"
+      - name: pr_files_changed
+        description: "Number of files changed in PR"
+      - name: time_to_merge_minutes
+        description: "Time from PR creation to merge (minutes)"
+      - name: review_count
+        description: "Number of reviews for this PR"

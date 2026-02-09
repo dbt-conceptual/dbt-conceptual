@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: stg_herd__personality_version
+    description: "Staging model for versioned personality content (immutable)"
+    config:
+      meta:
+        concept: personality
+        layer: staging
+    columns:
+      - name: personality_version_code
+        description: "Primary key - unique personality version identifier"
+        tests:
+          - unique
+          - not_null
+      - name: personality_code
+        description: "Foreign key to personality_def"
+        tests:
+          - not_null

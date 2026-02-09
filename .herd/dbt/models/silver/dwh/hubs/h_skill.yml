@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: h_skill
+    description: "Hub for Skill business key (individual skill capability)"
+    config:
+      meta:
+        concept: skillset
+        layer: hub
+    columns:
+      - name: skill_tk
+        description: "Technical key (SHA1 of skillset_code)"
+        tests:
+          - unique
+          - not_null
+      - name: skill_code
+        description: "Business key for skill"
+        tests:
+          - not_null

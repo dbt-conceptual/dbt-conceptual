@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: stg_herd__craft_def
+    description: "Staging model for craft definitions"
+    config:
+      meta:
+        concept: craft
+        layer: staging
+    columns:
+      - name: craft_code
+        description: "Primary key - unique craft identifier"
+        tests:
+          - unique
+          - not_null

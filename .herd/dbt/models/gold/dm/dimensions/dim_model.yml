@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: dim_model
+    description: "Model dimension (Type 1) - current state only"
+    config:
+      meta:
+        concept: model
+        layer: dimension
+    columns:
+      - name: model_sk
+        description: "Model surrogate key (aliased from model_tk)"
+        tests:
+          - unique
+          - not_null
+      - name: model_code
+        description: "Model business key"

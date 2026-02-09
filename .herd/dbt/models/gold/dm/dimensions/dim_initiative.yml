@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: dim_initiative
+    description: "Initiative dimension (Type 1) - current state only"
+    config:
+      meta:
+        concept: initiative
+        layer: dimension
+    columns:
+      - name: initiative_sk
+        description: "Initiative surrogate key (aliased from initiative_tk)"
+        tests:
+          - unique
+          - not_null
+      - name: initiative_code
+        description: "Initiative business key"

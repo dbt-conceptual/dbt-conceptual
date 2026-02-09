@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: dim_skillset
+    description: "Skillset dimension (Type 1) - aggregates skills linked to each skillset"
+    config:
+      meta:
+        concept: skillset
+        layer: dimension
+    columns:
+      - name: skillset_sk
+        description: "Skillset surrogate key (aliased from skillset_tk)"
+        tests:
+          - unique
+          - not_null
+      - name: skillset_tk
+        description: "Skillset technical key from vault"
+      - name: skill_codes
+        description: "Comma-separated list of skills in this skillset"

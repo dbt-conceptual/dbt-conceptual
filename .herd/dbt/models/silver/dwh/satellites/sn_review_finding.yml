@@ -1,0 +1,14 @@
+version: 2
+
+models:
+  - name: sn_review_finding
+    description: "Non-historized satellite for Review findings (append-only)"
+    config:
+      meta:
+        concept: review
+        layer: satellite
+    columns:
+      - name: review_tk
+        description: "Foreign key to h_review"
+        tests:
+          - not_null

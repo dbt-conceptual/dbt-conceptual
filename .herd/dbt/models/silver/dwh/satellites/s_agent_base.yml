@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: s_agent_base
+    description: "Historized satellite for Agent descriptive attributes"
+    config:
+      meta:
+        concept: agent
+        layer: satellite
+    columns:
+      - name: agent_tk
+        description: "Foreign key to h_agent"
+        tests:
+          - not_null
+      - name: agent_hd
+        description: "Hashdiff of descriptive attributes"
+        tests:
+          - not_null

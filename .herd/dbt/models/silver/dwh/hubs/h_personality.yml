@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: h_personality
+    description: "Hub for Personality business key"
+    config:
+      meta:
+        concept: personality
+        layer: hub
+    columns:
+      - name: personality_tk
+        description: "Technical key (SHA1 of personality_code)"
+        tests:
+          - unique
+          - not_null
+      - name: personality_code
+        description: "Business key for personality"
+        tests:
+          - not_null

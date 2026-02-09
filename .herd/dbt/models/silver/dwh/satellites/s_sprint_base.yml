@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: s_sprint_base
+    description: "Historized satellite for Sprint descriptive attributes"
+    config:
+      meta:
+        concept: sprint
+        layer: satellite
+    columns:
+      - name: sprint_tk
+        description: "Foreign key to h_sprint"
+        tests:
+          - not_null
+      - name: sprint_hd
+        description: "Hashdiff of descriptive attributes"
+        tests:
+          - not_null

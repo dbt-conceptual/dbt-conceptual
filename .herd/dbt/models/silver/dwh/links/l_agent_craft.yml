@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: l_agent_craft
+    description: "Standing link - Agent uses a craft"
+    config:
+      meta:
+        concept: craft
+        layer: link
+    columns:
+      - name: agent_craft_tk
+        description: "Link technical key"
+        tests:
+          - unique
+          - not_null
+      - name: agent_tk
+        description: "Foreign key to h_agent"
+        tests:
+          - not_null
+      - name: craft_tk
+        description: "Foreign key to h_craft"
+        tests:
+          - not_null

@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: dim_agent
+    description: "Agent dimension (Type 2 SCD) - tracks historical changes to agent attributes"
+    config:
+      meta:
+        concept: agent
+        layer: dimension
+    columns:
+      - name: agent_sk
+        description: "Agent surrogate key (hash of agent_tk + valid_from)"
+        tests:
+          - unique
+          - not_null
+      - name: agent_tk
+        description: "Agent technical key from vault"
+        tests:
+          - not_null
+      - name: agent_code
+        description: "Agent business key"
+      - name: valid_from
+        description: "Start of validity period"
+      - name: valid_to
+        description: "End of validity period (9999-12-31 for current)"
+      - name: is_current
+        description: "Flag indicating current version"

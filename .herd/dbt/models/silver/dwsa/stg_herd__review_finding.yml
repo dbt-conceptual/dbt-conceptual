@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: stg_herd__review_finding
+    description: "Staging model for review findings (immutable)"
+    config:
+      meta:
+        concept: review
+        layer: staging
+    columns:
+      - name: review_finding_code
+        description: "Primary key - unique finding identifier"
+        tests:
+          - unique
+          - not_null
+      - name: review_code
+        description: "Foreign key to review_def"
+        tests:
+          - not_null

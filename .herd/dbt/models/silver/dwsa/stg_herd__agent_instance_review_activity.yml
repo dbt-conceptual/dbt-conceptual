@@ -1,0 +1,26 @@
+version: 2
+
+models:
+  - name: stg_herd__agent_instance_review_activity
+    description: "Staging model for agent instance review activity events"
+    config:
+      meta:
+        concept: agent_instance
+        layer: staging
+    columns:
+      - name: agent_instance_code
+        description: "Foreign key to agent_instance"
+        tests:
+          - not_null
+      - name: review_code
+        description: "Foreign key to review_def"
+        tests:
+          - not_null
+      - name: pr_code
+        description: "Foreign key to pr_def"
+        tests:
+          - not_null
+      - name: review_event_type
+        description: "Type of review event"
+        tests:
+          - not_null

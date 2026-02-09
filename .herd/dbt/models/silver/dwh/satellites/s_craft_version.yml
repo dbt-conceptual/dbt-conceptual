@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: s_craft_version
+    description: "Historized satellite for Craft version history"
+    config:
+      meta:
+        concept: craft
+        layer: satellite
+    columns:
+      - name: craft_tk
+        description: "Foreign key to h_craft"
+        tests:
+          - not_null
+      - name: craft_hd
+        description: "Hashdiff of version attributes"
+        tests:
+          - not_null

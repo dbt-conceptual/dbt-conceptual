@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: h_review
+    description: "Hub for Review business key"
+    config:
+      meta:
+        concept: review
+        layer: hub
+    columns:
+      - name: review_tk
+        description: "Technical key (SHA1 of review_code)"
+        tests:
+          - unique
+          - not_null
+      - name: review_code
+        description: "Business key for review"
+        tests:
+          - not_null

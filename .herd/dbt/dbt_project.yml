@@ -12,12 +12,14 @@ target-path: target
 
 models:
   herd_analytics:
-    staging:
-      +materialized: view
-      +schema: herd
-    vault:
-      +materialized: incremental
-      +schema: dwh
-    marts:
-      +materialized: table
-      +schema: mart
+    silver:
+      dwsa:
+        +materialized: view
+        +schema: herd
+      dwh:
+        +materialized: incremental
+        +schema: dwh
+    gold:
+      dm:
+        +materialized: table
+        +schema: mart

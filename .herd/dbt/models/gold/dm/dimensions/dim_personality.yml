@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: dim_personality
+    description: "Personality dimension (Type 1) - current state only"
+    config:
+      meta:
+        concept: personality
+        layer: dimension
+    columns:
+      - name: personality_sk
+        description: "Personality surrogate key (aliased from personality_tk)"
+        tests:
+          - unique
+          - not_null
+      - name: personality_code
+        description: "Personality business key"

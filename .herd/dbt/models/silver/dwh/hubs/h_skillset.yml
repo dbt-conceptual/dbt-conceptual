@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: h_skillset
+    description: "Hub for Skillset business key (constructed entity - unique combination of skills)"
+    config:
+      meta:
+        concept: skillset
+        layer: hub
+    columns:
+      - name: skillset_tk
+        description: "Technical key (SHA1 of skillset_combination_bk)"
+        tests:
+          - unique
+          - not_null
+      - name: skillset_code
+        description: "Business key for skillset (pipe-delimited sorted skill codes)"
+        tests:
+          - not_null

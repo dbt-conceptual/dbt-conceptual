@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: stg_herd__skillset_version
+    description: "Staging model for versioned skillset content (immutable)"
+    config:
+      meta:
+        concept: skillset
+        layer: staging
+    columns:
+      - name: skillset_version_code
+        description: "Primary key - unique skillset version identifier"
+        tests:
+          - unique
+          - not_null
+      - name: skillset_code
+        description: "Foreign key to skillset_def"
+        tests:
+          - not_null

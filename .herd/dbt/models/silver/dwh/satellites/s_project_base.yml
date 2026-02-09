@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: s_project_base
+    description: "Historized satellite for Project descriptive attributes"
+    config:
+      meta:
+        concept: project
+        layer: satellite
+    columns:
+      - name: project_tk
+        description: "Foreign key to h_project"
+        tests:
+          - not_null
+      - name: project_hd
+        description: "Hashdiff of descriptive attributes"
+        tests:
+          - not_null

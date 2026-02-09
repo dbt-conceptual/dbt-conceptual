@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: s_review_base
+    description: "Historized satellite for Review descriptive attributes (immutable)"
+    config:
+      meta:
+        concept: review
+        layer: satellite
+    columns:
+      - name: review_tk
+        description: "Foreign key to h_review"
+        tests:
+          - not_null
+      - name: review_hd
+        description: "Hashdiff of descriptive attributes"
+        tests:
+          - not_null
