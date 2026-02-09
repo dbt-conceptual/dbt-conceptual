@@ -1,6 +1,10 @@
-"""Ticket transition tool stub."""
+"""Ticket transition tool implementation."""
 
 from __future__ import annotations
+
+import uuid
+
+from herd_mcp.db import connection
 
 
 async def execute(
@@ -22,13 +26,130 @@ async def execute(
     Returns:
         Dict with transition_id and elapsed time in previous status.
     """
-    return {
-        "status": "stub",
-        "message": "herd_transition not yet implemented",
-        "transition_id": None,
-        "ticket": ticket_id,
-        "to_status": to_status,
-        "blocked_by": blocked_by,
-        "elapsed_in_previous": None,
-        "agent": agent_name,
-    }
+    with connection() as conn:
+        # Get current ticket status
+        ticket = conn.execute(
+            """
+            SELECT ticket_code, ticket_title, ticket_current_status
+            FROM herd.ticket_def
+            WHERE ticket_code = ?
+              AND deleted_at IS NULL
+            """,
+            [ticket_id],
+        ).fetchone()
+
+        if not ticket:
+            return {
+                "transition_id": None,
+                "ticket": ticket_id,
+                "to_status": to_status,
+                "error": f"Ticket {ticket_id} not found",
+            }
+
+        current_status = ticket[2]
+
+        # Get agent's current instance
+        agent_instance_code = None
+        if agent_name:
+            instance = conn.execute(
+                """
+                SELECT agent_instance_code
+                FROM herd.agent_instance
+                WHERE agent_code = ?
+                  AND agent_instance_ended_at IS NULL
+                ORDER BY agent_instance_started_at DESC
+                LIMIT 1
+                """,
+                [agent_name],
+            ).fetchone()
+
+            if instance:
+                agent_instance_code = instance[0]
+
+        # Calculate elapsed time in previous status
+        elapsed_minutes = None
+        last_activity = conn.execute(
+            """
+            SELECT created_at
+            FROM herd.agent_instance_ticket_activity
+            WHERE ticket_code = ?
+            ORDER BY created_at DESC
+            LIMIT 1
+            """,
+            [ticket_id],
+        ).fetchone()
+
+        if last_activity and last_activity[0]:
+            # Calculate time difference in minutes
+            time_diff = conn.execute(
+                """
+                SELECT EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - ?::TIMESTAMP)) / 60.0
+                """,
+                [str(last_activity[0])],
+            ).fetchone()
+
+            if time_diff:
+                elapsed_minutes = float(time_diff[0])
+
+        # Determine event type based on transition
+        event_type = "status_changed"
+        if to_status == "blocked" or blocked_by:
+            event_type = "blocked"
+        elif current_status == "blocked" and to_status != "blocked":
+            event_type = "unblocked"
+
+        # Generate transition ID
+        transition_id = str(uuid.uuid4())
+
+        # Record transition (if we have an agent instance)
+        if agent_instance_code:
+            conn.execute(
+                """
+                INSERT INTO herd.agent_instance_ticket_activity
+                  (agent_instance_code, ticket_code, ticket_event_type, ticket_status,
+                   blocker_ticket_code, blocker_description, ticket_activity_comment, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                """,
+                [
+                    agent_instance_code,
+                    ticket_id,
+                    event_type,
+                    to_status,
+                    blocked_by,
+                    note if blocked_by else None,
+                    note,
+                ],
+            )
+        else:
+            # If no agent instance, we could either:
+            # 1. Skip the activity record (current approach for simplicity)
+            # 2. Create a system agent instance
+            # 3. Allow NULL agent_instance_code in the schema
+            pass
+
+        # Update ticket_def convenience denorm
+        conn.execute(
+            """
+            UPDATE herd.ticket_def
+            SET ticket_current_status = ?,
+                modified_at = CURRENT_TIMESTAMP
+            WHERE ticket_code = ?
+            """,
+            [to_status, ticket_id],
+        )
+
+        return {
+            "transition_id": transition_id,
+            "ticket": {
+                "id": ticket[0],
+                "title": ticket[1],
+                "previous_status": current_status,
+                "new_status": to_status,
+            },
+            "elapsed_in_previous_minutes": elapsed_minutes,
+            "event_type": event_type,
+            "blocked_by": blocked_by,
+            "agent": agent_name,
+            "agent_instance_code": agent_instance_code,
+            "note": "No active agent instance found" if not agent_instance_code else None,
+        }
