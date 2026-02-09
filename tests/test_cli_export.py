@@ -996,3 +996,213 @@ def test_cli_main_quiet_flag() -> None:
     result = runner.invoke(main, ["-q", "--help"])
     assert result.exit_code == 0
     assert "dbt-conceptual" in result.output
+
+
+def test_cli_diff_exit_code_no_changes() -> None:
+    """Test diff command returns exit code 0 when no changes (human format)."""
+    runner = CliRunner()
+
+    with TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        # Create dbt_project.yml
+        with open(tmppath / "dbt_project.yml", "w") as f:
+            yaml.dump({"name": "test"}, f)
+
+        # Create conceptual.yml
+        conceptual_data = {
+            "version": 1,
+            "domains": {"party": {"name": "Party"}},
+            "concepts": {
+                "customer": {
+                    "name": "Customer",
+                    "domain": "party",
+                    "owner": "data_team",
+                    "definition": "A customer",
+                }
+            },
+        }
+
+        with open(tmppath / "conceptual.yml", "w") as f:
+            yaml.dump(conceptual_data, f)
+
+        # Initialize git repo
+        import subprocess
+
+        subprocess.run(["git", "init"], cwd=tmppath, capture_output=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@example.com"],
+            cwd=tmppath,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test User"],
+            cwd=tmppath,
+            capture_output=True,
+        )
+        subprocess.run(["git", "add", "."], cwd=tmppath, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "-m", "Initial"],
+            cwd=tmppath,
+            capture_output=True,
+        )
+
+        # No changes - compare against HEAD
+        result = runner.invoke(
+            diff,
+            [
+                "--project-dir",
+                str(tmppath),
+                "--base",
+                "HEAD",
+                "--format",
+                "human",
+            ],
+        )
+
+        # Should succeed with exit code 0
+        assert result.exit_code == 0
+
+
+def test_cli_diff_exit_code_with_changes_github_format() -> None:
+    """Test diff command returns exit code 1 when changes exist (github format)."""
+    runner = CliRunner()
+
+    with TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        # Create dbt_project.yml
+        with open(tmppath / "dbt_project.yml", "w") as f:
+            yaml.dump({"name": "test"}, f)
+
+        # Create conceptual.yml
+        conceptual_data = {
+            "version": 1,
+            "domains": {"party": {"name": "Party"}},
+            "concepts": {
+                "customer": {
+                    "name": "Customer",
+                    "domain": "party",
+                    "owner": "data_team",
+                    "definition": "A customer",
+                }
+            },
+        }
+
+        with open(tmppath / "conceptual.yml", "w") as f:
+            yaml.dump(conceptual_data, f)
+
+        # Initialize git repo
+        import subprocess
+
+        subprocess.run(["git", "init"], cwd=tmppath, capture_output=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@example.com"],
+            cwd=tmppath,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test User"],
+            cwd=tmppath,
+            capture_output=True,
+        )
+        subprocess.run(["git", "add", "."], cwd=tmppath, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "-m", "Initial"],
+            cwd=tmppath,
+            capture_output=True,
+        )
+
+        # Make a change
+        conceptual_data["concepts"]["product"] = {
+            "name": "Product",
+            "domain": "party",
+            "owner": "data_team",
+            "definition": "A product",
+        }
+        with open(tmppath / "conceptual.yml", "w") as f:
+            yaml.dump(conceptual_data, f)
+
+        result = runner.invoke(
+            diff,
+            [
+                "--project-dir",
+                str(tmppath),
+                "--base",
+                "HEAD",
+                "--format",
+                "github",
+            ],
+        )
+
+        # Should signal changes with exit code 1 in github format
+        assert result.exit_code == 1
+
+
+def test_cli_diff_git_not_found_error() -> None:
+    """Test diff command handles git not found error gracefully."""
+    runner = CliRunner()
+
+    with TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        # Create dbt_project.yml
+        with open(tmppath / "dbt_project.yml", "w") as f:
+            yaml.dump({"name": "test"}, f)
+
+        # Create conceptual.yml
+        with open(tmppath / "conceptual.yml", "w") as f:
+            yaml.dump({"version": 1}, f)
+
+        # Don't initialize git - will trigger error
+        result = runner.invoke(
+            diff,
+            [
+                "--project-dir",
+                str(tmppath),
+                "--base",
+                "main",
+                "--format",
+                "human",
+            ],
+        )
+
+        # Should fail with appropriate error message
+        assert result.exit_code == 1
+        assert "git" in result.output.lower() or "repository" in result.output.lower()
+
+
+def test_cli_export_generic_exception_handling() -> None:
+    """Test export command handles generic exceptions with proper error message."""
+    runner = CliRunner()
+
+    with TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        # Create dbt_project.yml
+        with open(tmppath / "dbt_project.yml", "w") as f:
+            yaml.dump({"name": "test"}, f)
+
+        # Create conceptual.yml
+        with open(tmppath / "conceptual.yml", "w") as f:
+            yaml.dump({"version": 1}, f)
+
+        # Mock an export handler to raise an exception
+        with patch("dbt_conceptual.exporter.export_status_json") as mock_export:
+            mock_export.side_effect = RuntimeError("Simulated export error")
+
+            result = runner.invoke(
+                export,
+                [
+                    "--project-dir",
+                    str(tmppath),
+                    "--type",
+                    "status",
+                    "--format",
+                    "json",
+                ],
+            )
+
+            # Should fail with error message
+            assert result.exit_code == 1
+            assert "Error during export" in result.output
