@@ -1,0 +1,517 @@
+# Unit tests for dim_ticket (Type 2 SCD)
+# Tests temporal logic: LEAD() window function, valid_from/valid_to boundaries, is_current flag
+
+unit_tests:
+  # Test 1: Single version ticket - basic SCD2 case
+  - name: test_dim_ticket_single_version
+    description: |
+      Ticket with only one version should have:
+      - valid_to = 9999-12-31 (open-ended)
+      - is_current = true
+    model: dim_ticket
+    given:
+      - input: ref('h_ticket')
+        rows:
+          - ticket_tk: 'ticket1'
+            ticket_code: 'DBT-1'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'linear'
+      - input: ref('s_ticket_base')
+        rows:
+          - ticket_tk: 'ticket1'
+            ticket_title: 'Initial setup'
+            ticket_description: 'Set up the project'
+            ticket_tshirt_size: 'M'
+            ticket_acceptance_criteria: 'Project created'
+            ticket_current_status: 'Todo'
+            current_sprint_code: 'SPRINT-1'
+            project_code: 'DBT'
+            is_deleted: false
+            ticket_hd: 'hash1'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'linear'
+    expect:
+      rows:
+        - ticket_tk: 'ticket1'
+          ticket_code: 'DBT-1'
+          ticket_title: 'Initial setup'
+          ticket_description: 'Set up the project'
+          ticket_tshirt_size: 'M'
+          ticket_current_status: 'Todo'
+          current_sprint_code: 'SPRINT-1'
+          project_code: 'DBT'
+          is_deleted: false
+          valid_from: '2026-01-01 00:00:00'
+          valid_to: '9999-12-31 00:00:00'
+          is_current: true
+
+  # Test 2: Status transitions - core workflow tracking
+  - name: test_dim_ticket_status_transitions
+    description: |
+      Ticket moving through workflow statuses should create temporal versions:
+      Todo -> In Progress -> In Review -> Done
+      Each transition creates a new version with proper boundaries.
+    model: dim_ticket
+    given:
+      - input: ref('h_ticket')
+        rows:
+          - ticket_tk: 'ticket2'
+            ticket_code: 'DBT-2'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'linear'
+      - input: ref('s_ticket_base')
+        rows:
+          # Status: Todo
+          - ticket_tk: 'ticket2'
+            ticket_title: 'Build feature X'
+            ticket_description: 'Feature description'
+            ticket_tshirt_size: 'L'
+            ticket_acceptance_criteria: 'Feature works'
+            ticket_current_status: 'Todo'
+            current_sprint_code: 'SPRINT-1'
+            project_code: 'DBT'
+            is_deleted: false
+            ticket_hd: 'hash1'
+            load_ts: '2026-01-02 09:00:00'
+            rsrc: 'linear'
+          # Status: In Progress
+          - ticket_tk: 'ticket2'
+            ticket_title: 'Build feature X'
+            ticket_description: 'Feature description'
+            ticket_tshirt_size: 'L'
+            ticket_acceptance_criteria: 'Feature works'
+            ticket_current_status: 'In Progress'
+            current_sprint_code: 'SPRINT-1'
+            project_code: 'DBT'
+            is_deleted: false
+            ticket_hd: 'hash2'
+            load_ts: '2026-01-03 10:30:00'
+            rsrc: 'linear'
+          # Status: In Review
+          - ticket_tk: 'ticket2'
+            ticket_title: 'Build feature X'
+            ticket_description: 'Feature description'
+            ticket_tshirt_size: 'L'
+            ticket_acceptance_criteria: 'Feature works'
+            ticket_current_status: 'In Review'
+            current_sprint_code: 'SPRINT-1'
+            project_code: 'DBT'
+            is_deleted: false
+            ticket_hd: 'hash3'
+            load_ts: '2026-01-04 14:00:00'
+            rsrc: 'linear'
+          # Status: Done
+          - ticket_tk: 'ticket2'
+            ticket_title: 'Build feature X'
+            ticket_description: 'Feature description'
+            ticket_tshirt_size: 'L'
+            ticket_acceptance_criteria: 'Feature works'
+            ticket_current_status: 'Done'
+            current_sprint_code: 'SPRINT-1'
+            project_code: 'DBT'
+            is_deleted: false
+            ticket_hd: 'hash4'
+            load_ts: '2026-01-04 16:45:00'
+            rsrc: 'linear'
+    expect:
+      rows:
+        # Version 1: Todo
+        - ticket_tk: 'ticket2'
+          ticket_code: 'DBT-2'
+          ticket_current_status: 'Todo'
+          current_sprint_code: 'SPRINT-1'
+          valid_from: '2026-01-02 09:00:00'
+          valid_to: '2026-01-03 10:30:00'
+          is_current: false
+        # Version 2: In Progress
+        - ticket_tk: 'ticket2'
+          ticket_code: 'DBT-2'
+          ticket_current_status: 'In Progress'
+          current_sprint_code: 'SPRINT-1'
+          valid_from: '2026-01-03 10:30:00'
+          valid_to: '2026-01-04 14:00:00'
+          is_current: false
+        # Version 3: In Review
+        - ticket_tk: 'ticket2'
+          ticket_code: 'DBT-2'
+          ticket_current_status: 'In Review'
+          current_sprint_code: 'SPRINT-1'
+          valid_from: '2026-01-04 14:00:00'
+          valid_to: '2026-01-04 16:45:00'
+          is_current: false
+        # Version 4: Done (current)
+        - ticket_tk: 'ticket2'
+          ticket_code: 'DBT-2'
+          ticket_current_status: 'Done'
+          current_sprint_code: 'SPRINT-1'
+          valid_from: '2026-01-04 16:45:00'
+          valid_to: '9999-12-31 00:00:00'
+          is_current: true
+
+  # Test 3: Sprint reassignment
+  - name: test_dim_ticket_sprint_reassignment
+    description: |
+      Ticket moved from one sprint to another should create new version.
+      Tests that sprint changes are properly tracked in SCD2.
+    model: dim_ticket
+    given:
+      - input: ref('h_ticket')
+        rows:
+          - ticket_tk: 'ticket3'
+            ticket_code: 'DBT-3'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'linear'
+      - input: ref('s_ticket_base')
+        rows:
+          # Sprint 1
+          - ticket_tk: 'ticket3'
+            ticket_title: 'Complex task'
+            ticket_description: 'Takes longer than expected'
+            ticket_tshirt_size: 'XL'
+            ticket_acceptance_criteria: 'Task complete'
+            ticket_current_status: 'In Progress'
+            current_sprint_code: 'SPRINT-1'
+            project_code: 'DBT'
+            is_deleted: false
+            ticket_hd: 'hash1'
+            load_ts: '2026-01-01 09:00:00'
+            rsrc: 'linear'
+          # Moved to Sprint 2 (carryover)
+          - ticket_tk: 'ticket3'
+            ticket_title: 'Complex task'
+            ticket_description: 'Takes longer than expected'
+            ticket_tshirt_size: 'XL'
+            ticket_acceptance_criteria: 'Task complete'
+            ticket_current_status: 'In Progress'
+            current_sprint_code: 'SPRINT-2'
+            project_code: 'DBT'
+            is_deleted: false
+            ticket_hd: 'hash2'
+            load_ts: '2026-01-15 10:00:00'
+            rsrc: 'linear'
+          # Completed in Sprint 2
+          - ticket_tk: 'ticket3'
+            ticket_title: 'Complex task'
+            ticket_description: 'Takes longer than expected'
+            ticket_tshirt_size: 'XL'
+            ticket_acceptance_criteria: 'Task complete'
+            ticket_current_status: 'Done'
+            current_sprint_code: 'SPRINT-2'
+            project_code: 'DBT'
+            is_deleted: false
+            ticket_hd: 'hash3'
+            load_ts: '2026-01-20 15:00:00'
+            rsrc: 'linear'
+    expect:
+      rows:
+        # Sprint 1 period
+        - ticket_tk: 'ticket3'
+          ticket_code: 'DBT-3'
+          ticket_current_status: 'In Progress'
+          current_sprint_code: 'SPRINT-1'
+          valid_from: '2026-01-01 09:00:00'
+          valid_to: '2026-01-15 10:00:00'
+          is_current: false
+        # Sprint 2 period (in progress)
+        - ticket_tk: 'ticket3'
+          ticket_code: 'DBT-3'
+          ticket_current_status: 'In Progress'
+          current_sprint_code: 'SPRINT-2'
+          valid_from: '2026-01-15 10:00:00'
+          valid_to: '2026-01-20 15:00:00'
+          is_current: false
+        # Sprint 2 period (done)
+        - ticket_tk: 'ticket3'
+          ticket_code: 'DBT-3'
+          ticket_current_status: 'Done'
+          current_sprint_code: 'SPRINT-2'
+          valid_from: '2026-01-20 15:00:00'
+          valid_to: '9999-12-31 00:00:00'
+          is_current: true
+
+  # Test 4: Multiple tickets - independent tracking
+  - name: test_dim_ticket_multiple_tickets_independent
+    description: |
+      Multiple tickets with different version counts should track independently.
+      Tests PARTITION BY ticket_tk in LEAD() window function.
+    model: dim_ticket
+    given:
+      - input: ref('h_ticket')
+        rows:
+          - ticket_tk: 'ticket_a'
+            ticket_code: 'DBT-10'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'linear'
+          - ticket_tk: 'ticket_b'
+            ticket_code: 'DBT-11'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'linear'
+          - ticket_tk: 'ticket_c'
+            ticket_code: 'DBT-12'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'linear'
+      - input: ref('s_ticket_base')
+        rows:
+          # Ticket A: 1 version
+          - ticket_tk: 'ticket_a'
+            ticket_title: 'Quick fix'
+            ticket_description: 'Fast task'
+            ticket_tshirt_size: 'S'
+            ticket_acceptance_criteria: 'Fixed'
+            ticket_current_status: 'Done'
+            current_sprint_code: 'SPRINT-1'
+            project_code: 'DBT'
+            is_deleted: false
+            ticket_hd: 'hash_a1'
+            load_ts: '2026-01-01 09:00:00'
+            rsrc: 'linear'
+          # Ticket B: 2 versions
+          - ticket_tk: 'ticket_b'
+            ticket_title: 'Medium task'
+            ticket_description: 'Takes some time'
+            ticket_tshirt_size: 'M'
+            ticket_acceptance_criteria: 'Complete'
+            ticket_current_status: 'In Progress'
+            current_sprint_code: 'SPRINT-1'
+            project_code: 'DBT'
+            is_deleted: false
+            ticket_hd: 'hash_b1'
+            load_ts: '2026-01-02 10:00:00'
+            rsrc: 'linear'
+          - ticket_tk: 'ticket_b'
+            ticket_title: 'Medium task'
+            ticket_description: 'Takes some time'
+            ticket_tshirt_size: 'M'
+            ticket_acceptance_criteria: 'Complete'
+            ticket_current_status: 'Done'
+            current_sprint_code: 'SPRINT-1'
+            project_code: 'DBT'
+            is_deleted: false
+            ticket_hd: 'hash_b2'
+            load_ts: '2026-01-05 14:00:00'
+            rsrc: 'linear'
+          # Ticket C: 3 versions
+          - ticket_tk: 'ticket_c'
+            ticket_title: 'Complex feature'
+            ticket_description: 'Multi-phase work'
+            ticket_tshirt_size: 'L'
+            ticket_acceptance_criteria: 'All phases done'
+            ticket_current_status: 'Todo'
+            current_sprint_code: 'SPRINT-1'
+            project_code: 'DBT'
+            is_deleted: false
+            ticket_hd: 'hash_c1'
+            load_ts: '2026-01-01 08:00:00'
+            rsrc: 'linear'
+          - ticket_tk: 'ticket_c'
+            ticket_title: 'Complex feature'
+            ticket_description: 'Multi-phase work'
+            ticket_tshirt_size: 'L'
+            ticket_acceptance_criteria: 'All phases done'
+            ticket_current_status: 'In Progress'
+            current_sprint_code: 'SPRINT-1'
+            project_code: 'DBT'
+            is_deleted: false
+            ticket_hd: 'hash_c2'
+            load_ts: '2026-01-03 11:00:00'
+            rsrc: 'linear'
+          - ticket_tk: 'ticket_c'
+            ticket_title: 'Complex feature'
+            ticket_description: 'Multi-phase work'
+            ticket_tshirt_size: 'L'
+            ticket_acceptance_criteria: 'All phases done'
+            ticket_current_status: 'In Review'
+            current_sprint_code: 'SPRINT-1'
+            project_code: 'DBT'
+            is_deleted: false
+            ticket_hd: 'hash_c3'
+            load_ts: '2026-01-07 16:00:00'
+            rsrc: 'linear'
+    expect:
+      rows:
+        # Ticket A: 1 version (current)
+        - ticket_tk: 'ticket_a'
+          ticket_code: 'DBT-10'
+          ticket_current_status: 'Done'
+          valid_from: '2026-01-01 09:00:00'
+          valid_to: '9999-12-31 00:00:00'
+          is_current: true
+        # Ticket B: version 1 (historical)
+        - ticket_tk: 'ticket_b'
+          ticket_code: 'DBT-11'
+          ticket_current_status: 'In Progress'
+          valid_from: '2026-01-02 10:00:00'
+          valid_to: '2026-01-05 14:00:00'
+          is_current: false
+        # Ticket B: version 2 (current)
+        - ticket_tk: 'ticket_b'
+          ticket_code: 'DBT-11'
+          ticket_current_status: 'Done'
+          valid_from: '2026-01-05 14:00:00'
+          valid_to: '9999-12-31 00:00:00'
+          is_current: true
+        # Ticket C: version 1 (historical)
+        - ticket_tk: 'ticket_c'
+          ticket_code: 'DBT-12'
+          ticket_current_status: 'Todo'
+          valid_from: '2026-01-01 08:00:00'
+          valid_to: '2026-01-03 11:00:00'
+          is_current: false
+        # Ticket C: version 2 (historical)
+        - ticket_tk: 'ticket_c'
+          ticket_code: 'DBT-12'
+          ticket_current_status: 'In Progress'
+          valid_from: '2026-01-03 11:00:00'
+          valid_to: '2026-01-07 16:00:00'
+          is_current: false
+        # Ticket C: version 3 (current)
+        - ticket_tk: 'ticket_c'
+          ticket_code: 'DBT-12'
+          ticket_current_status: 'In Review'
+          valid_from: '2026-01-07 16:00:00'
+          valid_to: '9999-12-31 00:00:00'
+          is_current: true
+
+  # Test 5: Attribute changes without status change
+  - name: test_dim_ticket_attribute_changes
+    description: |
+      Changes to title, description, or size should create new versions.
+      Tests that non-status attributes are properly tracked.
+    model: dim_ticket
+    given:
+      - input: ref('h_ticket')
+        rows:
+          - ticket_tk: 'ticket4'
+            ticket_code: 'DBT-4'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'linear'
+      - input: ref('s_ticket_base')
+        rows:
+          # Original version
+          - ticket_tk: 'ticket4'
+            ticket_title: 'Initial title'
+            ticket_description: 'Initial description'
+            ticket_tshirt_size: 'M'
+            ticket_acceptance_criteria: 'Done'
+            ticket_current_status: 'In Progress'
+            current_sprint_code: 'SPRINT-1'
+            project_code: 'DBT'
+            is_deleted: false
+            ticket_hd: 'hash1'
+            load_ts: '2026-01-01 09:00:00'
+            rsrc: 'linear'
+          # Title updated
+          - ticket_tk: 'ticket4'
+            ticket_title: 'Clarified title'
+            ticket_description: 'Initial description'
+            ticket_tshirt_size: 'M'
+            ticket_acceptance_criteria: 'Done'
+            ticket_current_status: 'In Progress'
+            current_sprint_code: 'SPRINT-1'
+            project_code: 'DBT'
+            is_deleted: false
+            ticket_hd: 'hash2'
+            load_ts: '2026-01-02 11:00:00'
+            rsrc: 'linear'
+          # Size updated (scope increase)
+          - ticket_tk: 'ticket4'
+            ticket_title: 'Clarified title'
+            ticket_description: 'Initial description'
+            ticket_tshirt_size: 'L'
+            ticket_acceptance_criteria: 'Done'
+            ticket_current_status: 'In Progress'
+            current_sprint_code: 'SPRINT-1'
+            project_code: 'DBT'
+            is_deleted: false
+            ticket_hd: 'hash3'
+            load_ts: '2026-01-03 15:00:00'
+            rsrc: 'linear'
+    expect:
+      rows:
+        # Original
+        - ticket_tk: 'ticket4'
+          ticket_code: 'DBT-4'
+          ticket_title: 'Initial title'
+          ticket_tshirt_size: 'M'
+          ticket_current_status: 'In Progress'
+          valid_from: '2026-01-01 09:00:00'
+          valid_to: '2026-01-02 11:00:00'
+          is_current: false
+        # Title change
+        - ticket_tk: 'ticket4'
+          ticket_code: 'DBT-4'
+          ticket_title: 'Clarified title'
+          ticket_tshirt_size: 'M'
+          ticket_current_status: 'In Progress'
+          valid_from: '2026-01-02 11:00:00'
+          valid_to: '2026-01-03 15:00:00'
+          is_current: false
+        # Size change (current)
+        - ticket_tk: 'ticket4'
+          ticket_code: 'DBT-4'
+          ticket_title: 'Clarified title'
+          ticket_tshirt_size: 'L'
+          ticket_current_status: 'In Progress'
+          valid_from: '2026-01-03 15:00:00'
+          valid_to: '9999-12-31 00:00:00'
+          is_current: true
+
+  # Test 6: Soft delete tracking
+  - name: test_dim_ticket_soft_delete
+    description: |
+      Ticket deletion should create a new version with is_deleted = true.
+      Tests that SCD2 properly tracks deletion as a state change.
+    model: dim_ticket
+    given:
+      - input: ref('h_ticket')
+        rows:
+          - ticket_tk: 'ticket5'
+            ticket_code: 'DBT-5'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'linear'
+      - input: ref('s_ticket_base')
+        rows:
+          # Active
+          - ticket_tk: 'ticket5'
+            ticket_title: 'Deprecated feature'
+            ticket_description: 'No longer needed'
+            ticket_tshirt_size: 'M'
+            ticket_acceptance_criteria: 'N/A'
+            ticket_current_status: 'Cancelled'
+            current_sprint_code: 'SPRINT-1'
+            project_code: 'DBT'
+            is_deleted: false
+            ticket_hd: 'hash1'
+            load_ts: '2026-01-01 09:00:00'
+            rsrc: 'linear'
+          # Deleted
+          - ticket_tk: 'ticket5'
+            ticket_title: 'Deprecated feature'
+            ticket_description: 'No longer needed'
+            ticket_tshirt_size: 'M'
+            ticket_acceptance_criteria: 'N/A'
+            ticket_current_status: 'Cancelled'
+            current_sprint_code: 'SPRINT-1'
+            project_code: 'DBT'
+            is_deleted: true
+            ticket_hd: 'hash2'
+            load_ts: '2026-01-05 17:00:00'
+            rsrc: 'linear'
+    expect:
+      rows:
+        # Active period
+        - ticket_tk: 'ticket5'
+          ticket_code: 'DBT-5'
+          ticket_current_status: 'Cancelled'
+          is_deleted: false
+          valid_from: '2026-01-01 09:00:00'
+          valid_to: '2026-01-05 17:00:00'
+          is_current: false
+        # Deleted period (current)
+        - ticket_tk: 'ticket5'
+          ticket_code: 'DBT-5'
+          ticket_current_status: 'Cancelled'
+          is_deleted: true
+          valid_from: '2026-01-05 17:00:00'
+          valid_to: '9999-12-31 00:00:00'
+          is_current: true
