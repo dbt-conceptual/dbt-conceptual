@@ -519,11 +519,82 @@ def test_api_state_post_skips_ghost_concepts(temp_project):
     response = client.post("/api/state", json=state_data)
     assert response.status_code == 200
 
+    # Check response includes skipped ghosts
+    data = response.get_json()
+    assert data["success"] is True
+    assert "skipped_ghosts" in data
+    assert "ghost_concept" in data["skipped_ghosts"]
+
     conceptual_file = temp_project / "conceptual.yml"
     with open(conceptual_file) as f:
         saved_data = yaml.safe_load(f)
 
     assert "ghost_concept" not in saved_data["concepts"]
+
+
+def test_api_state_post_warns_about_skipped_ghosts(temp_project, caplog):
+    """Test POST /api/state logs warning when skipping ghost concepts."""
+    import logging
+
+    app = create_app(temp_project)
+    client = app.test_client()
+
+    state_data = {
+        "domains": {"customer": {"name": "customer", "color": "#4a9eff"}},
+        "concepts": {
+            "customer": {
+                "name": "Customer",
+                "domain": "customer",
+                "definition": "A buyer",
+            },
+            "ghost_one": {
+                "name": "Ghost One",
+                "isGhost": True,
+            },
+            "ghost_two": {
+                "name": "Ghost Two",
+                "isGhost": True,
+            },
+        },
+    }
+
+    with caplog.at_level(logging.WARNING):
+        response = client.post("/api/state", json=state_data)
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert len(data["skipped_ghosts"]) == 2
+    assert "ghost_one" in data["skipped_ghosts"]
+    assert "ghost_two" in data["skipped_ghosts"]
+
+    # Verify warning was logged
+    assert any("Skipping ghost concept" in record.message for record in caplog.records)
+    assert any("ghost_one" in record.message for record in caplog.records)
+
+
+def test_api_state_post_no_skipped_ghosts(temp_project):
+    """Test POST /api/state returns empty list when no ghosts are skipped."""
+    app = create_app(temp_project)
+    client = app.test_client()
+
+    state_data = {
+        "domains": {"customer": {"name": "customer", "color": "#4a9eff"}},
+        "concepts": {
+            "customer": {
+                "name": "Customer",
+                "domain": "customer",
+                "definition": "A buyer",
+            },
+        },
+    }
+
+    response = client.post("/api/state", json=state_data)
+    assert response.status_code == 200
+
+    data = response.get_json()
+    assert data["success"] is True
+    assert "skipped_ghosts" in data
+    assert data["skipped_ghosts"] == []
 
 
 def test_api_state_post_preserves_config(rich_project):
