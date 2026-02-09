@@ -1,0 +1,161 @@
+version: 2
+
+models:
+  - name: dim_agent
+    description: Agent dimension (Type 2 SCD) - tracks historical changes to agent attributes
+    columns:
+      - name: agent_sk
+        description: Agent surrogate key (hash of agent_tk + valid_from)
+        tests:
+          - unique
+          - not_null
+      - name: agent_tk
+        description: Agent technical key from vault
+        tests:
+          - not_null
+      - name: agent_code
+        description: Agent business key
+      - name: valid_from
+        description: Start of validity period
+      - name: valid_to
+        description: End of validity period (9999-12-31 for current)
+      - name: is_current
+        description: Flag indicating current version
+
+  - name: dim_ticket
+    description: Ticket dimension (Type 2 SCD) - tracks historical changes to ticket attributes
+    columns:
+      - name: ticket_sk
+        description: Ticket surrogate key (hash of ticket_tk + valid_from)
+        tests:
+          - unique
+          - not_null
+      - name: ticket_tk
+        description: Ticket technical key from vault
+        tests:
+          - not_null
+      - name: ticket_code
+        description: Ticket business key
+      - name: valid_from
+        description: Start of validity period
+      - name: valid_to
+        description: End of validity period (9999-12-31 for current)
+      - name: is_current
+        description: Flag indicating current version
+
+  - name: dim_sprint
+    description: Sprint dimension (Type 2 SCD) - tracks historical changes to sprint attributes
+    columns:
+      - name: sprint_sk
+        description: Sprint surrogate key (hash of sprint_tk + valid_from)
+        tests:
+          - unique
+          - not_null
+      - name: sprint_tk
+        description: Sprint technical key from vault
+        tests:
+          - not_null
+      - name: sprint_code
+        description: Sprint business key
+      - name: valid_from
+        description: Start of validity period
+      - name: valid_to
+        description: End of validity period (9999-12-31 for current)
+      - name: is_current
+        description: Flag indicating current version
+
+  - name: dim_model
+    description: Model dimension (Type 1) - current state only
+    columns:
+      - name: model_sk
+        description: Model surrogate key (aliased from model_tk)
+        tests:
+          - unique
+          - not_null
+      - name: model_code
+        description: Model business key
+
+  - name: dim_project
+    description: Project dimension (Type 1) - current state only
+    columns:
+      - name: project_sk
+        description: Project surrogate key (aliased from project_tk)
+        tests:
+          - unique
+          - not_null
+      - name: project_code
+        description: Project business key
+
+  - name: dim_initiative
+    description: Initiative dimension (Type 1) - current state only
+    columns:
+      - name: initiative_sk
+        description: Initiative surrogate key (aliased from initiative_tk)
+        tests:
+          - unique
+          - not_null
+      - name: initiative_code
+        description: Initiative business key
+
+  - name: dim_skillset
+    description: Skillset dimension (Type 1) - aggregates skills linked to each skillset
+    columns:
+      - name: skillset_sk
+        description: Skillset surrogate key (aliased from skillset_tk)
+        tests:
+          - unique
+          - not_null
+      - name: skillset_tk
+        description: Skillset technical key from vault
+      - name: skill_codes
+        description: Comma-separated list of skills in this skillset
+
+  - name: dim_craft
+    description: Craft dimension (Type 1) - current state only
+    columns:
+      - name: craft_sk
+        description: Craft surrogate key (aliased from craft_tk)
+        tests:
+          - unique
+          - not_null
+      - name: craft_code
+        description: Craft business key
+
+  - name: dim_personality
+    description: Personality dimension (Type 1) - current state only
+    columns:
+      - name: personality_sk
+        description: Personality surrogate key (aliased from personality_tk)
+        tests:
+          - unique
+          - not_null
+      - name: personality_code
+        description: Personality business key
+
+  - name: dim_pull_request
+    description: Pull request dimension (Type 1) - current state only
+    columns:
+      - name: pull_request_sk
+        description: Pull request surrogate key (aliased from pull_request_tk)
+        tests:
+          - unique
+          - not_null
+      - name: pr_code
+        description: Pull request business key
+
+  - name: dim_date
+    description: Date dimension (generated) - date spine from 2025-01-01 to 2027-12-31
+    columns:
+      - name: date_sk
+        description: Date surrogate key (YYYYMMDD integer)
+        tests:
+          - unique
+          - not_null
+      - name: date_actual
+        description: Actual date value
+        tests:
+          - not_null
+      - name: day_of_week
+        description: Day of week number (1=Sunday, 7=Saturday)
+      - name: is_weekend
+        description: Flag indicating weekend day
