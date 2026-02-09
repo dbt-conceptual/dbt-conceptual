@@ -12,7 +12,7 @@ models:
         description: "Foreign key to h_craft"
         tests:
           - not_null
-      - name: craft_hd
+      - name: craft_base_hd
         description: "Hashdiff of descriptive attributes"
         tests:
           - not_null

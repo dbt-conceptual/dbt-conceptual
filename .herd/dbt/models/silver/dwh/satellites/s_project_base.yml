@@ -12,7 +12,7 @@ models:
         description: "Foreign key to h_project"
         tests:
           - not_null
-      - name: project_hd
+      - name: project_base_hd
         description: "Hashdiff of descriptive attributes"
         tests:
           - not_null

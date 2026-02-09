@@ -12,7 +12,7 @@ models:
         description: "Foreign key to h_skill"
         tests:
           - not_null
-      - name: skill_hd
+      - name: skill_base_hd
         description: "Hashdiff of descriptive attributes"
         tests:
           - not_null

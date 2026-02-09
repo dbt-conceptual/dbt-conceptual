@@ -12,7 +12,7 @@ models:
         description: "Foreign key to h_model"
         tests:
           - not_null
-      - name: model_hd
+      - name: model_base_hd
         description: "Hashdiff of descriptive attributes"
         tests:
           - not_null
