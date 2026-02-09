@@ -8,10 +8,19 @@ Simplified v1.0 state model:
 """
 
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Literal, Optional
 
+
 # Validation types
-ValidationStatus = Literal["valid", "warning", "error"]
+class ValidationStatus(str, Enum):
+    """Validation status for concepts and relationships."""
+
+    VALID = "valid"
+    WARNING = "warning"
+    ERROR = "error"
+
+
 MessageSeverity = Literal["error", "warning", "info"]
 
 
@@ -57,7 +66,7 @@ class ConceptState:
 
     # Validation fields (populated during sync)
     is_ghost: bool = False  # True if referenced but not defined in YAML
-    validation_status: ValidationStatus = "valid"
+    validation_status: ValidationStatus = ValidationStatus.VALID
     validation_messages: list[str] = field(default_factory=list)
 
     @property
@@ -93,7 +102,7 @@ class RelationshipState:
     owner: Optional[str] = None
 
     # Validation fields (populated during sync)
-    validation_status: ValidationStatus = "valid"
+    validation_status: ValidationStatus = ValidationStatus.VALID
     validation_messages: list[str] = field(default_factory=list)
 
     @property

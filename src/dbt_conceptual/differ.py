@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any, TypeVar
@@ -120,24 +121,37 @@ def _compare_entities(
     return None
 
 
-# Field lists for each entity type -- these define which attributes are compared
-# when detecting modifications (excludes derived/runtime fields).
-_CONCEPT_COMPARE_FIELDS: Sequence[str] = (
-    "name",
-    "domain",
-    "owner",
-    "definition",
-    "color",
-)
-_RELATIONSHIP_COMPARE_FIELDS: Sequence[str] = (
-    "verb",
-    "from_concept",
-    "to_concept",
-    "cardinality",
-    "definition",
-    "owner",
-)
-_DOMAIN_COMPARE_FIELDS: Sequence[str] = ("name", "display_name", "color")
+def _get_comparable_fields(state_class: type) -> Sequence[str]:
+    """Extract field names from a dataclass, excluding runtime/derived fields.
+
+    Args:
+        state_class: The dataclass type to inspect.
+
+    Returns:
+        Tuple of field names suitable for comparison.
+    """
+    # Get all dataclass fields
+    all_fields = [f.name for f in dataclasses.fields(state_class)]
+
+    # Define runtime/derived fields to exclude
+    runtime_fields = {
+        # ConceptState runtime fields
+        "models",
+        "is_ghost",
+        "validation_status",
+        "validation_messages",
+        # RelationshipState runtime fields (validation only, not 'name' which is property)
+        # DomainState has no runtime fields to exclude
+    }
+
+    # Filter out runtime fields
+    return tuple(f for f in all_fields if f not in runtime_fields)
+
+
+# Field lists for each entity type -- derived from dataclass fields
+_CONCEPT_COMPARE_FIELDS: Sequence[str] = _get_comparable_fields(ConceptState)
+_RELATIONSHIP_COMPARE_FIELDS: Sequence[str] = _get_comparable_fields(RelationshipState)
+_DOMAIN_COMPARE_FIELDS: Sequence[str] = _get_comparable_fields(DomainState)
 
 
 def compute_diff(base: ProjectState, current: ProjectState) -> ConceptualDiff:
