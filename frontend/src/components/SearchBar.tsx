@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useStore } from '../store';
 
 interface SearchResult {
@@ -36,9 +36,9 @@ export function SearchBar() {
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Build search index from concepts and relationships
-  const search = useCallback(
-    (searchQuery: string) => {
+  // Build search index from concepts and relationships - memoized to avoid rebuilds
+  const search = useMemo(
+    () => (searchQuery: string) => {
       if (!searchQuery.trim()) {
         setResults([]);
         return;
@@ -90,7 +90,7 @@ export function SearchBar() {
       // Limit results
       setResults(matches.slice(0, 10));
     },
-    [concepts, relationships]
+    [concepts, relationships, setResults]
   );
 
   // Handle input change

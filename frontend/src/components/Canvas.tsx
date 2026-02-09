@@ -33,6 +33,13 @@ const nodeTypes = {
 const edgeTypes = {
   relationship: RelationshipEdge,
 };
+// Type guard for position changes
+function isPositionChange(
+  change: NodeChange<ConceptFlowNode>
+): change is NodeChange<ConceptFlowNode> & { type: 'position'; id: string; position: { x: number; y: number } } {
+  return change.type === 'position' && 'position' in change && change.position != null;
+}
+
 
 // Inner component that has access to React Flow instance
 function CanvasInner() {
@@ -167,10 +174,7 @@ function CanvasInner() {
       onNodesChange(changes);
 
       // Extract position changes to keep store in sync
-      const positionChanges = changes.filter(
-        (change): change is NodeChange<ConceptFlowNode> & { type: 'position'; id: string; position: { x: number; y: number } } =>
-          change.type === 'position' && 'position' in change && change.position != null
-      );
+      const positionChanges = changes.filter(isPositionChange);
 
       if (positionChanges.length > 0) {
         const newPositions: Record<string, { x: number; y: number }> = {};

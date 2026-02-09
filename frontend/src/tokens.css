@@ -97,6 +97,9 @@
   --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.15);
   --shadow-selection: 0 0 0 3px rgba(230, 126, 34, 0.15);
+
+  /* === Layout Dimensions === */
+  --property-panel-width: 360px;
 }
 
 /* === Base Styles === */
@@ -150,7 +153,7 @@ code, pre {
 
 .app-main {
   display: flex;
-  height: 100%;
+  height: calc(100% - 48px);
   padding-top: 48px;
 }
 
@@ -374,7 +377,7 @@ code, pre {
 
 /* === PropertyPanel Component === */
 .property-panel {
-  width: 360px;
+  width: var(--property-panel-width);
   height: 100%;
   background: var(--bg-surface);
   border-left: 1px solid var(--border);
