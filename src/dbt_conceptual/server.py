@@ -244,11 +244,17 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
                 }
 
             # Concepts
+            skipped_ghosts: list[str] = []
             if data.get("concepts"):
                 yaml_data["concepts"] = {}
                 for concept_id, concept in data["concepts"].items():
                     # Skip ghost concepts that haven't been properly defined
                     if concept.get("isGhost") and not concept.get("domain"):
+                        skipped_ghosts.append(concept_id)
+                        logger.warning(
+                            "Skipping ghost concept without domain during save: %s",
+                            concept_id,
+                        )
                         continue
                     # Only save fields that belong in YAML (not derived fields)
                     concept_dict = {
@@ -294,7 +300,12 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
             # Write to file
             _write_conceptual_yml(conceptual_file, yaml_data)
 
-            return jsonify({"success": True, "message": "Saved to conceptual.yml"})
+            response_data = {
+                "success": True,
+                "message": "Saved to conceptual.yml",
+                "skipped_ghosts": skipped_ghosts,
+            }
+            return jsonify(response_data)
 
         except (yaml.YAMLError, ValueError, KeyError) as e:
             logger.error("Data error saving state: %s", e)
