@@ -46,7 +46,9 @@ def _parse_period(period: str | None) -> tuple[str | None, str | None]:
     return None, None
 
 
-def _build_period_filter(start_date: str | None, end_date: str | None, column: str = "created_at") -> str:
+def _build_period_filter(
+    start_date: str | None, end_date: str | None, column: str = "created_at"
+) -> str:
     """Build SQL WHERE clause for period filtering.
 
     Args:
