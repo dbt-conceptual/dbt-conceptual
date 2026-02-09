@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import re
@@ -36,6 +37,42 @@ def _classify_event_type(message: str) -> str:
         return "code_pushed"
     else:
         return "status_update"
+
+
+def _get_thread_replies(channel_id: str, thread_ts: str, token: str) -> list[dict[str, Any]]:
+    """Get thread replies from Slack using urllib.
+
+    Args:
+        channel_id: Slack channel ID.
+        thread_ts: Thread timestamp.
+        token: Slack API token.
+
+    Returns:
+        List of reply messages (excluding parent message).
+    """
+    try:
+        import urllib.request
+        import urllib.parse
+
+        params = urllib.parse.urlencode({"channel": channel_id, "ts": thread_ts})
+        url = f"https://slack.com/api/conversations.replies?{params}"
+
+        req = urllib.request.Request(
+            url,
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        with urllib.request.urlopen(req) as resp:
+            result = json.loads(resp.read())
+
+        if result.get("ok", False):
+            messages = result.get("messages", [])
+            # Filter out the parent message (first message)
+            return messages[1:] if len(messages) > 1 else []
+
+        return []
+    except Exception:
+        return []
 
 
 def _post_to_slack(message: str, channel: str, agent_name: str) -> dict[str, Any]:
@@ -140,10 +177,34 @@ async def execute(
     slack_result = _post_to_slack(message, channel, agent_name)
     posted = slack_result.get("success", False)
 
+    responses = []
+    if posted and await_response:
+        # Extract thread info from Slack response
+        slack_response = slack_result.get("response", {})
+        thread_ts = slack_response.get("ts")
+        channel_id = slack_response.get("channel")
+        token = os.getenv("HERD_SLACK_TOKEN")
+
+        if thread_ts and channel_id and token:
+            # Poll for replies (24 iterations * 5 seconds = 120 seconds)
+            for _ in range(24):
+                await asyncio.sleep(5)
+                replies = _get_thread_replies(channel_id, thread_ts, token)
+                if replies:
+                    responses = [
+                        {
+                            "user": reply.get("user", "unknown"),
+                            "text": reply.get("text", ""),
+                            "ts": reply.get("ts", ""),
+                        }
+                        for reply in replies
+                    ]
+                    break
+
     return {
         "posted": posted,
         "event_id": event_id if posted else None,
-        "responses": [],  # TODO: implement await_response if needed
+        "responses": responses,
         "agent": agent_name,
         "event_type": event_type,
         "slack_response": slack_result if not posted else None,
