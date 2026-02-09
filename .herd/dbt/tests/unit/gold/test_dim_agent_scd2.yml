@@ -1,0 +1,317 @@
+# Unit tests for dim_agent (Type 2 SCD)
+# Tests temporal logic: LEAD() window function, valid_from/valid_to boundaries, is_current flag
+
+unit_tests:
+  # Test 1: Single version agent - most basic SCD2 case
+  - name: test_dim_agent_single_version
+    description: |
+      Agent with only one version should have:
+      - valid_to = 9999-12-31 (open-ended)
+      - is_current = true
+    model: dim_agent
+    given:
+      - input: ref('h_agent')
+        rows:
+          - agent_tk: 'abc123'
+            agent_code: 'grunt'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'herd'
+      - input: ref('s_agent_base')
+        rows:
+          - agent_tk: 'abc123'
+            agent_role: 'backend'
+            agent_status: 'active'
+            agent_branch_prefix: 'herd/grunt/'
+            agent_email: 'grunt@herd.dev'
+            default_model_code: 'sonnet-4.5'
+            is_deleted: false
+            agent_hd: 'hash1'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'herd'
+    expect:
+      rows:
+        - agent_tk: 'abc123'
+          agent_code: 'grunt'
+          agent_role: 'backend'
+          agent_status: 'active'
+          agent_branch_prefix: 'herd/grunt/'
+          agent_email: 'grunt@herd.dev'
+          default_model_code: 'sonnet-4.5'
+          is_deleted: false
+          valid_from: '2026-01-01 00:00:00'
+          valid_to: '9999-12-31 00:00:00'
+          is_current: true
+
+  # Test 2: Multi-version agent - core SCD2 temporal chain
+  - name: test_dim_agent_multi_version_temporal_chain
+    description: |
+      Agent with 3 versions should create proper temporal chain:
+      - Version 1: valid_to = version 2's valid_from, is_current = false
+      - Version 2: valid_to = version 3's valid_from, is_current = false
+      - Version 3: valid_to = 9999-12-31, is_current = true
+      Tests LEAD() window function correctness.
+    model: dim_agent
+    given:
+      - input: ref('h_agent')
+        rows:
+          - agent_tk: 'def456'
+            agent_code: 'pikasso'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'herd'
+      - input: ref('s_agent_base')
+        rows:
+          # Version 1: initial state
+          - agent_tk: 'def456'
+            agent_role: 'frontend'
+            agent_status: 'active'
+            agent_branch_prefix: 'herd/pikasso/'
+            agent_email: 'pikasso@herd.dev'
+            default_model_code: 'sonnet-4.5'
+            is_deleted: false
+            agent_hd: 'hash1'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'herd'
+          # Version 2: status change
+          - agent_tk: 'def456'
+            agent_role: 'frontend'
+            agent_status: 'on_leave'
+            agent_branch_prefix: 'herd/pikasso/'
+            agent_email: 'pikasso@herd.dev'
+            default_model_code: 'sonnet-4.5'
+            is_deleted: false
+            agent_hd: 'hash2'
+            load_ts: '2026-01-15 12:30:00'
+            rsrc: 'herd'
+          # Version 3: back to active
+          - agent_tk: 'def456'
+            agent_role: 'frontend'
+            agent_status: 'active'
+            agent_branch_prefix: 'herd/pikasso/'
+            agent_email: 'pikasso@herd.dev'
+            default_model_code: 'opus-4.6'
+            is_deleted: false
+            agent_hd: 'hash3'
+            load_ts: '2026-02-01 08:00:00'
+            rsrc: 'herd'
+    expect:
+      rows:
+        # Version 1
+        - agent_tk: 'def456'
+          agent_code: 'pikasso'
+          agent_role: 'frontend'
+          agent_status: 'active'
+          default_model_code: 'sonnet-4.5'
+          is_deleted: false
+          valid_from: '2026-01-01 00:00:00'
+          valid_to: '2026-01-15 12:30:00'
+          is_current: false
+        # Version 2
+        - agent_tk: 'def456'
+          agent_code: 'pikasso'
+          agent_role: 'frontend'
+          agent_status: 'on_leave'
+          default_model_code: 'sonnet-4.5'
+          is_deleted: false
+          valid_from: '2026-01-15 12:30:00'
+          valid_to: '2026-02-01 08:00:00'
+          is_current: false
+        # Version 3 (current)
+        - agent_tk: 'def456'
+          agent_code: 'pikasso'
+          agent_role: 'frontend'
+          agent_status: 'active'
+          default_model_code: 'opus-4.6'
+          is_deleted: false
+          valid_from: '2026-02-01 08:00:00'
+          valid_to: '9999-12-31 00:00:00'
+          is_current: true
+
+  # Test 3: Multiple agents - independent tracking
+  - name: test_dim_agent_multiple_agents_independent
+    description: |
+      Multiple agents with different version counts should track independently.
+      Agent A: 1 version (current)
+      Agent B: 2 versions (historical + current)
+      Tests PARTITION BY agent_tk in LEAD() window function.
+    model: dim_agent
+    given:
+      - input: ref('h_agent')
+        rows:
+          - agent_tk: 'agent_a'
+            agent_code: 'mini-mao'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'herd'
+          - agent_tk: 'agent_b'
+            agent_code: 'wardenstein'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'herd'
+      - input: ref('s_agent_base')
+        rows:
+          # Agent A: single version
+          - agent_tk: 'agent_a'
+            agent_role: 'architect'
+            agent_status: 'active'
+            agent_branch_prefix: 'herd/mini-mao/'
+            agent_email: 'mini-mao@herd.dev'
+            default_model_code: 'opus-4.6'
+            is_deleted: false
+            agent_hd: 'hash_a1'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'herd'
+          # Agent B: version 1
+          - agent_tk: 'agent_b'
+            agent_role: 'qa'
+            agent_status: 'active'
+            agent_branch_prefix: 'herd/wardenstein/'
+            agent_email: 'wardenstein@herd.dev'
+            default_model_code: 'sonnet-4.5'
+            is_deleted: false
+            agent_hd: 'hash_b1'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'herd'
+          # Agent B: version 2
+          - agent_tk: 'agent_b'
+            agent_role: 'qa'
+            agent_status: 'active'
+            agent_branch_prefix: 'herd/wardenstein/'
+            agent_email: 'wardenstein@herd.dev'
+            default_model_code: 'opus-4.6'
+            is_deleted: false
+            agent_hd: 'hash_b2'
+            load_ts: '2026-01-20 10:00:00'
+            rsrc: 'herd'
+    expect:
+      rows:
+        # Agent A: current only
+        - agent_tk: 'agent_a'
+          agent_code: 'mini-mao'
+          agent_role: 'architect'
+          agent_status: 'active'
+          default_model_code: 'opus-4.6'
+          valid_from: '2026-01-01 00:00:00'
+          valid_to: '9999-12-31 00:00:00'
+          is_current: true
+        # Agent B: historical
+        - agent_tk: 'agent_b'
+          agent_code: 'wardenstein'
+          agent_role: 'qa'
+          agent_status: 'active'
+          default_model_code: 'sonnet-4.5'
+          valid_from: '2026-01-01 00:00:00'
+          valid_to: '2026-01-20 10:00:00'
+          is_current: false
+        # Agent B: current
+        - agent_tk: 'agent_b'
+          agent_code: 'wardenstein'
+          agent_role: 'qa'
+          agent_status: 'active'
+          default_model_code: 'opus-4.6'
+          valid_from: '2026-01-20 10:00:00'
+          valid_to: '9999-12-31 00:00:00'
+          is_current: true
+
+  # Test 4: Boundary precision - no gaps or overlaps
+  - name: test_dim_agent_boundary_precision
+    description: |
+      Verify valid_to of version N exactly equals valid_from of version N+1.
+      Uses microsecond precision timestamps to test exact boundary handling.
+    model: dim_agent
+    given:
+      - input: ref('h_agent')
+        rows:
+          - agent_tk: 'boundary_test'
+            agent_code: 'test_agent'
+            load_ts: '2026-01-01 00:00:00.000000'
+            rsrc: 'herd'
+      - input: ref('s_agent_base')
+        rows:
+          # Version 1
+          - agent_tk: 'boundary_test'
+            agent_role: 'backend'
+            agent_status: 'active'
+            agent_branch_prefix: 'test/'
+            agent_email: 'test@herd.dev'
+            default_model_code: 'sonnet-4.5'
+            is_deleted: false
+            agent_hd: 'hash1'
+            load_ts: '2026-01-01 10:15:30.123456'
+            rsrc: 'herd'
+          # Version 2 - precise boundary timestamp
+          - agent_tk: 'boundary_test'
+            agent_role: 'backend'
+            agent_status: 'paused'
+            agent_branch_prefix: 'test/'
+            agent_email: 'test@herd.dev'
+            default_model_code: 'sonnet-4.5'
+            is_deleted: false
+            agent_hd: 'hash2'
+            load_ts: '2026-01-01 14:22:45.987654'
+            rsrc: 'herd'
+    expect:
+      rows:
+        # Version 1: valid_to must equal version 2's valid_from exactly
+        - agent_tk: 'boundary_test'
+          agent_status: 'active'
+          valid_from: '2026-01-01 10:15:30.123456'
+          valid_to: '2026-01-01 14:22:45.987654'
+          is_current: false
+        # Version 2: valid_from must equal version 1's valid_to exactly
+        - agent_tk: 'boundary_test'
+          agent_status: 'paused'
+          valid_from: '2026-01-01 14:22:45.987654'
+          valid_to: '9999-12-31 00:00:00'
+          is_current: true
+
+  # Test 5: Soft delete tracking
+  - name: test_dim_agent_soft_delete
+    description: |
+      Agent deletion should create a new version with is_deleted = true.
+      Tests that SCD2 properly tracks deletion as a state change.
+    model: dim_agent
+    given:
+      - input: ref('h_agent')
+        rows:
+          - agent_tk: 'deleted_agent'
+            agent_code: 'deprecated_bot'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'herd'
+      - input: ref('s_agent_base')
+        rows:
+          # Active version
+          - agent_tk: 'deleted_agent'
+            agent_role: 'backend'
+            agent_status: 'active'
+            agent_branch_prefix: 'bot/'
+            agent_email: 'bot@herd.dev'
+            default_model_code: 'sonnet-4.5'
+            is_deleted: false
+            agent_hd: 'hash1'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'herd'
+          # Deleted version
+          - agent_tk: 'deleted_agent'
+            agent_role: 'backend'
+            agent_status: 'active'
+            agent_branch_prefix: 'bot/'
+            agent_email: 'bot@herd.dev'
+            default_model_code: 'sonnet-4.5'
+            is_deleted: true
+            agent_hd: 'hash2'
+            load_ts: '2026-01-05 16:00:00'
+            rsrc: 'herd'
+    expect:
+      rows:
+        # Active period
+        - agent_tk: 'deleted_agent'
+          agent_code: 'deprecated_bot'
+          is_deleted: false
+          valid_from: '2026-01-01 00:00:00'
+          valid_to: '2026-01-05 16:00:00'
+          is_current: false
+        # Deleted period (still current from temporal perspective)
+        - agent_tk: 'deleted_agent'
+          agent_code: 'deprecated_bot'
+          is_deleted: true
+          valid_from: '2026-01-05 16:00:00'
+          valid_to: '9999-12-31 00:00:00'
+          is_current: true

@@ -1,0 +1,294 @@
+# Unit tests for dim_craft (Type 1 SCD - current state only)
+# Tests QUALIFY ROW_NUMBER() logic for selecting latest version
+
+unit_tests:
+  # Test 1: Single version craft - basic case
+  - name: test_dim_craft_single_version
+    description: |
+      Craft with only one version should return that version.
+      Basic case for Type 1 SCD.
+    model: dim_craft
+    given:
+      - input: ref('h_craft')
+        rows:
+          - craft_tk: 'craft1'
+            craft_code: 'backend'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'herd'
+      - input: ref('s_craft_base')
+        rows:
+          - craft_tk: 'craft1'
+            craft_description: 'Backend development craft'
+            is_deleted: false
+            craft_hd: 'hash1'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'herd'
+    expect:
+      rows:
+        - craft_sk: 'craft1'
+          craft_code: 'backend'
+          craft_description: 'Backend development craft'
+          is_deleted: false
+
+  # Test 2: Multi-version craft - returns only latest
+  - name: test_dim_craft_multi_version_latest_only
+    description: |
+      Craft with multiple versions should return ONLY the latest version.
+      Tests that QUALIFY ROW_NUMBER() ... ORDER BY load_ts DESC = 1 works correctly.
+      Earlier versions should be ignored.
+    model: dim_craft
+    given:
+      - input: ref('h_craft')
+        rows:
+          - craft_tk: 'craft2'
+            craft_code: 'frontend'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'herd'
+      - input: ref('s_craft_base')
+        rows:
+          # Version 1 (oldest - should be ignored)
+          - craft_tk: 'craft2'
+            craft_description: 'Initial description'
+            is_deleted: false
+            craft_hd: 'hash1'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'herd'
+          # Version 2 (middle - should be ignored)
+          - craft_tk: 'craft2'
+            craft_description: 'Updated description'
+            is_deleted: false
+            craft_hd: 'hash2'
+            load_ts: '2026-01-05 10:00:00'
+            rsrc: 'herd'
+          # Version 3 (latest - should be returned)
+          - craft_tk: 'craft2'
+            craft_description: 'Final refined description'
+            is_deleted: false
+            craft_hd: 'hash3'
+            load_ts: '2026-01-10 14:30:00'
+            rsrc: 'herd'
+    expect:
+      rows:
+        # Only the latest version
+        - craft_sk: 'craft2'
+          craft_code: 'frontend'
+          craft_description: 'Final refined description'
+          is_deleted: false
+
+  # Test 3: Multiple crafts - each returns its own latest
+  - name: test_dim_craft_multiple_crafts_independent
+    description: |
+      Multiple crafts with different version counts should each return their own latest.
+      Tests PARTITION BY craft_tk in ROW_NUMBER() window function.
+    model: dim_craft
+    given:
+      - input: ref('h_craft')
+        rows:
+          - craft_tk: 'craft_a'
+            craft_code: 'backend'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'herd'
+          - craft_tk: 'craft_b'
+            craft_code: 'frontend'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'herd'
+          - craft_tk: 'craft_c'
+            craft_code: 'qa'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'herd'
+      - input: ref('s_craft_base')
+        rows:
+          # Craft A: 1 version
+          - craft_tk: 'craft_a'
+            craft_description: 'Backend craft - stable'
+            is_deleted: false
+            craft_hd: 'hash_a1'
+            load_ts: '2026-01-01 09:00:00'
+            rsrc: 'herd'
+          # Craft B: 2 versions (only latest should appear)
+          - craft_tk: 'craft_b'
+            craft_description: 'Frontend craft - old'
+            is_deleted: false
+            craft_hd: 'hash_b1'
+            load_ts: '2026-01-01 09:00:00'
+            rsrc: 'herd'
+          - craft_tk: 'craft_b'
+            craft_description: 'Frontend craft - updated'
+            is_deleted: false
+            craft_hd: 'hash_b2'
+            load_ts: '2026-01-05 12:00:00'
+            rsrc: 'herd'
+          # Craft C: 4 versions (only latest should appear)
+          - craft_tk: 'craft_c'
+            craft_description: 'QA craft - v1'
+            is_deleted: false
+            craft_hd: 'hash_c1'
+            load_ts: '2026-01-01 09:00:00'
+            rsrc: 'herd'
+          - craft_tk: 'craft_c'
+            craft_description: 'QA craft - v2'
+            is_deleted: false
+            craft_hd: 'hash_c2'
+            load_ts: '2026-01-02 11:00:00'
+            rsrc: 'herd'
+          - craft_tk: 'craft_c'
+            craft_description: 'QA craft - v3'
+            is_deleted: false
+            craft_hd: 'hash_c3'
+            load_ts: '2026-01-03 13:00:00'
+            rsrc: 'herd'
+          - craft_tk: 'craft_c'
+            craft_description: 'QA craft - final'
+            is_deleted: false
+            craft_hd: 'hash_c4'
+            load_ts: '2026-01-08 16:00:00'
+            rsrc: 'herd'
+    expect:
+      rows:
+        # Craft A: only version (latest)
+        - craft_sk: 'craft_a'
+          craft_code: 'backend'
+          craft_description: 'Backend craft - stable'
+          is_deleted: false
+        # Craft B: only latest version
+        - craft_sk: 'craft_b'
+          craft_code: 'frontend'
+          craft_description: 'Frontend craft - updated'
+          is_deleted: false
+        # Craft C: only latest version
+        - craft_sk: 'craft_c'
+          craft_code: 'qa'
+          craft_description: 'QA craft - final'
+          is_deleted: false
+
+  # Test 4: Latest deleted version
+  - name: test_dim_craft_latest_is_deleted
+    description: |
+      If the latest version is deleted, it should still be returned.
+      Type 1 shows current state, even if that state is deleted.
+    model: dim_craft
+    given:
+      - input: ref('h_craft')
+        rows:
+          - craft_tk: 'craft3'
+            craft_code: 'deprecated'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'herd'
+      - input: ref('s_craft_base')
+        rows:
+          # Active version (old)
+          - craft_tk: 'craft3'
+            craft_description: 'Legacy craft'
+            is_deleted: false
+            craft_hd: 'hash1'
+            load_ts: '2026-01-01 09:00:00'
+            rsrc: 'herd'
+          # Deleted version (latest - should be returned)
+          - craft_tk: 'craft3'
+            craft_description: 'Legacy craft'
+            is_deleted: true
+            craft_hd: 'hash2'
+            load_ts: '2026-01-15 14:00:00'
+            rsrc: 'herd'
+    expect:
+      rows:
+        # Latest version (deleted)
+        - craft_sk: 'craft3'
+          craft_code: 'deprecated'
+          craft_description: 'Legacy craft'
+          is_deleted: true
+
+  # Test 5: Timestamp precision - latest determined by exact timestamp
+  - name: test_dim_craft_timestamp_precision
+    description: |
+      When multiple versions exist with close timestamps, latest is determined by exact timestamp.
+      Tests ORDER BY load_ts DESC precision.
+    model: dim_craft
+    given:
+      - input: ref('h_craft')
+        rows:
+          - craft_tk: 'craft4'
+            craft_code: 'precision_test'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'herd'
+      - input: ref('s_craft_base')
+        rows:
+          # Version 1
+          - craft_tk: 'craft4'
+            craft_description: 'Version at 10:00:00.000001'
+            is_deleted: false
+            craft_hd: 'hash1'
+            load_ts: '2026-01-01 10:00:00.000001'
+            rsrc: 'herd'
+          # Version 2
+          - craft_tk: 'craft4'
+            craft_description: 'Version at 10:00:00.000002'
+            is_deleted: false
+            craft_hd: 'hash2'
+            load_ts: '2026-01-01 10:00:00.000002'
+            rsrc: 'herd'
+          # Version 3 (latest by microseconds)
+          - craft_tk: 'craft4'
+            craft_description: 'Version at 10:00:00.000003'
+            is_deleted: false
+            craft_hd: 'hash3'
+            load_ts: '2026-01-01 10:00:00.000003'
+            rsrc: 'herd'
+    expect:
+      rows:
+        # Only the latest by microseconds
+        - craft_sk: 'craft4'
+          craft_code: 'precision_test'
+          craft_description: 'Version at 10:00:00.000003'
+          is_deleted: false
+
+  # Test 6: Description change tracking (Type 1 overwrites)
+  - name: test_dim_craft_description_updates
+    description: |
+      Multiple description updates should result in only the latest being visible.
+      Tests that Type 1 SCD does NOT preserve history - only current state.
+    model: dim_craft
+    given:
+      - input: ref('h_craft')
+        rows:
+          - craft_tk: 'craft5'
+            craft_code: 'evolving'
+            load_ts: '2026-01-01 00:00:00'
+            rsrc: 'herd'
+      - input: ref('s_craft_base')
+        rows:
+          # Original description
+          - craft_tk: 'craft5'
+            craft_description: 'Original brief description'
+            is_deleted: false
+            craft_hd: 'hash1'
+            load_ts: '2026-01-01 09:00:00'
+            rsrc: 'herd'
+          # First update
+          - craft_tk: 'craft5'
+            craft_description: 'Expanded description with more details'
+            is_deleted: false
+            craft_hd: 'hash2'
+            load_ts: '2026-01-05 10:00:00'
+            rsrc: 'herd'
+          # Second update
+          - craft_tk: 'craft5'
+            craft_description: 'Further refined with best practices'
+            is_deleted: false
+            craft_hd: 'hash3'
+            load_ts: '2026-01-10 11:00:00'
+            rsrc: 'herd'
+          # Final update (current)
+          - craft_tk: 'craft5'
+            craft_description: 'Comprehensive guide to the evolving craft'
+            is_deleted: false
+            craft_hd: 'hash4'
+            load_ts: '2026-01-20 15:30:00'
+            rsrc: 'herd'
+    expect:
+      rows:
+        # Only current description, all history is lost
+        - craft_sk: 'craft5'
+          craft_code: 'evolving'
+          craft_description: 'Comprehensive guide to the evolving craft'
+          is_deleted: false
