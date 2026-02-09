@@ -1,0 +1,264 @@
+version: 2
+
+models:
+  # Historized Satellites
+  - name: s_agent_base
+    description: Historized satellite for Agent descriptive attributes
+    columns:
+      - name: agent_tk
+        description: Foreign key to h_agent
+        tests:
+          - not_null
+      - name: agent_hd
+        description: Hashdiff of descriptive attributes
+        tests:
+          - not_null
+
+  - name: s_model_base
+    description: Historized satellite for Model descriptive attributes
+    columns:
+      - name: model_tk
+        description: Foreign key to h_model
+        tests:
+          - not_null
+      - name: model_hd
+        description: Hashdiff of descriptive attributes
+        tests:
+          - not_null
+
+  - name: s_craft_base
+    description: Historized satellite for Craft descriptive attributes
+    columns:
+      - name: craft_tk
+        description: Foreign key to h_craft
+        tests:
+          - not_null
+      - name: craft_hd
+        description: Hashdiff of descriptive attributes
+        tests:
+          - not_null
+
+  - name: s_craft_version
+    description: Historized satellite for Craft version history
+    columns:
+      - name: craft_tk
+        description: Foreign key to h_craft
+        tests:
+          - not_null
+      - name: craft_hd
+        description: Hashdiff of version attributes
+        tests:
+          - not_null
+
+  - name: s_personality_base
+    description: Historized satellite for Personality descriptive attributes
+    columns:
+      - name: personality_tk
+        description: Foreign key to h_personality
+        tests:
+          - not_null
+      - name: personality_hd
+        description: Hashdiff of descriptive attributes
+        tests:
+          - not_null
+
+  - name: s_personality_version
+    description: Historized satellite for Personality version history
+    columns:
+      - name: personality_tk
+        description: Foreign key to h_personality
+        tests:
+          - not_null
+      - name: personality_hd
+        description: Hashdiff of version attributes
+        tests:
+          - not_null
+
+  - name: s_skill_base
+    description: Historized satellite for Skill descriptive attributes
+    columns:
+      - name: skill_tk
+        description: Foreign key to h_skill
+        tests:
+          - not_null
+      - name: skill_hd
+        description: Hashdiff of descriptive attributes
+        tests:
+          - not_null
+
+  - name: s_skill_version
+    description: Historized satellite for Skill version history
+    columns:
+      - name: skill_tk
+        description: Foreign key to h_skill
+        tests:
+          - not_null
+      - name: skill_hd
+        description: Hashdiff of version attributes
+        tests:
+          - not_null
+
+  - name: s_initiative_base
+    description: Historized satellite for Initiative descriptive attributes
+    columns:
+      - name: initiative_tk
+        description: Foreign key to h_initiative
+        tests:
+          - not_null
+      - name: initiative_hd
+        description: Hashdiff of descriptive attributes
+        tests:
+          - not_null
+
+  - name: s_project_base
+    description: Historized satellite for Project descriptive attributes
+    columns:
+      - name: project_tk
+        description: Foreign key to h_project
+        tests:
+          - not_null
+      - name: project_hd
+        description: Hashdiff of descriptive attributes
+        tests:
+          - not_null
+
+  - name: s_sprint_base
+    description: Historized satellite for Sprint descriptive attributes
+    columns:
+      - name: sprint_tk
+        description: Foreign key to h_sprint
+        tests:
+          - not_null
+      - name: sprint_hd
+        description: Hashdiff of descriptive attributes
+        tests:
+          - not_null
+
+  - name: s_ticket_base
+    description: Historized satellite for Ticket descriptive attributes
+    columns:
+      - name: ticket_tk
+        description: Foreign key to h_ticket
+        tests:
+          - not_null
+      - name: ticket_hd
+        description: Hashdiff of descriptive attributes
+        tests:
+          - not_null
+
+  - name: s_pull_request_base
+    description: Historized satellite for Pull Request descriptive attributes
+    columns:
+      - name: pull_request_tk
+        description: Foreign key to h_pull_request
+        tests:
+          - not_null
+      - name: pull_request_hd
+        description: Hashdiff of descriptive attributes
+        tests:
+          - not_null
+
+  - name: s_review_base
+    description: Historized satellite for Review descriptive attributes (immutable)
+    columns:
+      - name: review_tk
+        description: Foreign key to h_review
+        tests:
+          - not_null
+      - name: review_hd
+        description: Hashdiff of descriptive attributes
+        tests:
+          - not_null
+
+  # Non-Historized Satellites
+  - name: sn_review_finding
+    description: Non-historized satellite for Review findings (append-only)
+    columns:
+      - name: review_tk
+        description: Foreign key to h_review
+        tests:
+          - not_null
+
+  - name: sn_agent_instance_lifecycle
+    description: Non-historized satellite for Agent instance lifecycle events (append-only)
+    columns:
+      - name: agent_instance_tk
+        description: Foreign key to ln_agent_instance
+        tests:
+          - not_null
+      - name: agent_tk
+        description: Foreign key to h_agent
+        tests:
+          - not_null
+
+  - name: sn_agent_instance_ticket
+    description: Non-historized satellite for Agent instance ticket activity (append-only)
+    columns:
+      - name: agent_instance_tk
+        description: Foreign key to ln_agent_instance
+        tests:
+          - not_null
+      - name: agent_tk
+        description: Foreign key to h_agent
+        tests:
+          - not_null
+      - name: ticket_tk
+        description: Foreign key to h_ticket
+        tests:
+          - not_null
+
+  - name: sn_agent_instance_pr
+    description: Non-historized satellite for Agent instance PR activity (append-only)
+    columns:
+      - name: agent_instance_tk
+        description: Foreign key to ln_agent_instance
+        tests:
+          - not_null
+      - name: agent_tk
+        description: Foreign key to h_agent
+        tests:
+          - not_null
+      - name: pull_request_tk
+        description: Foreign key to h_pull_request
+        tests:
+          - not_null
+
+  - name: sn_agent_instance_review
+    description: Non-historized satellite for Agent instance review activity (append-only)
+    columns:
+      - name: agent_instance_tk
+        description: Foreign key to ln_agent_instance
+        tests:
+          - not_null
+      - name: agent_tk
+        description: Foreign key to h_agent
+        tests:
+          - not_null
+      - name: review_tk
+        description: Foreign key to h_review
+        tests:
+          - not_null
+      - name: pull_request_tk
+        description: Foreign key to h_pull_request
+        tests:
+          - not_null
+
+  - name: sn_agent_instance_token
+    description: Non-historized satellite for Agent instance token usage (append-only)
+    columns:
+      - name: agent_instance_tk
+        description: Foreign key to ln_agent_instance
+        tests:
+          - not_null
+      - name: agent_tk
+        description: Foreign key to h_agent
+        tests:
+          - not_null
+      - name: model_tk
+        description: Foreign key to h_model
+        tests:
+          - not_null
+      - name: ticket_tk
+        description: Foreign key to h_ticket
+        tests:
+          - not_null
