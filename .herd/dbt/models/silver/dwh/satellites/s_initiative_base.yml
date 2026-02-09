@@ -12,7 +12,7 @@ models:
         description: "Foreign key to h_initiative"
         tests:
           - not_null
-      - name: initiative_hd
+      - name: initiative_base_hd
         description: "Hashdiff of descriptive attributes"
         tests:
           - not_null

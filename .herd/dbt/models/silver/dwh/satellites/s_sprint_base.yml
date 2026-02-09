@@ -12,7 +12,7 @@ models:
         description: "Foreign key to h_sprint"
         tests:
           - not_null
-      - name: sprint_hd
+      - name: sprint_base_hd
         description: "Hashdiff of descriptive attributes"
         tests:
           - not_null

@@ -12,7 +12,7 @@ models:
         description: "Foreign key to h_personality"
         tests:
           - not_null
-      - name: personality_hd
+      - name: personality_version_hd
         description: "Hashdiff of version attributes"
         tests:
           - not_null

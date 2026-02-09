@@ -12,7 +12,7 @@ models:
         description: "Foreign key to h_ticket"
         tests:
           - not_null
-      - name: ticket_hd
+      - name: ticket_base_hd
         description: "Hashdiff of descriptive attributes"
         tests:
           - not_null

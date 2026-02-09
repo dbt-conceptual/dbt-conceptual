@@ -12,7 +12,7 @@ models:
         description: "Foreign key to h_pull_request"
         tests:
           - not_null
-      - name: pull_request_hd
+      - name: pull_request_base_hd
         description: "Hashdiff of descriptive attributes"
         tests:
           - not_null

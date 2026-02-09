@@ -5,7 +5,7 @@ SELECT
     SHA1(LOWER(CONCAT_WS('|', ai.agent_code, pv.personality_code))) AS agent_personality_tk,
     {{ generate_hash('ai.agent_code') }} AS agent_tk,
     {{ generate_hash('pv.personality_code') }} AS personality_tk,
-    MIN(ai.load_ts) AS load_ts,
+    MIN(ai.agent_instance_started_at) AS load_ts,
     'herd.agent_instance' AS rsrc
 FROM {{ ref('stg_herd__agent_instance') }} ai
 JOIN {{ ref('stg_herd__personality_version') }} pv ON ai.personality_version_code = pv.personality_version_code

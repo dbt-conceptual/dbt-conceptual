@@ -12,7 +12,7 @@ models:
         description: "Foreign key to h_review"
         tests:
           - not_null
-      - name: review_hd
+      - name: review_base_hd
         description: "Hashdiff of descriptive attributes"
         tests:
           - not_null

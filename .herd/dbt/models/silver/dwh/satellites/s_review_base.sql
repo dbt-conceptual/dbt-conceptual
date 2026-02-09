@@ -7,7 +7,7 @@ WITH source AS (
         review_round,
         review_verdict,
         review_duration_minutes,
-        {{ hashdiff(['review_round', 'review_verdict', 'review_duration_minutes']) }} AS review_hd,
+        {{ hashdiff(['review_round', 'review_verdict', 'review_duration_minutes']) }} AS review_base_hd,
         load_ts,
         rsrc
     FROM {{ ref('stg_herd__review_def') }}
@@ -17,11 +17,11 @@ SELECT s.*
 FROM source s
 {% if is_incremental() %}
 LEFT JOIN (
-    SELECT review_tk, review_hd
+    SELECT review_tk, review_base_hd
     FROM {{ this }}
     QUALIFY ROW_NUMBER() OVER (PARTITION BY review_tk ORDER BY load_ts DESC) = 1
 ) AS existing
     ON s.review_tk = existing.review_tk
-    AND s.review_hd = existing.review_hd
+    AND s.review_base_hd = existing.review_base_hd
 WHERE existing.review_tk IS NULL
 {% endif %}

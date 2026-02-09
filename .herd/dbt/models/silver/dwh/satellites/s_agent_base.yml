@@ -12,7 +12,7 @@ models:
         description: "Foreign key to h_agent"
         tests:
           - not_null
-      - name: agent_hd
+      - name: agent_base_hd
         description: "Hashdiff of descriptive attributes"
         tests:
           - not_null
