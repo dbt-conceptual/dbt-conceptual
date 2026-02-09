@@ -9,6 +9,8 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test-setup.ts'],
     css: false,
+    // Exclude e2e tests (those are run by Playwright)
+    exclude: ['**/node_modules/**', '**/dist/**', '**/e2e/**', '**/.{git,cache}/**'],
     // Mock CSS imports
     deps: {
       optimizer: {
