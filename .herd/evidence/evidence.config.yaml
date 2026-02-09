@@ -1,0 +1,24 @@
+# Evidence Configuration
+# https://docs.evidence.dev/configuration/
+
+title: "Herd Analytics"
+description: "Executive dashboards for The Herd multi-agent system"
+
+# Database connection
+database: herd
+
+# Component settings
+components:
+  charts:
+    defaultColors:
+      - "#4A90D9"  # Blue
+      - "#7AB648"  # Green
+      - "#D4A843"  # Amber
+      - "#E85D75"  # Red
+      - "#9B59B6"  # Purple
+      - "#3498DB"  # Light Blue
+
+# Layout settings
+layout:
+  headerColor: "#2C3E50"
+  accentColor: "#4A90D9"
