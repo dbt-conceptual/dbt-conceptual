@@ -5,7 +5,6 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from herd_mcp.tools import lifecycle
 
 
@@ -15,28 +14,24 @@ def seeded_db(in_memory_db):
     conn = in_memory_db
 
     # Insert test agents
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.agent_def
           (agent_code, agent_role, agent_status, created_at)
         VALUES
           ('grunt', 'backend', 'active', CURRENT_TIMESTAMP),
           ('pikasso', 'frontend', 'active', CURRENT_TIMESTAMP),
           ('old-agent', 'backend', 'decommissioned', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     # Insert active agent instances
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.agent_instance
           (agent_instance_code, agent_code, model_code, agent_instance_started_at)
         VALUES
           ('inst-grunt-001', 'grunt', 'claude-sonnet-4', CURRENT_TIMESTAMP),
           ('inst-grunt-002', 'grunt', 'claude-sonnet-4', CURRENT_TIMESTAMP),
           ('inst-pikasso-001', 'pikasso', 'claude-opus-4', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     yield conn
 
@@ -67,25 +62,21 @@ async def test_decommission_agent(seeded_db):
     assert agent_status == "decommissioned"
 
     # Verify instances were ended
-    ended_count = seeded_db.execute(
-        """
+    ended_count = seeded_db.execute("""
         SELECT COUNT(*)
         FROM herd.agent_instance
         WHERE agent_code = 'grunt'
           AND agent_instance_ended_at IS NOT NULL
           AND agent_instance_outcome = 'decommissioned'
-        """
-    ).fetchone()[0]
+        """).fetchone()[0]
     assert ended_count == 2
 
     # Verify lifecycle activity was recorded
-    activity_count = seeded_db.execute(
-        """
+    activity_count = seeded_db.execute("""
         SELECT COUNT(*)
         FROM herd.agent_instance_lifecycle_activity
         WHERE lifecycle_event_type = 'decommissioned'
-        """
-    ).fetchone()[0]
+        """).fetchone()[0]
     assert activity_count == 2
 
 
@@ -122,14 +113,12 @@ async def test_decommission_without_current_agent(seeded_db):
         assert result["requested_by"] is None
 
     # Verify lifecycle detail mentions "system"
-    activity = seeded_db.execute(
-        """
+    activity = seeded_db.execute("""
         SELECT lifecycle_detail
         FROM herd.agent_instance_lifecycle_activity
         WHERE lifecycle_event_type = 'decommissioned'
         LIMIT 1
-        """
-    ).fetchone()
+        """).fetchone()
     assert "system" in activity[0]
 
 
@@ -177,25 +166,21 @@ async def test_standdown_agent(seeded_db):
     assert agent_status == "standby"
 
     # Verify instances were ended with standdown outcome
-    ended_count = seeded_db.execute(
-        """
+    ended_count = seeded_db.execute("""
         SELECT COUNT(*)
         FROM herd.agent_instance
         WHERE agent_code = 'grunt'
           AND agent_instance_ended_at IS NOT NULL
           AND agent_instance_outcome = 'standdown'
-        """
-    ).fetchone()[0]
+        """).fetchone()[0]
     assert ended_count == 2
 
     # Verify lifecycle activity was recorded
-    activity_count = seeded_db.execute(
-        """
+    activity_count = seeded_db.execute("""
         SELECT COUNT(*)
         FROM herd.agent_instance_lifecycle_activity
         WHERE lifecycle_event_type = 'standdown'
-        """
-    ).fetchone()[0]
+        """).fetchone()[0]
     assert activity_count == 2
 
 
@@ -232,14 +217,12 @@ async def test_standdown_without_current_agent(seeded_db):
         assert result["requested_by"] is None
 
     # Verify lifecycle detail mentions "system"
-    activity = seeded_db.execute(
-        """
+    activity = seeded_db.execute("""
         SELECT lifecycle_detail
         FROM herd.agent_instance_lifecycle_activity
         WHERE lifecycle_event_type = 'standdown'
         LIMIT 1
-        """
-    ).fetchone()
+        """).fetchone()
     assert "system" in activity[0]
 
 
@@ -247,13 +230,11 @@ async def test_standdown_without_current_agent(seeded_db):
 async def test_standdown_agent_no_active_instances(seeded_db):
     """Test standing down an agent with no active instances."""
     # Create an agent with no active instances
-    seeded_db.execute(
-        """
+    seeded_db.execute("""
         INSERT INTO herd.agent_def
           (agent_code, agent_role, agent_status, created_at)
         VALUES ('inactive-agent', 'backend', 'active', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     with patch("herd_mcp.tools.lifecycle.connection") as mock_context:
         mock_context.return_value.__enter__ = MagicMock(return_value=seeded_db)
@@ -272,13 +253,11 @@ async def test_standdown_agent_no_active_instances(seeded_db):
 async def test_decommission_agent_no_active_instances(seeded_db):
     """Test decommissioning an agent with no active instances."""
     # Create an agent with no active instances
-    seeded_db.execute(
-        """
+    seeded_db.execute("""
         INSERT INTO herd.agent_def
           (agent_code, agent_role, agent_status, created_at)
         VALUES ('inactive-agent2', 'backend', 'active', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     with patch("herd_mcp.tools.lifecycle.connection") as mock_context:
         mock_context.return_value.__enter__ = MagicMock(return_value=seeded_db)

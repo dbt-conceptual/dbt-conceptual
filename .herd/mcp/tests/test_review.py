@@ -5,7 +5,6 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from herd_mcp.tools import review
 
 
@@ -15,22 +14,18 @@ def seeded_db(in_memory_db):
     conn = in_memory_db
 
     # Insert test agents
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.agent_def
           (agent_code, agent_role, agent_status, created_at)
         VALUES ('wardenstein', 'qa', 'active', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     # Insert test agent instance
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.agent_instance
           (agent_instance_code, agent_code, model_code, agent_instance_started_at)
         VALUES ('inst-ward-001', 'wardenstein', 'claude-sonnet-4', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     yield conn
 
@@ -81,12 +76,10 @@ async def test_review_with_findings(seeded_db):
                 assert result["pr_number"] == 123
 
     # Verify review was recorded
-    review_record = seeded_db.execute(
-        """
+    review_record = seeded_db.execute("""
         SELECT review_code, pr_code, review_verdict, review_round
         FROM herd.review_def
-        """
-    ).fetchone()
+        """).fetchone()
     assert review_record is not None
     assert review_record[1] == "PR-123"
     assert review_record[2] == "fail"
@@ -99,12 +92,10 @@ async def test_review_with_findings(seeded_db):
     assert finding_count == 2
 
     # Verify activity was recorded
-    activity = seeded_db.execute(
-        """
+    activity = seeded_db.execute("""
         SELECT review_event_type, review_activity_detail
         FROM herd.agent_instance_review_activity
-        """
-    ).fetchone()
+        """).fetchone()
     assert activity is not None
     assert activity[0] == "review_submitted"
     assert "fail" in activity[1]
@@ -177,14 +168,12 @@ async def test_review_pass_with_advisory(seeded_db):
 async def test_review_round_calculation(seeded_db):
     """Test that review rounds are calculated correctly."""
     # Create first review manually
-    seeded_db.execute(
-        """
+    seeded_db.execute("""
         INSERT INTO herd.review_def
           (review_code, pr_code, reviewer_agent_instance_code, review_round,
            review_verdict, created_at)
         VALUES ('REV-first', 'PR-999', 'inst-ward-001', 1, 'fail', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     with patch("herd_mcp.tools.review.connection") as mock_context:
         mock_context.return_value.__enter__ = MagicMock(return_value=seeded_db)
@@ -279,7 +268,11 @@ async def test_review_slack_post_failure(seeded_db):
 async def test_review_format_body():
     """Test review body formatting."""
     findings = [
-        {"severity": "blocking", "category": "security", "description": "SQL injection risk"},
+        {
+            "severity": "blocking",
+            "category": "security",
+            "description": "SQL injection risk",
+        },
         {"severity": "advisory", "category": "style", "description": "Use snake_case"},
     ]
 

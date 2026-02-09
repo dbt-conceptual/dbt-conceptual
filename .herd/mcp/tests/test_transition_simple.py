@@ -5,7 +5,6 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from herd_mcp.tools import transition
 
 
@@ -15,43 +14,35 @@ def seeded_db(in_memory_db):
     conn = in_memory_db
 
     # Insert test agents
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.agent_def
           (agent_code, agent_role, agent_status, created_at)
         VALUES ('grunt', 'backend', 'active', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     # Insert test tickets
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.ticket_def
           (ticket_code, ticket_title, ticket_current_status, created_at)
         VALUES
           ('DBC-100', 'Test ticket', 'in_progress', CURRENT_TIMESTAMP),
           ('DBC-101', 'Another ticket', 'backlog', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     # Insert test agent instance
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.agent_instance
           (agent_instance_code, agent_code, model_code, agent_instance_started_at)
         VALUES ('inst-001', 'grunt', 'claude-sonnet-4', CURRENT_TIMESTAMP - INTERVAL '1 hour')
-        """
-    )
+        """)
 
     # Insert initial ticket activity for DBC-100
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.agent_instance_ticket_activity
           (agent_instance_code, ticket_code, ticket_event_type, ticket_status, created_at)
         VALUES ('inst-001', 'DBC-100', 'status_changed', 'in_progress',
                 CURRENT_TIMESTAMP - INTERVAL '30 minutes')
-        """
-    )
+        """)
 
     yield conn
 

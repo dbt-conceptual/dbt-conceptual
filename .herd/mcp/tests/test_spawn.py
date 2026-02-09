@@ -5,7 +5,6 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from herd_mcp.tools import spawn
 
 
@@ -15,25 +14,21 @@ def seeded_db(in_memory_db):
     conn = in_memory_db
 
     # Insert test agent definitions
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.agent_def
           (agent_code, agent_role, agent_status, default_model_code, created_at)
         VALUES
           ('grunt', 'backend', 'active', 'claude-sonnet-4', CURRENT_TIMESTAMP),
           ('pikasso', 'frontend', 'active', 'claude-opus-4', CURRENT_TIMESTAMP),
           ('mini-mao', 'architect', 'active', 'claude-opus-4', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     # Insert a current instance for mini-mao (spawner)
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.agent_instance
           (agent_instance_code, agent_code, model_code, agent_instance_started_at)
         VALUES ('inst-mao-001', 'mini-mao', 'claude-opus-4', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     yield conn
 

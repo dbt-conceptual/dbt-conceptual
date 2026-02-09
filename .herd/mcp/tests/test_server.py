@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from herd_mcp.server import mcp
 
 
@@ -32,6 +31,7 @@ async def test_all_tools_registered():
         "herd_catchup",
         "herd_decommission",
         "herd_standdown",
+        "herd_harvest_tokens",
     ]
 
     for expected_tool in expected_tools:
@@ -40,6 +40,6 @@ async def test_all_tools_registered():
 
 @pytest.mark.asyncio
 async def test_tool_count():
-    """Test that we have exactly 10 tools registered."""
+    """Test that we have exactly 11 tools registered."""
     tools = await mcp.list_tools()
-    assert len(tools) == 10
+    assert len(tools) == 11

@@ -17,13 +17,11 @@ def _get_active_agents(conn: Any) -> list[dict]:
         List of agent dicts with assignment info.
     """
     agents = []
-    result = conn.execute(
-        """
+    result = conn.execute("""
         SELECT agent_code, agent_role, agent_status, default_model_code
         FROM herd.agent_def
         WHERE deleted_at IS NULL
-        """
-    ).fetchall()
+        """).fetchall()
 
     for row in result:
         agent = {
@@ -68,8 +66,7 @@ def _get_blocked_tickets(conn: Any) -> list[dict]:
         List of blocked ticket dicts.
     """
     blockers = []
-    result = conn.execute(
-        """
+    result = conn.execute("""
         WITH blocked_events AS (
             SELECT
                 ta.ticket_code,
@@ -97,16 +94,17 @@ def _get_blocked_tickets(conn: Any) -> list[dict]:
         LEFT JOIN unblocked_events ue ON be.ticket_code = ue.ticket_code
         WHERE be.rn = 1
           AND (ue.unblocked_at IS NULL OR be.created_at > ue.unblocked_at)
-        """
-    ).fetchall()
+        """).fetchall()
 
     for row in result:
-        blockers.append({
-            "ticket_code": row[0],
-            "blocker_ticket_code": row[1],
-            "blocker_description": row[2],
-            "blocked_since": str(row[3]) if row[3] else None,
-        })
+        blockers.append(
+            {
+                "ticket_code": row[0],
+                "blocker_ticket_code": row[1],
+                "blocker_description": row[2],
+                "blocked_since": str(row[3]) if row[3] else None,
+            }
+        )
 
     return blockers
 
@@ -120,8 +118,7 @@ def _get_current_sprint(conn: Any) -> dict | None:
     Returns:
         Sprint dict or None if no active sprint.
     """
-    result = conn.execute(
-        """
+    result = conn.execute("""
         SELECT
             sprint_code,
             sprint_title,
@@ -133,8 +130,7 @@ def _get_current_sprint(conn: Any) -> dict | None:
           AND deleted_at IS NULL
         ORDER BY sprint_started_at DESC
         LIMIT 1
-        """
-    ).fetchone()
+        """).fetchone()
 
     if not result:
         return None
@@ -160,11 +156,13 @@ def _get_current_sprint(conn: Any) -> dict | None:
     ).fetchall()
 
     for ticket in tickets:
-        sprint["tickets"].append({
-            "ticket_code": ticket[0],
-            "ticket_title": ticket[1],
-            "status": ticket[2],
-        })
+        sprint["tickets"].append(
+            {
+                "ticket_code": ticket[0],
+                "ticket_title": ticket[1],
+                "status": ticket[2],
+            }
+        )
 
     return sprint
 
@@ -212,13 +210,15 @@ def _get_agent_status(conn: Any, agent_name: str) -> dict:
 
     instance_list = []
     for inst in instances:
-        instance_list.append({
-            "instance_code": inst[0],
-            "ticket_code": inst[1],
-            "started_at": str(inst[2]) if inst[2] else None,
-            "ended_at": str(inst[3]) if inst[3] else None,
-            "outcome": inst[4],
-        })
+        instance_list.append(
+            {
+                "instance_code": inst[0],
+                "ticket_code": inst[1],
+                "started_at": str(inst[2]) if inst[2] else None,
+                "ended_at": str(inst[3]) if inst[3] else None,
+                "outcome": inst[4],
+            }
+        )
 
     return {
         "agent_code": agent_info[0],
@@ -276,13 +276,15 @@ def _get_ticket_status(conn: Any, ticket_id: str) -> dict:
 
     activity_list = []
     for act in activities:
-        activity_list.append({
-            "agent_instance": act[0],
-            "event_type": act[1],
-            "status": act[2],
-            "comment": act[3],
-            "timestamp": str(act[4]) if act[4] else None,
-        })
+        activity_list.append(
+            {
+                "agent_instance": act[0],
+                "event_type": act[1],
+                "status": act[2],
+                "comment": act[3],
+                "timestamp": str(act[4]) if act[4] else None,
+            }
+        )
 
     return {
         "ticket_code": ticket_info[0],
@@ -303,8 +305,7 @@ def _get_available_agents(conn: Any) -> list[dict]:
     Returns:
         List of available agent dicts.
     """
-    result = conn.execute(
-        """
+    result = conn.execute("""
         SELECT ad.agent_code, ad.agent_role, ad.agent_status
         FROM herd.agent_def ad
         WHERE ad.deleted_at IS NULL
@@ -313,16 +314,17 @@ def _get_available_agents(conn: Any) -> list[dict]:
               FROM herd.agent_instance
               WHERE agent_instance_ended_at IS NULL
           )
-        """
-    ).fetchall()
+        """).fetchall()
 
     available = []
     for row in result:
-        available.append({
-            "agent_code": row[0],
-            "agent_role": row[1],
-            "agent_status": row[2],
-        })
+        available.append(
+            {
+                "agent_code": row[0],
+                "agent_role": row[1],
+                "agent_status": row[2],
+            }
+        )
 
     return available
 
