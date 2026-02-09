@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: stg_herd__review_def
+    description: "Staging model for review definitions (immutable)"
+    config:
+      meta:
+        concept: review
+        layer: staging
+    columns:
+      - name: review_code
+        description: "Primary key - unique review identifier"
+        tests:
+          - unique
+          - not_null
+      - name: pr_code
+        description: "Foreign key to pr_def"
+        tests:
+          - not_null
+      - name: reviewer_agent_instance_code
+        description: "Foreign key to agent_instance"
+        tests:
+          - not_null

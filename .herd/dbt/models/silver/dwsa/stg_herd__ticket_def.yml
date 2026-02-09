@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: stg_herd__ticket_def
+    description: "Staging model for ticket definitions"
+    config:
+      meta:
+        concept: ticket
+        layer: staging
+    columns:
+      - name: ticket_code
+        description: "Primary key - unique ticket identifier"
+        tests:
+          - unique
+          - not_null
+      - name: project_code
+        description: "Foreign key to project_def"
+      - name: current_sprint_code
+        description: "Foreign key to sprint_def"

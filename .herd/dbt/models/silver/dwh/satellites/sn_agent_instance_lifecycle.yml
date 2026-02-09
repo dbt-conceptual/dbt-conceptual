@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: sn_agent_instance_lifecycle
+    description: "Non-historized satellite for Agent instance lifecycle events (append-only)"
+    config:
+      meta:
+        concept: agent_instance
+        layer: satellite
+    columns:
+      - name: agent_instance_tk
+        description: "Foreign key to ln_agent_instance"
+        tests:
+          - not_null
+      - name: agent_tk
+        description: "Foreign key to h_agent"
+        tests:
+          - not_null

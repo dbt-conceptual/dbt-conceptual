@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: fact_agent_instance_cost
+    description: "Agent instance cost fact - aggregates token usage and costs"
+    config:
+      meta:
+        concept: agent_instance
+        layer: fact
+    columns:
+      - name: agent_instance_tk
+        description: "Agent instance technical key"
+        tests:
+          - unique
+          - not_null
+      - name: agent_sk
+        description: "Agent dimension surrogate key (Type 2 SCD)"
+      - name: ticket_sk
+        description: "Ticket dimension surrogate key (Type 2 SCD)"
+      - name: model_sk
+        description: "Model dimension surrogate key (Type 1)"
+      - name: total_token_input_count
+        description: "Total input tokens consumed"
+      - name: total_token_output_count
+        description: "Total output tokens generated"
+      - name: total_token_cache_read_count
+        description: "Total cache read tokens"
+      - name: total_token_cache_create_count
+        description: "Total cache create tokens"
+      - name: total_token_cost_usd
+        description: "Total cost in USD"

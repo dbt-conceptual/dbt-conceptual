@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: s_skill_version
+    description: "Historized satellite for Skill version history"
+    config:
+      meta:
+        concept: skillset
+        layer: satellite
+    columns:
+      - name: skill_tk
+        description: "Foreign key to h_skill"
+        tests:
+          - not_null
+      - name: skill_hd
+        description: "Hashdiff of version attributes"
+        tests:
+          - not_null

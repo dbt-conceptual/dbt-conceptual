@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: s_initiative_base
+    description: "Historized satellite for Initiative descriptive attributes"
+    config:
+      meta:
+        concept: initiative
+        layer: satellite
+    columns:
+      - name: initiative_tk
+        description: "Foreign key to h_initiative"
+        tests:
+          - not_null
+      - name: initiative_hd
+        description: "Hashdiff of descriptive attributes"
+        tests:
+          - not_null

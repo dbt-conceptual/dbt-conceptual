@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: stg_herd__initiative_def
+    description: "Staging model for initiative definitions"
+    config:
+      meta:
+        concept: initiative
+        layer: staging
+    columns:
+      - name: initiative_code
+        description: "Primary key - unique initiative identifier"
+        tests:
+          - unique
+          - not_null

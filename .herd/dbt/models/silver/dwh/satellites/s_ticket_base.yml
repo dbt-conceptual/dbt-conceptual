@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: s_ticket_base
+    description: "Historized satellite for Ticket descriptive attributes"
+    config:
+      meta:
+        concept: ticket
+        layer: satellite
+    columns:
+      - name: ticket_tk
+        description: "Foreign key to h_ticket"
+        tests:
+          - not_null
+      - name: ticket_hd
+        description: "Hashdiff of descriptive attributes"
+        tests:
+          - not_null

@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: h_agent
+    description: "Hub for Agent business key"
+    config:
+      meta:
+        concept: agent
+        layer: hub
+    columns:
+      - name: agent_tk
+        description: "Technical key (SHA1 of agent_code)"
+        tests:
+          - unique
+          - not_null
+      - name: agent_code
+        description: "Business key for agent"
+        tests:
+          - not_null

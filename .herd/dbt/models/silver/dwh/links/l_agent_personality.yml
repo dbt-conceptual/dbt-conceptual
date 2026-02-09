@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: l_agent_personality
+    description: "Standing link - Agent uses a personality"
+    config:
+      meta:
+        concept: personality
+        layer: link
+    columns:
+      - name: agent_personality_tk
+        description: "Link technical key"
+        tests:
+          - unique
+          - not_null
+      - name: agent_tk
+        description: "Foreign key to h_agent"
+        tests:
+          - not_null
+      - name: personality_tk
+        description: "Foreign key to h_personality"
+        tests:
+          - not_null

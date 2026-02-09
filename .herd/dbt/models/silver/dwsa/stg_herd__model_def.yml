@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: stg_herd__model_def
+    description: "Staging model for model definitions"
+    config:
+      meta:
+        concept: model
+        layer: staging
+    columns:
+      - name: model_code
+        description: "Primary key - unique model identifier"
+        tests:
+          - unique
+          - not_null

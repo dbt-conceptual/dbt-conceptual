@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: dim_craft
+    description: "Craft dimension (Type 1) - current state only"
+    config:
+      meta:
+        concept: craft
+        layer: dimension
+    columns:
+      - name: craft_sk
+        description: "Craft surrogate key (aliased from craft_tk)"
+        tests:
+          - unique
+          - not_null
+      - name: craft_code
+        description: "Craft business key"

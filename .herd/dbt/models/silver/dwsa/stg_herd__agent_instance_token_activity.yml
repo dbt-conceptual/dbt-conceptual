@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: stg_herd__agent_instance_token_activity
+    description: "Staging model for agent instance token usage tracking"
+    config:
+      meta:
+        concept: agent_instance
+        layer: staging
+    columns:
+      - name: agent_instance_code
+        description: "Foreign key to agent_instance"
+        tests:
+          - not_null
+      - name: model_code
+        description: "Foreign key to model_def"
+        tests:
+          - not_null

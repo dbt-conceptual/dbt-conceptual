@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: l_skill_skillset
+    description: "Standing link - Decomposes skillset back to individual skills"
+    config:
+      meta:
+        concept: skillset
+        layer: link
+    columns:
+      - name: skill_skillset_tk
+        description: "Link technical key"
+        tests:
+          - unique
+          - not_null
+      - name: skill_tk
+        description: "Foreign key to h_skill"
+        tests:
+          - not_null
+      - name: skillset_tk
+        description: "Foreign key to h_skillset"
+        tests:
+          - not_null

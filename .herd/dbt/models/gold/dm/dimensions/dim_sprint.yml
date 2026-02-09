@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: dim_sprint
+    description: "Sprint dimension (Type 2 SCD) - tracks historical changes to sprint attributes"
+    config:
+      meta:
+        concept: sprint
+        layer: dimension
+    columns:
+      - name: sprint_sk
+        description: "Sprint surrogate key (hash of sprint_tk + valid_from)"
+        tests:
+          - unique
+          - not_null
+      - name: sprint_tk
+        description: "Sprint technical key from vault"
+        tests:
+          - not_null
+      - name: sprint_code
+        description: "Sprint business key"
+      - name: valid_from
+        description: "Start of validity period"
+      - name: valid_to
+        description: "End of validity period (9999-12-31 for current)"
+      - name: is_current
+        description: "Flag indicating current version"

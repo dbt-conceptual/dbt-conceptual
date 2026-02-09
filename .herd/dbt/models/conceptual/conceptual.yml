@@ -1,0 +1,97 @@
+version: 2
+
+conceptual:
+  name: herd_analytics
+  description: >
+    Herd agent operations analytics — tracks AI agent teams, their work,
+    delivery metrics, and operational costs.
+
+  domains:
+    - name: agent_operations
+      owner: mini-mao
+      description: Agent definitions, instances, and operational configuration
+      concepts:
+        - name: agent
+          description: An AI agent with a defined role in the Herd team
+        - name: agent_instance
+          description: A single execution of an agent working on a task
+        - name: model
+          description: The LLM model used by an agent instance
+        - name: craft
+          description: Quality standards applied to agent work
+        - name: personality
+          description: Behavioral configuration for an agent
+        - name: skillset
+          description: Set of skills assigned to an agent
+
+    - name: work_management
+      owner: architect
+      description: Work planning, tracking, and delivery
+      concepts:
+        - name: initiative
+          description: High-level strategic initiative
+        - name: project
+          description: Project within an initiative
+        - name: sprint
+          description: Time-boxed delivery period
+        - name: ticket
+          description: Work item assigned to agents
+
+    - name: delivery
+      owner: wardenstein
+      description: Code delivery and quality assurance
+      concepts:
+        - name: pull_request
+          description: Code delivery artifact
+        - name: review
+          description: Quality inspection of a pull request
+
+  relationships:
+    - from: agent
+      to: agent_instance
+      cardinality: one_to_many
+      verb: spawns
+    - from: agent_instance
+      to: ticket
+      cardinality: many_to_one
+      verb: works_on
+    - from: agent_instance
+      to: model
+      cardinality: many_to_one
+      verb: uses
+    - from: agent
+      to: craft
+      cardinality: many_to_one
+      verb: follows
+    - from: agent
+      to: personality
+      cardinality: many_to_one
+      verb: embodies
+    - from: agent
+      to: skillset
+      cardinality: many_to_one
+      verb: has
+    - from: ticket
+      to: sprint
+      cardinality: many_to_one
+      verb: belongs_to
+    - from: ticket
+      to: project
+      cardinality: many_to_one
+      verb: part_of
+    - from: project
+      to: initiative
+      cardinality: many_to_one
+      verb: advances
+    - from: agent_instance
+      to: pull_request
+      cardinality: many_to_one
+      verb: submits
+    - from: pull_request
+      to: review
+      cardinality: one_to_many
+      verb: receives
+    - from: skillset
+      to: skillset
+      cardinality: many_to_many
+      verb: contains_skills

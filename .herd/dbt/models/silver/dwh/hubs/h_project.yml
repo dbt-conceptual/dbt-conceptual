@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: h_project
+    description: "Hub for Project business key"
+    config:
+      meta:
+        concept: project
+        layer: hub
+    columns:
+      - name: project_tk
+        description: "Technical key (SHA1 of project_code)"
+        tests:
+          - unique
+          - not_null
+      - name: project_code
+        description: "Business key for project"
+        tests:
+          - not_null

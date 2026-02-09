@@ -1,0 +1,26 @@
+version: 2
+
+models:
+  - name: fact_ticket_lifecycle
+    description: "Ticket lifecycle fact - tracks ticket status changes over time"
+    config:
+      meta:
+        concept: ticket
+        layer: fact
+    columns:
+      - name: agent_instance_tk
+        description: "Agent instance technical key"
+        tests:
+          - not_null
+      - name: ticket_sk
+        description: "Ticket dimension surrogate key (Type 2 SCD)"
+      - name: agent_sk
+        description: "Agent dimension surrogate key (Type 2 SCD)"
+      - name: ticket_event_type
+        description: "Type of ticket event"
+      - name: ticket_status
+        description: "Ticket status after this event"
+      - name: previous_status
+        description: "Ticket status before this event"
+      - name: time_in_previous_status_minutes
+        description: "Time spent in previous status (minutes)"

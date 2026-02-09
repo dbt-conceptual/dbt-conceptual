@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: stg_herd__agent_def
+    description: "Staging model for agent definitions"
+    config:
+      meta:
+        concept: agent
+        layer: staging
+    columns:
+      - name: agent_code
+        description: "Primary key - unique agent identifier"
+        tests:
+          - unique
+          - not_null
+      - name: default_model_code
+        description: "Foreign key to model_def"

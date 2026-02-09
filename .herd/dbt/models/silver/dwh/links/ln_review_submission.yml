@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: ln_review_submission
+    description: "Transactional link - Review of a PR"
+    config:
+      meta:
+        concept: review
+        layer: link
+    columns:
+      - name: review_submission_tk
+        description: "Link technical key"
+        tests:
+          - unique
+          - not_null
+      - name: review_tk
+        description: "Foreign key to h_review"
+        tests:
+          - not_null
+      - name: pull_request_tk
+        description: "Foreign key to h_pull_request"
+        tests:
+          - not_null
+      - name: agent_tk
+        description: "Foreign key to h_agent (reviewer)"
+        tests:
+          - not_null

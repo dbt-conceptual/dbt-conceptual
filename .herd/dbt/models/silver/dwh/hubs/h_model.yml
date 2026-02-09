@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: h_model
+    description: "Hub for Model business key"
+    config:
+      meta:
+        concept: model
+        layer: hub
+    columns:
+      - name: model_tk
+        description: "Technical key (SHA1 of model_code)"
+        tests:
+          - unique
+          - not_null
+      - name: model_code
+        description: "Business key for model"
+        tests:
+          - not_null

@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: h_craft
+    description: "Hub for Craft business key"
+    config:
+      meta:
+        concept: craft
+        layer: hub
+    columns:
+      - name: craft_tk
+        description: "Technical key (SHA1 of craft_code)"
+        tests:
+          - unique
+          - not_null
+      - name: craft_code
+        description: "Business key for craft"
+        tests:
+          - not_null

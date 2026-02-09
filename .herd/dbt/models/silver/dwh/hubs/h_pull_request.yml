@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: h_pull_request
+    description: "Hub for Pull Request business key"
+    config:
+      meta:
+        concept: pull_request
+        layer: hub
+    columns:
+      - name: pull_request_tk
+        description: "Technical key (SHA1 of pr_code)"
+        tests:
+          - unique
+          - not_null
+      - name: pr_code
+        description: "Business key for pull request"
+        tests:
+          - not_null

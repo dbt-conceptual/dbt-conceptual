@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: h_ticket
+    description: "Hub for Ticket business key"
+    config:
+      meta:
+        concept: ticket
+        layer: hub
+    columns:
+      - name: ticket_tk
+        description: "Technical key (SHA1 of ticket_code)"
+        tests:
+          - unique
+          - not_null
+      - name: ticket_code
+        description: "Business key for ticket"
+        tests:
+          - not_null

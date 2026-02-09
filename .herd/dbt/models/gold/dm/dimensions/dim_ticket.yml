@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: dim_ticket
+    description: "Ticket dimension (Type 2 SCD) - tracks historical changes to ticket attributes"
+    config:
+      meta:
+        concept: ticket
+        layer: dimension
+    columns:
+      - name: ticket_sk
+        description: "Ticket surrogate key (hash of ticket_tk + valid_from)"
+        tests:
+          - unique
+          - not_null
+      - name: ticket_tk
+        description: "Ticket technical key from vault"
+        tests:
+          - not_null
+      - name: ticket_code
+        description: "Ticket business key"
+      - name: valid_from
+        description: "Start of validity period"
+      - name: valid_to
+        description: "End of validity period (9999-12-31 for current)"
+      - name: is_current
+        description: "Flag indicating current version"

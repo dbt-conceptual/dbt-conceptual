@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: ln_agent_instance
+    description: "Transactional link - Agent instance (central transactional link)"
+    config:
+      meta:
+        concept: agent_instance
+        layer: link
+    columns:
+      - name: agent_instance_tk
+        description: "Link technical key"
+        tests:
+          - unique
+          - not_null
+      - name: agent_tk
+        description: "Foreign key to h_agent"
+        tests:
+          - not_null
+      - name: model_tk
+        description: "Foreign key to h_model"
+        tests:
+          - not_null
+      - name: ticket_tk
+        description: "Foreign key to h_ticket"
+        tests:
+          - not_null

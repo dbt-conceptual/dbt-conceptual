@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: fact_review_quality
+    description: "Review quality fact - tracks code review quality metrics"
+    config:
+      meta:
+        concept: review
+        layer: fact
+    columns:
+      - name: review_submission_tk
+        description: "Review submission technical key"
+        tests:
+          - unique
+          - not_null
+      - name: pull_request_sk
+        description: "Pull request dimension surrogate key (Type 1)"
+      - name: agent_sk
+        description: "Agent dimension surrogate key (Type 2 SCD)"
+      - name: review_round
+        description: "Review round number"
+      - name: review_verdict
+        description: "Review verdict (approve, request_changes, etc.)"
+      - name: review_duration_minutes
+        description: "Duration of review in minutes"
+      - name: finding_count
+        description: "Total number of findings"
+      - name: blocking_finding_count
+        description: "Number of blocking findings"
+      - name: advisory_finding_count
+        description: "Number of advisory findings"

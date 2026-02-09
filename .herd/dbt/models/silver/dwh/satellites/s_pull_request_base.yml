@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: s_pull_request_base
+    description: "Historized satellite for Pull Request descriptive attributes"
+    config:
+      meta:
+        concept: pull_request
+        layer: satellite
+    columns:
+      - name: pull_request_tk
+        description: "Foreign key to h_pull_request"
+        tests:
+          - not_null
+      - name: pull_request_hd
+        description: "Hashdiff of descriptive attributes"
+        tests:
+          - not_null

@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: stg_herd__agent_instance_ticket_activity
+    description: "Staging model for agent instance ticket activity events"
+    config:
+      meta:
+        concept: agent_instance
+        layer: staging
+    columns:
+      - name: agent_instance_code
+        description: "Foreign key to agent_instance"
+        tests:
+          - not_null
+      - name: ticket_code
+        description: "Foreign key to ticket_def"
+        tests:
+          - not_null
+      - name: ticket_event_type
+        description: "Type of ticket event"
+        tests:
+          - not_null

@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: h_initiative
+    description: "Hub for Initiative business key"
+    config:
+      meta:
+        concept: initiative
+        layer: hub
+    columns:
+      - name: initiative_tk
+        description: "Technical key (SHA1 of initiative_code)"
+        tests:
+          - unique
+          - not_null
+      - name: initiative_code
+        description: "Business key for initiative"
+        tests:
+          - not_null

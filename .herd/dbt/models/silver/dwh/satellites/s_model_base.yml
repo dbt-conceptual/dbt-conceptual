@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: s_model_base
+    description: "Historized satellite for Model descriptive attributes"
+    config:
+      meta:
+        concept: model
+        layer: satellite
+    columns:
+      - name: model_tk
+        description: "Foreign key to h_model"
+        tests:
+          - not_null
+      - name: model_hd
+        description: "Hashdiff of descriptive attributes"
+        tests:
+          - not_null

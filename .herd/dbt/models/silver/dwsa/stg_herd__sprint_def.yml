@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: stg_herd__sprint_def
+    description: "Staging model for sprint definitions"
+    config:
+      meta:
+        concept: sprint
+        layer: staging
+    columns:
+      - name: sprint_code
+        description: "Primary key - unique sprint identifier"
+        tests:
+          - unique
+          - not_null
