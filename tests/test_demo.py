@@ -68,12 +68,12 @@ class TestCreateDemoProject:
             shutil.rmtree(demo_dir, ignore_errors=True)
 
     def test_creates_layout_json(self) -> None:
-        """Test that conceptual.layout.json is created with positions."""
+        """Test that conceptual_layout.json is created with positions."""
         demo_dir = create_demo_project()
         try:
             import json
 
-            layout_file = demo_dir / "conceptual.layout.json"
+            layout_file = demo_dir / "conceptual_layout.json"
             assert layout_file.exists()
 
             with open(layout_file) as f:

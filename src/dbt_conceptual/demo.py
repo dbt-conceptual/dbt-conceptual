@@ -242,7 +242,7 @@ def create_demo_project(base_dir: Optional[Path] = None) -> Path:
     # Write YAML files
     (demo_dir / "dbt_project.yml").write_text(DBT_PROJECT_YML)
     (demo_dir / "conceptual.yml").write_text(CONCEPTUAL_YML)
-    (demo_dir / "conceptual.layout.json").write_text(LAYOUT_JSON)
+    (demo_dir / "conceptual_layout.json").write_text(LAYOUT_JSON)
 
     # Write schema files
     (bronze_dir / "_schema.yml").write_text(BRONZE_SCHEMA_YML)
