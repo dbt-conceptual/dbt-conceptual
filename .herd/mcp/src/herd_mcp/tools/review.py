@@ -68,9 +68,9 @@ def _post_review_to_github(pr_number: int, review_body: str) -> bool:
             [
                 "gh",
                 "api",
-                "repos/dbt-conceptual/dbt-conceptual/issues/{}/comments".format(pr_number),
+                f"repos/dbt-conceptual/dbt-conceptual/issues/{pr_number}/comments",
                 "-f",
-                "body={}".format(review_body),
+                f"body={review_body}",
             ],
             capture_output=True,
             text=True,
