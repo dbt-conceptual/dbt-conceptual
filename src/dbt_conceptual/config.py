@@ -34,6 +34,14 @@ class RuleSeverity(Enum):
     IGNORE = "ignore"
 
 
+# Single source of truth for severity string -> enum mapping
+SEVERITY_RULES: dict[str, RuleSeverity] = {
+    "error": RuleSeverity.ERROR,
+    "warn": RuleSeverity.WARN,
+    "ignore": RuleSeverity.IGNORE,
+}
+
+
 def _validate_config_schema(data: dict) -> list:
     """Validate config schema and return warnings for unknown keys.
 
@@ -332,23 +340,17 @@ class Config:
         Returns:
             ValidationConfig with defaults set
         """
-        severity_map = {
-            "error": RuleSeverity.ERROR,
-            "warn": RuleSeverity.WARN,
-            "ignore": RuleSeverity.IGNORE,
-        }
-
         config = ValidationConfig()
         for rule_name in _VALID_RULE_NAMES:
             if rule_name in data:
                 severity_str = str(data[rule_name]).lower()
-                if severity_str in severity_map:
+                if severity_str in SEVERITY_RULES:
                     if rule_name == "orphan_models":
-                        config.orphan_models = severity_map[severity_str]
+                        config.orphan_models = SEVERITY_RULES[severity_str]
                     elif rule_name == "unimplemented_concepts":
-                        config.unimplemented_concepts = severity_map[severity_str]
+                        config.unimplemented_concepts = SEVERITY_RULES[severity_str]
                     elif rule_name == "missing_definitions":
-                        config.missing_definitions = severity_map[severity_str]
+                        config.missing_definitions = SEVERITY_RULES[severity_str]
 
         return config
 
@@ -362,23 +364,17 @@ class Config:
         Returns:
             LayerValidationConfig with overrides set
         """
-        severity_map = {
-            "error": RuleSeverity.ERROR,
-            "warn": RuleSeverity.WARN,
-            "ignore": RuleSeverity.IGNORE,
-        }
-
         config = LayerValidationConfig()
         for rule_name in _VALID_RULE_NAMES:
             if rule_name in data:
                 severity_str = str(data[rule_name]).lower()
-                if severity_str in severity_map:
+                if severity_str in SEVERITY_RULES:
                     if rule_name == "orphan_models":
-                        config.orphan_models = severity_map[severity_str]
+                        config.orphan_models = SEVERITY_RULES[severity_str]
                     elif rule_name == "unimplemented_concepts":
-                        config.unimplemented_concepts = severity_map[severity_str]
+                        config.unimplemented_concepts = SEVERITY_RULES[severity_str]
                     elif rule_name == "missing_definitions":
-                        config.missing_definitions = severity_map[severity_str]
+                        config.missing_definitions = SEVERITY_RULES[severity_str]
 
         return config
 
@@ -439,12 +435,6 @@ class Config:
         Returns:
             ValidationConfig instance
         """
-        severity_map = {
-            "error": RuleSeverity.ERROR,
-            "warn": RuleSeverity.WARN,
-            "ignore": RuleSeverity.IGNORE,
-        }
-
         config = ValidationConfig()
 
         # Parse defaults section
@@ -456,13 +446,13 @@ class Config:
         ]:
             if rule_name in defaults:
                 severity_str = str(defaults[rule_name]).lower()
-                if severity_str in severity_map:
+                if severity_str in SEVERITY_RULES:
                     if rule_name == "orphan_models":
-                        config.orphan_models = severity_map[severity_str]
+                        config.orphan_models = SEVERITY_RULES[severity_str]
                     elif rule_name == "unimplemented_concepts":
-                        config.unimplemented_concepts = severity_map[severity_str]
+                        config.unimplemented_concepts = SEVERITY_RULES[severity_str]
                     elif rule_name == "missing_definitions":
-                        config.missing_definitions = severity_map[severity_str]
+                        config.missing_definitions = SEVERITY_RULES[severity_str]
 
         # Parse gold layer overrides
         gold_data = data.get("gold", {})
@@ -475,15 +465,17 @@ class Config:
             ]:
                 if rule_name in gold_data:
                     severity_str = str(gold_data[rule_name]).lower()
-                    if severity_str in severity_map:
+                    if severity_str in SEVERITY_RULES:
                         if rule_name == "orphan_models":
-                            gold_config.orphan_models = severity_map[severity_str]
+                            gold_config.orphan_models = SEVERITY_RULES[severity_str]
                         elif rule_name == "unimplemented_concepts":
-                            gold_config.unimplemented_concepts = severity_map[
+                            gold_config.unimplemented_concepts = SEVERITY_RULES[
                                 severity_str
                             ]
                         elif rule_name == "missing_definitions":
-                            gold_config.missing_definitions = severity_map[severity_str]
+                            gold_config.missing_definitions = SEVERITY_RULES[
+                                severity_str
+                            ]
             config.gold = gold_config
 
         return config

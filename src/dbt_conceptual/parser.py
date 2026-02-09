@@ -3,6 +3,7 @@
 v1.0: Simplified parser with flat model lists and no lineage inference.
 """
 
+from pathlib import Path
 from typing import Literal, Optional
 
 import yaml
@@ -19,6 +20,7 @@ from dbt_conceptual.state import (
     ProjectState,
     RelationshipState,
     ValidationState,
+    ValidationStatus,
 )
 
 # Element types that can appear in validation messages
@@ -139,6 +141,28 @@ class ConceptualModelParser:
 
         return state
 
+    def _parse_conceptual_yml(self, conceptual_file: Path) -> ProjectState:
+        """Parse a conceptual.yml file and return basic state (for git.py).
+
+        This is a simplified version of parse() that only loads the YAML structure
+        without scanning dbt models.
+
+        Args:
+            conceptual_file: Path to conceptual.yml file
+
+        Returns:
+            ProjectState with domains, concepts, and relationships
+        """
+        # Temporarily swap config file path
+        try:
+            # Override conceptual_file path
+            self.config._conceptual_file_override = conceptual_file  # type: ignore[attr-defined]
+            return self.parse()
+        finally:
+            # Restore original path
+            if hasattr(self.config, "_conceptual_file_override"):
+                delattr(self.config, "_conceptual_file_override")
+
 
 class StateBuilder:
     """Builds complete ProjectState by combining conceptual model and dbt models."""
@@ -227,6 +251,19 @@ class StateBuilder:
 
         return state
 
+    def _parse_conceptual_yml(self, conceptual_file: Path) -> ProjectState:
+        """Parse a conceptual.yml file and return basic state (for git.py).
+
+        This delegates to ConceptualModelParser's method.
+
+        Args:
+            conceptual_file: Path to conceptual.yml file
+
+        Returns:
+            ProjectState with domains, concepts, and relationships
+        """
+        return self.parser._parse_conceptual_yml(conceptual_file)
+
     def _make_msg(
         self,
         severity: MessageSeverity,
@@ -278,7 +315,7 @@ class StateBuilder:
                     name=rel.from_concept,
                     domain=None,
                     is_ghost=True,
-                    validation_status="error",
+                    validation_status=ValidationStatus.ERROR,
                     validation_messages=["Referenced but not defined"],
                 )
                 state.concepts[rel.from_concept] = ghost
@@ -299,7 +336,7 @@ class StateBuilder:
                         rel.from_concept,
                     )
                 )
-                rel.validation_status = "error"
+                rel.validation_status = ValidationStatus.ERROR
                 rel.validation_messages.append(
                     f"Source concept '{rel.from_concept}' not defined"
                 )
@@ -309,7 +346,7 @@ class StateBuilder:
                     name=rel.to_concept,
                     domain=None,
                     is_ghost=True,
-                    validation_status="error",
+                    validation_status=ValidationStatus.ERROR,
                     validation_messages=["Referenced but not defined"],
                 )
                 state.concepts[rel.to_concept] = ghost
@@ -330,7 +367,7 @@ class StateBuilder:
                         rel.to_concept,
                     )
                 )
-                rel.validation_status = "error"
+                rel.validation_status = ValidationStatus.ERROR
                 rel.validation_messages.append(
                     f"Target concept '{rel.to_concept}' not defined"
                 )
@@ -365,11 +402,11 @@ class StateBuilder:
                         concept_id,
                     )
                 )
-                concept.validation_status = "error"
+                concept.validation_status = ValidationStatus.ERROR
                 concept.validation_messages.append(f"Duplicate name: {concept.name}")
                 # Also mark the first one
                 if first_id in state.concepts:
-                    state.concepts[first_id].validation_status = "error"
+                    state.concepts[first_id].validation_status = ValidationStatus.ERROR
                     state.concepts[first_id].validation_messages.append(
                         f"Duplicate name: {concept.name}"
                     )
@@ -404,7 +441,7 @@ class StateBuilder:
                         rel_id,
                     )
                 )
-                rel.validation_status = "error"
+                rel.validation_status = ValidationStatus.ERROR
                 rel.validation_messages.append("Duplicate relationship")
             else:
                 rel_keys_seen[key] = rel_id

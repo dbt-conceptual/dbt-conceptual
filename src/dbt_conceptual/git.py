@@ -8,14 +8,7 @@ import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import yaml
-
-from dbt_conceptual.state import (
-    ConceptState,
-    DomainState,
-    ProjectState,
-    RelationshipState,
-)
+from dbt_conceptual.state import ProjectState
 
 if TYPE_CHECKING:
     from dbt_conceptual.config import Config
@@ -65,6 +58,8 @@ def load_state_from_git_ref(config: "Config", base_ref: str) -> ProjectState:
         NotAGitRepoError: If not in a git repository
         RefNotFoundError: If the ref or file doesn't exist
     """
+    from dbt_conceptual.parser import StateBuilder
+
     project_dir = config.project_dir
 
     # Check if we're in a git repo
@@ -96,7 +91,7 @@ def load_state_from_git_ref(config: "Config", base_ref: str) -> ProjectState:
             stderr=result.stderr.strip(),
         )
 
-    # Write base version to temp file and parse
+    # Write base version to temp file
     with tempfile.NamedTemporaryFile(
         mode="w", suffix=".yml", delete=False
     ) as temp_file:
@@ -104,49 +99,33 @@ def load_state_from_git_ref(config: "Config", base_ref: str) -> ProjectState:
         temp_path = Path(temp_file.name)
 
     try:
-        with open(temp_path) as f:
-            base_data = yaml.safe_load(f) or {}
+        # Create a temporary config that points to the temp file
+        # StateBuilder will handle parsing the YAML and building the state
+        temp_config = type(config)(
+            project_dir=temp_path.parent,
+            gold_paths=config.gold_paths,
+            validation=config.validation,
+        )
 
-        base_state = ProjectState()
+        # Override the conceptual_file property to point to our temp file
+        # We do this by replacing the project_dir to make the relative path work
+        temp_config.project_dir = temp_path.parent
 
-        # Populate base state (simplified - no dbt manifest needed for diff)
-        for domain_id, domain_data in base_data.get("domains", {}).items():
-            base_state.domains[domain_id] = DomainState(
-                name=domain_id,
-                display_name=domain_data.get("name", domain_id),
-                color=domain_data.get("color"),
-            )
+        # Temporarily rename temp file to match expected name
+        expected_path = temp_path.parent / "conceptual.yml"
+        temp_path.rename(expected_path)
+        temp_path = expected_path
 
-        for concept_id, concept_data in base_data.get("concepts", {}).items():
-            base_state.concepts[concept_id] = ConceptState(
-                name=concept_data.get("name", concept_id),
-                domain=concept_data.get("domain"),
-                owner=concept_data.get("owner"),
-                definition=concept_data.get("definition"),
-                color=concept_data.get("color"),
-            )
-
-        for rel in base_data.get("relationships", []):
-            verb = rel.get("verb", "")
-            from_concept = rel.get("from", "")
-            to_concept = rel.get("to", "")
-            rel_key = f"{from_concept}:{verb}:{to_concept}"
-
-            # v1.0: Simplified relationship state
-            base_state.relationships[rel_key] = RelationshipState(
-                verb=verb,
-                from_concept=from_concept,
-                to_concept=to_concept,
-                cardinality=rel.get("cardinality"),
-                definition=rel.get("definition"),
-                owner=rel.get("owner"),
-            )
+        # Use StateBuilder to parse YAML into domain objects
+        # Note: This will not scan dbt models, only load conceptual.yml structure
+        builder = StateBuilder(temp_config)
+        base_state = builder._parse_conceptual_yml(temp_path)
 
         return base_state
 
     finally:
         # Clean up temp file
-        temp_path.unlink()
+        temp_path.unlink(missing_ok=True)
 
 
 def compute_diff_from_ref(config: "Config", base_ref: str) -> "ConceptualDiff":

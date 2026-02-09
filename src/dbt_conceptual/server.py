@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +23,15 @@ from dbt_conceptual.scanner import DbtProjectScanner
 from dbt_conceptual.state import ProjectState
 
 logger = logging.getLogger(__name__)
+
+# Module-level cache for ProjectState
+_state_cache: ProjectState | None = None
+
+
+def _invalidate_cache() -> None:
+    """Invalidate the cached state."""
+    global _state_cache
+    _state_cache = None
 
 
 def _serialize_state(state: ProjectState) -> dict[str, Any]:
@@ -55,7 +66,7 @@ def _serialize_state(state: ProjectState) -> dict[str, Any]:
                 "models": concept.models,  # Flat list
                 # Validation fields
                 "isGhost": concept.is_ghost,
-                "validationStatus": concept.validation_status,
+                "validationStatus": concept.validation_status.value,
                 "validationMessages": concept.validation_messages,
             }
             for concept_id, concept in state.concepts.items()
@@ -71,12 +82,48 @@ def _serialize_state(state: ProjectState) -> dict[str, Any]:
                 "definition": rel.definition,
                 "status": rel.get_status(state.concepts),  # Derived
                 # Validation fields
-                "validationStatus": rel.validation_status,
+                "validationStatus": rel.validation_status.value,
                 "validationMessages": rel.validation_messages,
             }
             for rel_id, rel in state.relationships.items()
         },
     }
+
+
+def _atomic_write(file_path: Path, content: str) -> None:
+    """Atomically write content to a file using temp file + rename.
+
+    Args:
+        file_path: Target file path to write to.
+        content: Content to write.
+
+    Raises:
+        OSError: If the file cannot be written due to permission or I/O errors.
+    """
+    # Create temp file in same directory for atomic rename
+    temp_fd, temp_path_str = tempfile.mkstemp(
+        dir=file_path.parent, prefix=f".{file_path.name}.", suffix=".tmp"
+    )
+    temp_path = Path(temp_path_str)
+
+    try:
+        # Write content to temp file
+        os.write(temp_fd, content.encode("utf-8"))
+        os.close(temp_fd)
+
+        # Atomic rename
+        os.rename(temp_path, file_path)
+    except Exception:
+        # Clean up temp file on error
+        try:
+            os.close(temp_fd)
+        except OSError:
+            pass
+        try:
+            temp_path.unlink()
+        except OSError:
+            pass
+        raise
 
 
 def _read_conceptual_yml(conceptual_file: Path) -> dict[str, Any]:
@@ -98,7 +145,7 @@ def _read_conceptual_yml(conceptual_file: Path) -> dict[str, Any]:
 
 
 def _write_conceptual_yml(conceptual_file: Path, data: dict[str, Any]) -> None:
-    """Write data to the conceptual.yml file.
+    """Write data to the conceptual.yml file atomically.
 
     Args:
         conceptual_file: Path to conceptual.yml.
@@ -108,8 +155,11 @@ def _write_conceptual_yml(conceptual_file: Path, data: dict[str, Any]) -> None:
         OSError: If the file cannot be written due to permission or I/O errors.
         yaml.YAMLError: If the data cannot be serialized.
     """
-    with open(conceptual_file, "w") as f:
-        yaml.dump(data, f, sort_keys=False, default_flow_style=False)
+    from io import StringIO
+
+    output = StringIO()
+    yaml.dump(data, output, sort_keys=False, default_flow_style=False)
+    _atomic_write(conceptual_file, output.getvalue())
 
 
 def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
@@ -178,8 +228,11 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
     def get_state() -> Response | tuple[Response, int]:
         """Get current conceptual model state as JSON."""
         try:
-            builder = StateBuilder(config)
-            state = builder.build()
+            global _state_cache
+            if _state_cache is None:
+                builder = StateBuilder(config)
+                _state_cache = builder.build()
+            state = _state_cache
 
             # Check for integrity issues (relationships referencing missing concepts)
             missing_refs = []
@@ -300,6 +353,9 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
             # Write to file
             _write_conceptual_yml(conceptual_file, yaml_data)
 
+            # Invalidate cache
+            _invalidate_cache()
+
             response_data = {
                 "success": True,
                 "message": "Saved to conceptual.yml",
@@ -380,9 +436,8 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
             # Prepare layout data
             layout_data = {"version": 1, "positions": data.get("positions", {})}
 
-            # Write to file
-            with open(layout_file, "w") as f:
-                json.dump(layout_data, f, indent=2)
+            # Write to file atomically
+            _atomic_write(layout_file, json.dumps(layout_data, indent=2))
 
             return jsonify({"success": True, "message": "Layout saved"})
         except (ValueError, TypeError) as e:
@@ -525,6 +580,9 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
             # Write back
             _write_conceptual_yml(conceptual_file, conceptual_data)
 
+            # Invalidate cache
+            _invalidate_cache()
+
             return jsonify({"success": True, "message": "Settings saved"})
         except (yaml.YAMLError, ValueError) as e:
             logger.error("Data error saving settings: %s", e)
@@ -568,6 +626,9 @@ def create_app(project_dir: Path, demo_mode: bool = False) -> Flask:
             conceptual_data["config"] = data
 
             _write_conceptual_yml(conceptual_file, conceptual_data)
+
+            # Invalidate cache
+            _invalidate_cache()
 
             return jsonify({"success": True, "message": "Config saved"})
         except (yaml.YAMLError, ValueError) as e:
