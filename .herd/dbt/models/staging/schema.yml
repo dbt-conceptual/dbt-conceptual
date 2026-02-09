@@ -1,0 +1,297 @@
+version: 2
+
+models:
+  # Entity Definitions (12 tables)
+  - name: stg_herd__initiative_def
+    description: Staging model for initiative definitions
+    columns:
+      - name: initiative_code
+        description: Primary key - unique initiative identifier
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_herd__project_def
+    description: Staging model for project definitions
+    columns:
+      - name: project_code
+        description: Primary key - unique project identifier
+        tests:
+          - unique
+          - not_null
+      - name: initiative_code
+        description: Foreign key to initiative_def
+        tests:
+          - not_null
+
+  - name: stg_herd__agent_def
+    description: Staging model for agent definitions
+    columns:
+      - name: agent_code
+        description: Primary key - unique agent identifier
+        tests:
+          - unique
+          - not_null
+      - name: default_model_code
+        description: Foreign key to model_def
+
+  - name: stg_herd__model_def
+    description: Staging model for model definitions
+    columns:
+      - name: model_code
+        description: Primary key - unique model identifier
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_herd__craft_def
+    description: Staging model for craft definitions
+    columns:
+      - name: craft_code
+        description: Primary key - unique craft identifier
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_herd__personality_def
+    description: Staging model for personality definitions
+    columns:
+      - name: personality_code
+        description: Primary key - unique personality identifier
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_herd__skillset_def
+    description: Staging model for skillset definitions
+    columns:
+      - name: skillset_code
+        description: Primary key - unique skillset identifier
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_herd__sprint_def
+    description: Staging model for sprint definitions
+    columns:
+      - name: sprint_code
+        description: Primary key - unique sprint identifier
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_herd__ticket_def
+    description: Staging model for ticket definitions
+    columns:
+      - name: ticket_code
+        description: Primary key - unique ticket identifier
+        tests:
+          - unique
+          - not_null
+      - name: project_code
+        description: Foreign key to project_def
+      - name: current_sprint_code
+        description: Foreign key to sprint_def
+
+  - name: stg_herd__pr_def
+    description: Staging model for pull request definitions
+    columns:
+      - name: pr_code
+        description: Primary key - unique PR identifier
+        tests:
+          - unique
+          - not_null
+      - name: ticket_code
+        description: Foreign key to ticket_def
+      - name: creator_agent_instance_code
+        description: Foreign key to agent_instance
+
+  - name: stg_herd__review_def
+    description: Staging model for review definitions (immutable)
+    columns:
+      - name: review_code
+        description: Primary key - unique review identifier
+        tests:
+          - unique
+          - not_null
+      - name: pr_code
+        description: Foreign key to pr_def
+        tests:
+          - not_null
+      - name: reviewer_agent_instance_code
+        description: Foreign key to agent_instance
+        tests:
+          - not_null
+
+  - name: stg_herd__review_finding
+    description: Staging model for review findings (immutable)
+    columns:
+      - name: review_finding_code
+        description: Primary key - unique finding identifier
+        tests:
+          - unique
+          - not_null
+      - name: review_code
+        description: Foreign key to review_def
+        tests:
+          - not_null
+
+  # Versioned Content (3 tables)
+  - name: stg_herd__craft_version
+    description: Staging model for versioned craft content (immutable)
+    columns:
+      - name: craft_version_code
+        description: Primary key - unique craft version identifier
+        tests:
+          - unique
+          - not_null
+      - name: craft_code
+        description: Foreign key to craft_def
+        tests:
+          - not_null
+
+  - name: stg_herd__personality_version
+    description: Staging model for versioned personality content (immutable)
+    columns:
+      - name: personality_version_code
+        description: Primary key - unique personality version identifier
+        tests:
+          - unique
+          - not_null
+      - name: personality_code
+        description: Foreign key to personality_def
+        tests:
+          - not_null
+
+  - name: stg_herd__skillset_version
+    description: Staging model for versioned skillset content (immutable)
+    columns:
+      - name: skillset_version_code
+        description: Primary key - unique skillset version identifier
+        tests:
+          - unique
+          - not_null
+      - name: skillset_code
+        description: Foreign key to skillset_def
+        tests:
+          - not_null
+
+  # Instance (1 table)
+  - name: stg_herd__agent_instance
+    description: Staging model for agent instance executions
+    columns:
+      - name: agent_instance_code
+        description: Primary key - unique agent instance identifier
+        tests:
+          - unique
+          - not_null
+      - name: agent_code
+        description: Foreign key to agent_def
+        tests:
+          - not_null
+      - name: model_code
+        description: Foreign key to model_def
+        tests:
+          - not_null
+
+  # Junction Tables (2 tables)
+  - name: stg_herd__agent_skillset
+    description: Staging model for agent to skillset assignments
+    columns:
+      - name: agent_code
+        description: Part of composite primary key
+        tests:
+          - not_null
+      - name: skillset_code
+        description: Part of composite primary key
+        tests:
+          - not_null
+
+  - name: stg_herd__agent_instance_skillset
+    description: Staging model for agent instance to skillset version assignments
+    columns:
+      - name: agent_instance_code
+        description: Part of composite primary key
+        tests:
+          - not_null
+      - name: skillset_version_code
+        description: Part of composite primary key
+        tests:
+          - not_null
+
+  # Activity Ledgers (5 tables - insert-only)
+  - name: stg_herd__agent_instance_lifecycle_activity
+    description: Staging model for agent instance lifecycle events
+    columns:
+      - name: agent_instance_code
+        description: Foreign key to agent_instance
+        tests:
+          - not_null
+      - name: lifecycle_event_type
+        description: Type of lifecycle event
+        tests:
+          - not_null
+
+  - name: stg_herd__agent_instance_ticket_activity
+    description: Staging model for agent instance ticket activity events
+    columns:
+      - name: agent_instance_code
+        description: Foreign key to agent_instance
+        tests:
+          - not_null
+      - name: ticket_code
+        description: Foreign key to ticket_def
+        tests:
+          - not_null
+      - name: ticket_event_type
+        description: Type of ticket event
+        tests:
+          - not_null
+
+  - name: stg_herd__agent_instance_pr_activity
+    description: Staging model for agent instance PR activity events
+    columns:
+      - name: agent_instance_code
+        description: Foreign key to agent_instance
+        tests:
+          - not_null
+      - name: pr_code
+        description: Foreign key to pr_def
+        tests:
+          - not_null
+      - name: pr_event_type
+        description: Type of PR event
+        tests:
+          - not_null
+
+  - name: stg_herd__agent_instance_review_activity
+    description: Staging model for agent instance review activity events
+    columns:
+      - name: agent_instance_code
+        description: Foreign key to agent_instance
+        tests:
+          - not_null
+      - name: review_code
+        description: Foreign key to review_def
+        tests:
+          - not_null
+      - name: pr_code
+        description: Foreign key to pr_def
+        tests:
+          - not_null
+      - name: review_event_type
+        description: Type of review event
+        tests:
+          - not_null
+
+  - name: stg_herd__agent_instance_token_activity
+    description: Staging model for agent instance token usage tracking
+    columns:
+      - name: agent_instance_code
+        description: Foreign key to agent_instance
+        tests:
+          - not_null
+      - name: model_code
+        description: Foreign key to model_def
+        tests:
+          - not_null

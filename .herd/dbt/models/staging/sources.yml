@@ -1,0 +1,62 @@
+version: 2
+
+sources:
+  - name: herd
+    description: Herd operational database - tracks agent activity, tickets, PRs, reviews, and token usage
+    schema: herd
+    tables:
+      # Entity Definitions (12 tables)
+      - name: initiative_def
+        description: Initiative definitions and metadata
+      - name: project_def
+        description: Project definitions linked to initiatives
+      - name: agent_def
+        description: Agent definitions with roles and configuration
+      - name: model_def
+        description: LLM model definitions with pricing
+      - name: craft_def
+        description: Craft standard definitions
+      - name: personality_def
+        description: Agent personality definitions
+      - name: skillset_def
+        description: Agent skillset definitions
+      - name: sprint_def
+        description: Sprint definitions with goals and timelines
+      - name: ticket_def
+        description: Ticket definitions with status and metadata
+      - name: pr_def
+        description: Pull request definitions with metrics
+      - name: review_def
+        description: Code review definitions (immutable)
+      - name: review_finding
+        description: Individual review findings (immutable)
+
+      # Versioned Content (3 tables)
+      - name: craft_version
+        description: Versioned craft standard content (immutable)
+      - name: personality_version
+        description: Versioned personality content (immutable)
+      - name: skillset_version
+        description: Versioned skillset content (immutable)
+
+      # Instance (1 table)
+      - name: agent_instance
+        description: Agent instance executions
+
+      # Junction Tables (2 tables)
+      - name: agent_skillset
+        description: Agent to skillset assignments
+      - name: agent_instance_skillset
+        description: Agent instance to skillset version assignments
+
+      # Activity Ledgers (5 tables)
+      - name: agent_instance_lifecycle_activity
+        description: Agent instance lifecycle events (insert-only)
+      - name: agent_instance_ticket_activity
+        description: Agent instance ticket activity events (insert-only)
+      - name: agent_instance_pr_activity
+        description: Agent instance PR activity events (insert-only)
+      - name: agent_instance_review_activity
+        description: Agent instance review activity events (insert-only)
+      - name: agent_instance_token_activity
+        description: Agent instance token usage and cost tracking (insert-only)
