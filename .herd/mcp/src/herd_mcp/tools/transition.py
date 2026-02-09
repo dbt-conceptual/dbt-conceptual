@@ -101,31 +101,24 @@ async def execute(
         # Generate transition ID
         transition_id = str(uuid.uuid4())
 
-        # Record transition (if we have an agent instance)
-        if agent_instance_code:
-            conn.execute(
-                """
-                INSERT INTO herd.agent_instance_ticket_activity
-                  (agent_instance_code, ticket_code, ticket_event_type, ticket_status,
-                   blocker_ticket_code, blocker_description, ticket_activity_comment, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-                """,
-                [
-                    agent_instance_code,
-                    ticket_id,
-                    event_type,
-                    to_status,
-                    blocked_by,
-                    note if blocked_by else None,
-                    note,
-                ],
-            )
-        else:
-            # If no agent instance, we could either:
-            # 1. Skip the activity record (current approach for simplicity)
-            # 2. Create a system agent instance
-            # 3. Allow NULL agent_instance_code in the schema
-            pass
+        # Record transition (always, even with NULL agent_instance_code)
+        conn.execute(
+            """
+            INSERT INTO herd.agent_instance_ticket_activity
+              (agent_instance_code, ticket_code, ticket_event_type, ticket_status,
+               blocker_ticket_code, blocker_description, ticket_activity_comment, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            """,
+            [
+                agent_instance_code,
+                ticket_id,
+                event_type,
+                to_status,
+                blocked_by,
+                note if blocked_by else None,
+                note,
+            ],
+        )
 
         # Update ticket_def convenience denorm
         conn.execute(
@@ -151,5 +144,7 @@ async def execute(
             "blocked_by": blocked_by,
             "agent": agent_name,
             "agent_instance_code": agent_instance_code,
-            "note": "No active agent instance found" if not agent_instance_code else None,
+            "note": (
+                "No active agent instance found" if not agent_instance_code else None
+            ),
         }

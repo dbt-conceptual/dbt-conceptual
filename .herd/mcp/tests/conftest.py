@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import pytest
-
 import duckdb
-
+import pytest
 from herd_mcp import db
 
 

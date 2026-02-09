@@ -104,17 +104,16 @@ async def execute(
             # For now, we'll just note that no instance exists
             pass
 
-        # Record assignment in ticket_activity (if we have an instance)
-        if agent_instance_code:
-            conn.execute(
-                """
-                INSERT INTO herd.agent_instance_ticket_activity
-                  (agent_instance_code, ticket_code, ticket_event_type, ticket_status,
-                   ticket_activity_comment, created_at)
-                VALUES (?, ?, 'assigned', 'assigned', ?, CURRENT_TIMESTAMP)
-                """,
-                [agent_instance_code, ticket_id, f"Assigned with priority: {priority}"],
-            )
+        # Record assignment in ticket_activity (always, even with NULL agent_instance_code)
+        conn.execute(
+            """
+            INSERT INTO herd.agent_instance_ticket_activity
+              (agent_instance_code, ticket_code, ticket_event_type, ticket_status,
+               ticket_activity_comment, created_at)
+            VALUES (?, ?, 'assigned', 'assigned', ?, CURRENT_TIMESTAMP)
+            """,
+            [agent_instance_code, ticket_id, f"Assigned with priority: {priority}"],
+        )
 
         # Update ticket_def convenience denorm
         conn.execute(

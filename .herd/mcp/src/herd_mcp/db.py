@@ -7,9 +7,9 @@ operational database backed by DuckDB.
 from __future__ import annotations
 
 import os
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Generator
 
 import duckdb
 
@@ -78,7 +78,9 @@ def init_schema(conn: duckdb.DuckDBPyConnection) -> None:
 
 
 @contextmanager
-def connection(db_path: str | None = None) -> Generator[duckdb.DuckDBPyConnection, None, None]:
+def connection(
+    db_path: str | None = None,
+) -> Generator[duckdb.DuckDBPyConnection, None, None]:
     """Context manager for DuckDB connections.
 
     Args:

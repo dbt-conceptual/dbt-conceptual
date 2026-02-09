@@ -5,7 +5,6 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from herd_mcp.tools import assign
 
 
@@ -15,35 +14,29 @@ def seeded_db(in_memory_db):
     conn = in_memory_db
 
     # Insert test agents
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.agent_def
           (agent_code, agent_role, agent_status, created_at)
         VALUES
           ('grunt', 'backend', 'active', CURRENT_TIMESTAMP),
           ('pikasso', 'frontend', 'active', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     # Insert test tickets
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.ticket_def
           (ticket_code, ticket_title, ticket_description, ticket_current_status, created_at)
         VALUES
           ('DBC-100', 'Test ticket', 'Test description', 'backlog', CURRENT_TIMESTAMP),
           ('DBC-101', 'Another ticket', 'Another description', 'backlog', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     # Insert test agent instance for grunt
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.agent_instance
           (agent_instance_code, agent_code, model_code, agent_instance_started_at)
         VALUES ('inst-001', 'grunt', 'claude-sonnet-4', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     yield conn
 
@@ -77,13 +70,11 @@ async def test_assign_success_with_instance(seeded_db):
         assert ticket_status == "assigned"
 
         # Verify activity was recorded
-        activity = seeded_db.execute(
-            """
+        activity = seeded_db.execute("""
             SELECT ticket_event_type, ticket_status, ticket_activity_comment
             FROM herd.agent_instance_ticket_activity
             WHERE ticket_code = 'DBC-100'
-            """
-        ).fetchone()
+            """).fetchone()
         assert activity is not None
         assert activity[0] == "assigned"
         assert activity[1] == "assigned"
@@ -115,11 +106,17 @@ async def test_assign_without_agent_instance(seeded_db):
         ).fetchone()[0]
         assert ticket_status == "assigned"
 
-        # Verify NO activity was recorded (no instance)
-        count = seeded_db.execute(
-            "SELECT COUNT(*) FROM herd.agent_instance_ticket_activity WHERE ticket_code = 'DBC-101'"
-        ).fetchone()[0]
-        assert count == 0
+        # Verify activity WAS recorded (with NULL agent_instance_code)
+        activity = seeded_db.execute("""
+            SELECT agent_instance_code, ticket_code, ticket_event_type, ticket_status
+            FROM herd.agent_instance_ticket_activity
+            WHERE ticket_code = 'DBC-101'
+            """).fetchone()
+        assert activity is not None
+        assert activity[0] is None  # agent_instance_code is NULL
+        assert activity[1] == "DBC-101"
+        assert activity[2] == "assigned"
+        assert activity[3] == "assigned"
 
 
 @pytest.mark.asyncio

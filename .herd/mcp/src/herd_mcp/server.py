@@ -7,7 +7,6 @@ import os
 from mcp.server.fastmcp import FastMCP
 
 # Import all tool modules
-from . import db
 from .tools import (
     assign,
     catchup,
