@@ -21,7 +21,7 @@ import sys
 from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Callable, Optional, TextIO
+from typing import Optional, Protocol, TextIO
 
 import click
 import yaml
@@ -44,6 +44,45 @@ from dbt_conceptual.state import ConceptState, ProjectState
 from dbt_conceptual.validator import Severity, ValidationIssue, Validator
 
 console = Console()
+
+# Unicode symbols used throughout CLI output
+CHECK_ICON = "\u2713"  # ✓
+ARROW = "\u2192"  # →
+WARNING_ICON = "\u26a0"  # ⚠
+CIRCLE = "\u25cb"  # ○
+HALF_CIRCLE = "\u25d0"  # ◐
+FILLED_CIRCLE = "\u25cf"  # ●
+BULLET = "\u2022"  # •
+
+
+class ExportHandler(Protocol):
+    """Protocol for export handler functions.
+
+    All export handlers must accept these keyword arguments, even if unused.
+    This allows the export dispatch system to call all handlers uniformly.
+    """
+
+    def __call__(
+        self,
+        *,
+        export_format: str,
+        state: ProjectState,
+        out: TextIO,
+        config: Config,
+        no_drafts: bool,
+        base: Optional[str],
+    ) -> None:
+        """Execute the export operation.
+
+        Args:
+            export_format: Output format (svg, html, markdown, json)
+            state: Project state containing concepts and relationships
+            out: Output stream to write to
+            config: Project configuration
+            no_drafts: If True, treat stub/draft concepts as errors
+            base: Base git ref for diff operations
+        """
+        ...
 
 
 def _configure_logging(verbose: int, quiet: bool) -> None:
@@ -78,12 +117,8 @@ def _configure_logging(verbose: int, quiet: bool) -> None:
     "-v", "--verbose", count=True, help="Increase verbosity (use -vv for debug)"
 )
 @click.option("-q", "--quiet", is_flag=True, help="Suppress non-error output")
-@click.pass_context
-def main(ctx: click.Context, verbose: int, quiet: bool) -> None:
+def main(verbose: int, quiet: bool) -> None:
     """dbt-conceptual: Bridge the gap between conceptual models and your lakehouse."""
-    ctx.ensure_object(dict)
-    ctx.obj["verbose"] = verbose
-    ctx.obj["quiet"] = quiet
     _configure_logging(verbose, quiet)
 
 
@@ -105,6 +140,47 @@ def status(
         raise click.Abort() from None
 
     # Display concepts by domain
+    _display_concepts_by_domain(state)
+
+    # Display relationships
+    _display_relationships(state)
+
+    # Display orphan models
+    if state.orphan_models:
+        _display_orphan_models(state.orphan_models, show_header=True)
+        console.print(
+            "\n[dim]Tip: Run 'dbt-conceptual sync --create-stubs' to create stub concepts[/dim]"
+        )
+
+    # Summary: Concepts needing attention
+    incomplete_concepts = [
+        (cid, c)
+        for cid, c in state.concepts.items()
+        if c.status != "complete" and (not c.domain or not c.owner or not c.definition)
+    ]
+
+    if incomplete_concepts:
+        console.print("\n[bold]Concepts Needing Attention[/bold]")
+        console.print("=" * 50)
+        console.print(
+            f"[yellow]{len(incomplete_concepts)} concept(s) missing required attributes:[/yellow]"
+        )
+        for concept_id, concept in incomplete_concepts:
+            missing = _get_missing_attributes(concept)
+            console.print(
+                f"  {BULLET} {concept_id} [{concept.status}] - missing: {', '.join(missing)}"
+            )
+        console.print("\n[dim]Edit conceptual.yml to add missing attributes[/dim]")
+
+    console.print()
+
+
+def _display_concepts_by_domain(state: ProjectState) -> None:
+    """Display concepts organized by domain.
+
+    Args:
+        state: Project state containing concepts and domains
+    """
     console.print("\n[bold]Concepts by Domain[/bold]")
     console.print("=" * 50)
 
@@ -131,7 +207,13 @@ def status(
         for concept_id, concept in no_domain:
             _print_concept_status(concept_id, concept)
 
-    # Display relationships
+
+def _display_relationships(state: ProjectState) -> None:
+    """Display relationship status.
+
+    Args:
+        state: Project state containing relationships and concepts
+    """
     console.print("\n[bold]Relationships[/bold]")
     console.print("=" * 50)
 
@@ -140,53 +222,228 @@ def status(
     else:
         for _rel_id, rel in state.relationships.items():
             status = rel.get_status(state.concepts)
-            status_icon = "\u2713" if status == "complete" else "\u25cb"
+            status_icon = CHECK_ICON if status == "complete" else CIRCLE
             status_color = "green" if status == "complete" else "yellow"
 
             console.print(
                 f"  [{status_color}]{status_icon}[/{status_color}] "
-                f"{rel.name} ({rel.from_concept} \u2192 {rel.to_concept})"
+                f"{rel.name} ({rel.from_concept} {ARROW} {rel.to_concept})"
             )
 
-    # Display orphan models
-    if state.orphan_models:
+
+def _create_conceptual_file(project_dir: Path, force: bool) -> None:
+    """Create or overwrite conceptual.yml template file.
+
+    Args:
+        project_dir: Path to dbt project directory
+        force: Whether to overwrite existing file
+    """
+    conceptual_file = project_dir / "conceptual.yml"
+    if conceptual_file.exists() and not force:
+        console.print(
+            f"[yellow]conceptual.yml already exists at {conceptual_file}[/yellow]"
+        )
+        console.print("[dim]Use --force to overwrite[/dim]")
+        return
+
+    template = """# dbt-conceptual: Conceptual Model Definition
+# Configuration lives in dbt_project.yml under vars.dbt_conceptual.
+
+domains:
+  # Define your domains here
+  # Example:
+  # sales:
+  #   display_name: Sales
+  #   color: "#4a9eff"
+  #   owner: "@sales-team"
+
+concepts:
+  # Define your concepts here
+  # Example:
+  # Customer:
+  #   domain: sales
+  #   owner: "@data-team"
+  #   definition: |
+  #     A person or organization that purchases products.
+
+relationships:
+  # Define relationships between concepts here
+  # Example:
+  # - from: Customer
+  #   verb: places
+  #   to: Order
+  #   cardinality: "1:N"
+"""
+    conceptual_file.write_text(template)
+
+    if force:
+        console.print(f"[green]{CHECK_ICON}[/green] Overwrote {conceptual_file}")
+    else:
+        console.print(f"[green]{CHECK_ICON}[/green] Created {conceptual_file}")
+
+
+def _update_dbt_project_vars(project_dir: Path) -> None:
+    """Add or merge vars.dbt_conceptual in dbt_project.yml.
+
+    Args:
+        project_dir: Path to dbt project directory
+    """
+    dbt_project_path = project_dir / "dbt_project.yml"
+    dbt_data = yaml.safe_load(dbt_project_path.read_text()) or {}
+
+    dbt_conceptual_block = {
+        "scan": {
+            "gold": ["models/marts/**/*.yml"],
+        },
+        "validation": {
+            "orphan_models": "warn",
+            "unimplemented_concepts": "warn",
+            "missing_definitions": "ignore",
+        },
+    }
+
+    vars_section = dbt_data.get("vars")
+    if isinstance(vars_section, dict) and "dbt_conceptual" in vars_section:
+        console.print(
+            "[yellow]vars.dbt_conceptual already exists in dbt_project.yml, skipping[/yellow]"
+        )
+        return
+
+    if not isinstance(vars_section, dict):
+        dbt_data["vars"] = {}
+    dbt_data["vars"]["dbt_conceptual"] = dbt_conceptual_block
+
+    dbt_project_path.write_text(
+        yaml.dump(dbt_data, default_flow_style=False, sort_keys=False)
+    )
+
+    console.print(
+        f"[green]{CHECK_ICON}[/green] Added vars.dbt_conceptual to dbt_project.yml"
+    )
+
+
+def _filter_orphan_models(
+    orphans: list, model: Optional[str], state: ProjectState
+) -> list:
+    """Filter orphan models based on --model flag.
+
+    Args:
+        orphans: List of orphan models
+        model: Specific model name to filter for (optional)
+        state: Project state containing concepts
+
+    Returns:
+        Filtered list of orphan models
+    """
+    if not model:
+        return orphans
+
+    # Filter to specific model
+    orphan_names = [o.name for o in orphans]
+    if model in orphan_names:
+        return [o for o in orphans if o.name == model]
+    else:
+        console.print(f"[yellow]Model '{model}' is not an orphan[/yellow]")
+        if model in [m for c in state.concepts.values() for m in c.models]:
+            console.print(f"Model '{model}' is already mapped to a concept")
+        else:
+            console.print(f"Model '{model}' not found in project")
+        return []
+
+
+def _create_stubs(orphans: list, config: Config) -> list[tuple[str, str]]:
+    """Create stub concepts for orphan models.
+
+    Args:
+        orphans: List of orphan models to create stubs for
+        config: Project configuration
+
+    Returns:
+        List of tuples (model_name, concept_id) for created stubs
+    """
+    # Read existing conceptual.yml
+    conceptual_data = yaml.safe_load(config.conceptual_file.read_text()) or {}
+
+    if "concepts" not in conceptual_data:
+        conceptual_data["concepts"] = {}
+
+    # Create stub for each orphan
+    stubs_created = []
+    for orphan in orphans:
+        # Generate concept ID from model name
+        # Strip prefixes like dim_, fact_, stg_
+        concept_id = orphan.name
+        for prefix in ["dim_", "fact_", "stg_", "fct_", "bridge_"]:
+            if concept_id.startswith(prefix):
+                concept_id = concept_id[len(prefix) :]
+                break
+
+        # Check if concept already exists
+        if concept_id in conceptual_data["concepts"]:
+            console.print(
+                f"[yellow]Skipping {orphan.name}: concept '{concept_id}' already exists[/yellow]"
+            )
+            continue
+
+        # Create stub with data from model if available
+        stub_data: dict[str, object] = {
+            "name": concept_id.replace("_", " ").title(),
+        }
+
+        # Use model description as definition if available
+        if orphan.description:
+            stub_data["definition"] = orphan.description
+
+        # Use meta.domain if available
+        if orphan.domain:
+            stub_data["domain"] = orphan.domain
+
+        conceptual_data["concepts"][concept_id] = {
+            k: v for k, v in stub_data.items() if v is not None
+        }
+        stubs_created.append((orphan.name, concept_id))
+
+    # Write back to file
+    if stubs_created:
+        config.conceptual_file.write_text(
+            yaml.dump(conceptual_data, default_flow_style=False, sort_keys=False)
+        )
+
+    return stubs_created
+
+
+def _get_missing_attributes(concept: ConceptState) -> list[str]:
+    """Get list of missing required attributes for a concept.
+
+    Args:
+        concept: The concept to check
+
+    Returns:
+        List of missing attribute names (domain, owner, definition)
+    """
+    missing = []
+    if not concept.domain:
+        missing.append("domain")
+    if not concept.owner:
+        missing.append("owner")
+    if not concept.definition:
+        missing.append("definition")
+    return missing
+
+
+def _display_orphan_models(orphan_models: list, show_header: bool = True) -> None:
+    """Display orphan models with consistent formatting.
+
+    Args:
+        orphan_models: List of OrphanModel objects to display
+        show_header: Whether to show the section header (default: True)
+    """
+    if show_header:
         console.print("\n[bold]Orphan Models[/bold]")
         console.print("=" * 50)
-        console.print("[yellow]These models have no concept tags:[/yellow]")
-        for model in state.orphan_models:
-            console.print(f"  - {model.name}")
-        console.print(
-            "\n[dim]Tip: Run 'dbt-conceptual sync --create-stubs' to create stub concepts[/dim]"
-        )
-
-    # Summary: Concepts needing attention
-    incomplete_concepts = [
-        (cid, c)
-        for cid, c in state.concepts.items()
-        if c.status != "complete" and (not c.domain or not c.owner or not c.definition)
-    ]
-
-    if incomplete_concepts:
-        console.print("\n[bold]Concepts Needing Attention[/bold]")
-        console.print("=" * 50)
-        console.print(
-            f"[yellow]{len(incomplete_concepts)} concept(s) missing required attributes:[/yellow]"
-        )
-        for concept_id, concept in incomplete_concepts:
-            missing = []
-            if not concept.domain:
-                missing.append("domain")
-            if not concept.owner:
-                missing.append("owner")
-            if not concept.definition:
-                missing.append("definition")
-
-            console.print(
-                f"  \u2022 {concept_id} [{concept.status}] - missing: {', '.join(missing)}"
-            )
-        console.print("\n[dim]Edit conceptual.yml to add missing attributes[/dim]")
-
-    console.print()
+    console.print("[yellow]These models have no concept tags:[/yellow]")
+    for model in orphan_models:
+        console.print(f"  - {model.name}")
 
 
 def _print_concept_status(concept_id: str, concept: ConceptState) -> None:
@@ -194,13 +451,13 @@ def _print_concept_status(concept_id: str, concept: ConceptState) -> None:
 
     # Status icon
     if concept.status == "complete":
-        status_icon = "\u2713"
+        status_icon = CHECK_ICON
         status_color = "green"
     elif concept.status == "stub":
-        status_icon = "\u26a0"
+        status_icon = WARNING_ICON
         status_color = "yellow"
     else:
-        status_icon = "\u25d0"
+        status_icon = HALF_CIRCLE
         status_color = "blue"
 
     # Model count badge
@@ -214,13 +471,7 @@ def _print_concept_status(concept_id: str, concept: ConceptState) -> None:
 
     # Show missing attributes for any non-complete concept
     if concept.status != "complete":
-        missing = []
-        if not concept.domain:
-            missing.append("domain")
-        if not concept.owner:
-            missing.append("owner")
-        if not concept.definition:
-            missing.append("definition")
+        missing = _get_missing_attributes(concept)
         if missing:
             console.print(f"     [dim]missing: {', '.join(missing)}[/dim]")
 
@@ -248,7 +499,7 @@ def orphans(
 
     # Display orphan models
     if not state.orphan_models:
-        console.print("[green]\u2713 No orphan models found![/green]")
+        console.print(f"[green]{CHECK_ICON} No orphan models found![/green]")
         console.print("\nAll models have conceptual tags (meta.concept).")
         return
 
@@ -257,7 +508,7 @@ def orphans(
     console.print("[yellow]These models have no meta.concept tag:[/yellow]\n")
 
     for model in sorted(state.orphan_models, key=lambda m: m.name):
-        console.print(f"  \u2022 {model.name}")
+        console.print(f"  {BULLET} {model.name}")
 
     console.print(
         "\n[dim]Next steps:[/dim]"
@@ -426,13 +677,13 @@ def _output_human_format(
 
         # Status indicator
         if concept.status == "complete":
-            status = "\u25cf complete"
+            status = f"{FILLED_CIRCLE} complete"
             color = "green"
         elif concept.status == "stub":
-            status = "\u25d0 stub"
+            status = f"{HALF_CIRCLE} stub"
             color = "yellow"
         else:
-            status = f"\u25d0 {concept.status}"
+            status = f"{HALF_CIRCLE} {concept.status}"
             color = "blue"
 
         console.print(f"  status: [{color}]{status}[/{color}]")
@@ -445,9 +696,9 @@ def _output_human_format(
         console.print(f"\n{rel_id}")
         rel_status = rel.get_status(state.concepts)
         if rel_status == "complete":
-            console.print(f"  [green]\u2713[/green] {rel.cardinality}")
+            console.print(f"  [green]{CHECK_ICON}[/green] {rel.cardinality}")
         else:
-            console.print("  [yellow]\u25cb stub[/yellow]")
+            console.print(f"  [yellow]{CIRCLE} stub[/yellow]")
 
     # Display validation issues
     if issues:
@@ -465,7 +716,7 @@ def _output_human_format(
                 console.print(f"  [{issue.code}] {issue.message}")
 
         if warnings:
-            console.print("\n[yellow bold]\u26a0 WARNINGS[/yellow bold]")
+            console.print(f"\n[yellow bold]{WARNING_ICON} WARNINGS[/yellow bold]")
             for issue in warnings:
                 console.print(f"  [{issue.code}] {issue.message}")
 
@@ -514,79 +765,10 @@ def init(project_dir: Optional[Path], force: bool) -> None:
         raise click.Abort()
 
     # 1. Create/update conceptual.yml (clean template, no config section)
-    conceptual_file = project_dir / "conceptual.yml"
-    if conceptual_file.exists() and not force:
-        console.print(
-            f"[yellow]conceptual.yml already exists at {conceptual_file}[/yellow]"
-        )
-        console.print("[dim]Use --force to overwrite[/dim]")
-    else:
-        template = """# dbt-conceptual: Conceptual Model Definition
-# Configuration lives in dbt_project.yml under vars.dbt_conceptual.
-
-domains:
-  # Define your domains here
-  # Example:
-  # sales:
-  #   display_name: Sales
-  #   color: "#4a9eff"
-  #   owner: "@sales-team"
-
-concepts:
-  # Define your concepts here
-  # Example:
-  # Customer:
-  #   domain: sales
-  #   owner: "@data-team"
-  #   definition: |
-  #     A person or organization that purchases products.
-
-relationships:
-  # Define relationships between concepts here
-  # Example:
-  # - from: Customer
-  #   verb: places
-  #   to: Order
-  #   cardinality: "1:N"
-"""
-        conceptual_file.write_text(template)
-
-        if force:
-            console.print(f"[green]\u2713[/green] Overwrote {conceptual_file}")
-        else:
-            console.print(f"[green]\u2713[/green] Created {conceptual_file}")
+    _create_conceptual_file(project_dir, force)
 
     # 2. Add vars.dbt_conceptual to dbt_project.yml (merge, don't overwrite)
-    dbt_data = yaml.safe_load(dbt_project_path.read_text()) or {}
-
-    dbt_conceptual_block = {
-        "scan": {
-            "gold": ["models/marts/**/*.yml"],
-        },
-        "validation": {
-            "orphan_models": "warn",
-            "unimplemented_concepts": "warn",
-            "missing_definitions": "ignore",
-        },
-    }
-
-    vars_section = dbt_data.get("vars")
-    if isinstance(vars_section, dict) and "dbt_conceptual" in vars_section:
-        console.print(
-            "[yellow]vars.dbt_conceptual already exists in dbt_project.yml, skipping[/yellow]"
-        )
-    else:
-        if not isinstance(vars_section, dict):
-            dbt_data["vars"] = {}
-        dbt_data["vars"]["dbt_conceptual"] = dbt_conceptual_block
-
-        dbt_project_path.write_text(
-            yaml.dump(dbt_data, default_flow_style=False, sort_keys=False)
-        )
-
-        console.print(
-            "[green]\u2713[/green] Added vars.dbt_conceptual to dbt_project.yml"
-        )
+    _update_dbt_project_vars(project_dir)
 
     console.print("\n[green bold]Initialization complete![/green bold]")
     console.print("\nNext steps:")
@@ -629,29 +811,18 @@ def sync(project_dir: Optional[Path], create_stubs: bool, model: Optional[str]) 
     state = builder.build()
 
     # Filter orphan models
-    orphans = state.orphan_models
-    if model:
-        # Filter to specific model
-        orphan_names = [o.name for o in orphans]
-        if model in orphan_names:
-            orphans = [o for o in orphans if o.name == model]
-        else:
-            console.print(f"[yellow]Model '{model}' is not an orphan[/yellow]")
-            if model in [m for c in state.concepts.values() for m in c.models]:
-                console.print(f"Model '{model}' is already mapped to a concept")
-            else:
-                console.print(f"Model '{model}' not found in project")
-            return
-
+    orphans = _filter_orphan_models(state.orphan_models, model, state)
     if not orphans:
+        if model:
+            # Already printed message in filter function
+            return
         console.print("[green]No orphan models found![/green]")
         console.print("All models are mapped to concepts.")
         return
 
     # Display orphans
     console.print(f"\n[bold]Found {len(orphans)} orphan model(s):[/bold]")
-    for orphan in orphans:
-        console.print(f"  - {orphan.name}")
+    _display_orphan_models(orphans, show_header=False)
 
     if not create_stubs:
         console.print(
@@ -660,59 +831,14 @@ def sync(project_dir: Optional[Path], create_stubs: bool, model: Optional[str]) 
         return
 
     # Create stubs
-    # Read existing conceptual.yml
-    conceptual_data = yaml.safe_load(config.conceptual_file.read_text()) or {}
-
-    if "concepts" not in conceptual_data:
-        conceptual_data["concepts"] = {}
-
-    # Create stub for each orphan
-    stubs_created = []
-    for orphan in orphans:
-        # Generate concept ID from model name
-        # Strip prefixes like dim_, fact_, stg_
-        concept_id = orphan.name
-        for prefix in ["dim_", "fact_", "stg_", "fct_", "bridge_"]:
-            if concept_id.startswith(prefix):
-                concept_id = concept_id[len(prefix) :]
-                break
-
-        # Check if concept already exists
-        if concept_id in conceptual_data["concepts"]:
-            console.print(
-                f"[yellow]Skipping {orphan.name}: concept '{concept_id}' already exists[/yellow]"
-            )
-            continue
-
-        # Create stub with data from model if available
-        stub_data: dict[str, object] = {
-            "name": concept_id.replace("_", " ").title(),
-        }
-
-        # Use model description as definition if available
-        if orphan.description:
-            stub_data["definition"] = orphan.description
-
-        # Use meta.domain if available
-        if orphan.domain:
-            stub_data["domain"] = orphan.domain
-
-        conceptual_data["concepts"][concept_id] = {
-            k: v for k, v in stub_data.items() if v is not None
-        }
-        stubs_created.append((orphan.name, concept_id))
+    stubs_created = _create_stubs(orphans, config)
 
     if not stubs_created:
         console.print("[yellow]No stubs created (concepts already exist)[/yellow]")
         return
 
-    # Write back to file
-    config.conceptual_file.write_text(
-        yaml.dump(conceptual_data, default_flow_style=False, sort_keys=False)
-    )
-
     console.print(
-        f"\n[green]\u2713 Created {len(stubs_created)} stub concept(s):[/green]"
+        f"\n[green]{CHECK_ICON} Created {len(stubs_created)} stub concept(s):[/green]"
     )
     for model_name, concept_id in stubs_created:
         console.print(f"  - {concept_id} (from {model_name})")
@@ -753,10 +879,13 @@ def _validate_export_combination(export_type: str, export_format: str) -> None:
 
 
 def _export_diagram(
+    *,
     export_format: str,
     state: ProjectState,
     out: TextIO,
-    **kwargs: object,
+    config: Config,
+    no_drafts: bool,
+    base: Optional[str],
 ) -> None:
     """Handle diagram export.
 
@@ -764,7 +893,9 @@ def _export_diagram(
         export_format: Output format (svg)
         state: Project state containing concepts and relationships
         out: Output stream to write to
-        **kwargs: Unused keyword arguments from dispatch
+        config: Project configuration (unused)
+        no_drafts: Draft check flag (unused)
+        base: Base git ref (unused)
     """
     from dbt_conceptual.exporter import export_diagram_svg
 
@@ -773,10 +904,13 @@ def _export_diagram(
 
 
 def _export_coverage(
+    *,
     export_format: str,
     state: ProjectState,
     out: TextIO,
-    **kwargs: object,
+    config: Config,
+    no_drafts: bool,
+    base: Optional[str],
 ) -> None:
     """Handle coverage export.
 
@@ -784,7 +918,9 @@ def _export_coverage(
         export_format: Output format (html, markdown, or json)
         state: Project state containing concepts and relationships
         out: Output stream to write to
-        **kwargs: Unused keyword arguments from dispatch
+        config: Project configuration (unused)
+        no_drafts: Draft check flag (unused)
+        base: Base git ref (unused)
     """
     from dbt_conceptual.exporter import (
         export_coverage,
@@ -801,10 +937,13 @@ def _export_coverage(
 
 
 def _export_bus_matrix(
+    *,
     export_format: str,
     state: ProjectState,
     out: TextIO,
-    **kwargs: object,
+    config: Config,
+    no_drafts: bool,
+    base: Optional[str],
 ) -> None:
     """Handle bus-matrix export.
 
@@ -812,7 +951,9 @@ def _export_bus_matrix(
         export_format: Output format (html, markdown, or json)
         state: Project state containing concepts and relationships
         out: Output stream to write to
-        **kwargs: Unused keyword arguments from dispatch
+        config: Project configuration (unused)
+        no_drafts: Draft check flag (unused)
+        base: Base git ref (unused)
     """
     from dbt_conceptual.exporter import (
         export_bus_matrix,
@@ -829,10 +970,13 @@ def _export_bus_matrix(
 
 
 def _export_status(
+    *,
     export_format: str,
     state: ProjectState,
     out: TextIO,
-    **kwargs: object,
+    config: Config,
+    no_drafts: bool,
+    base: Optional[str],
 ) -> None:
     """Handle status export.
 
@@ -840,7 +984,9 @@ def _export_status(
         export_format: Output format (markdown or json)
         state: Project state containing concepts and relationships
         out: Output stream to write to
-        **kwargs: Unused keyword arguments from dispatch
+        config: Project configuration (unused)
+        no_drafts: Draft check flag (unused)
+        base: Base git ref (unused)
     """
     from dbt_conceptual.exporter import export_status_json, export_status_markdown
 
@@ -851,10 +997,13 @@ def _export_status(
 
 
 def _export_orphans(
+    *,
     export_format: str,
     state: ProjectState,
     out: TextIO,
-    **kwargs: object,
+    config: Config,
+    no_drafts: bool,
+    base: Optional[str],
 ) -> None:
     """Handle orphans export.
 
@@ -862,7 +1011,9 @@ def _export_orphans(
         export_format: Output format (markdown or json)
         state: Project state containing concepts and relationships
         out: Output stream to write to
-        **kwargs: Unused keyword arguments from dispatch
+        config: Project configuration (unused)
+        no_drafts: Draft check flag (unused)
+        base: Base git ref (unused)
     """
     from dbt_conceptual.exporter import export_orphans_json, export_orphans_markdown
 
@@ -873,22 +1024,23 @@ def _export_orphans(
 
 
 def _export_validation(
+    *,
     export_format: str,
     state: ProjectState,
+    out: TextIO,
     config: Config,
     no_drafts: bool,
-    out: TextIO,
-    **kwargs: object,
+    base: Optional[str],
 ) -> None:
     """Handle validation export.
 
     Args:
         export_format: Output format (markdown or json)
         state: Project state containing concepts and relationships
+        out: Output stream to write to
         config: Project configuration
         no_drafts: If True, treat stub/draft concepts as errors
-        out: Output stream to write to
-        **kwargs: Unused keyword arguments from dispatch
+        base: Base git ref (unused)
     """
     from dbt_conceptual.exporter import (
         export_validation_json,
@@ -904,11 +1056,13 @@ def _export_validation(
 
 
 def _export_diff(
+    *,
     export_format: str,
-    config: Config,
-    base: Optional[str],
+    state: ProjectState,
     out: TextIO,
-    **kwargs: object,
+    config: Config,
+    no_drafts: bool,
+    base: Optional[str],
 ) -> None:
     """Handle diff export.
 
@@ -917,15 +1071,19 @@ def _export_diff(
 
     Args:
         export_format: Output format (markdown or json)
-        config: Project configuration
-        base: Base git ref to compare against
+        state: Project state (unused - diff computes its own)
         out: Output stream to write to
-        **kwargs: Unused keyword arguments from dispatch
+        config: Project configuration
+        no_drafts: Draft check flag (unused)
+        base: Base git ref to compare against
     """
     from dbt_conceptual.diff_formatter import format_json, format_markdown
 
+    # base is already validated to be non-None by export() command
+    assert base is not None, "base should have been validated before calling handler"
+
     try:
-        diff_result = compute_diff_from_ref(config, base)  # type: ignore[arg-type]
+        diff_result = compute_diff_from_ref(config, base)
     except GitNotFoundError:
         console.print("[red]Error: git not found. This command requires git.[/red]")
         raise click.Abort() from None
@@ -949,9 +1107,8 @@ def _export_diff(
 
 
 # Registry mapping export type names to their handler functions.
-# Each handler accepts keyword arguments: export_format, state, config,
-# no_drafts, base, and out.
-_EXPORT_HANDLERS: dict[str, Callable[..., None]] = {
+# Each handler follows the ExportHandler protocol.
+_EXPORT_HANDLERS: dict[str, ExportHandler] = {
     "diagram": _export_diagram,
     "coverage": _export_coverage,
     "bus-matrix": _export_bus_matrix,
@@ -1094,7 +1251,7 @@ def export(
             )
 
         if output:
-            console.print(f"[green]\u2713 Exported to {output}[/green]")
+            console.print(f"[green]{CHECK_ICON} Exported to {output}[/green]")
 
     except Exception as e:
         console.print(f"[red]Error during export: {e}[/red]")

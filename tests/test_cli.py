@@ -798,3 +798,84 @@ def test_cli_sync_without_conceptual_file() -> None:
 
         assert result.exit_code == 1
         assert "conceptual.yml not found" in result.output
+
+
+def test_cli_validate_exit_code_on_success() -> None:
+    """Test validate command returns exit code 0 on success."""
+    runner = CliRunner()
+
+    with TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        # Create dbt_project.yml
+        with open(tmppath / "dbt_project.yml", "w") as f:
+            yaml.dump({"name": "test"}, f)
+
+        # Create conceptual.yml with complete concept
+        conceptual_data = {
+            "version": 1,
+            "domains": {"party": {"name": "Party"}},
+            "concepts": {
+                "customer": {
+                    "name": "Customer",
+                    "domain": "party",
+                    "owner": "data_team",
+                    "definition": "A customer",
+                }
+            },
+        }
+
+        with open(tmppath / "conceptual.yml", "w") as f:
+            yaml.dump(conceptual_data, f)
+
+        # Create models
+        gold_dir = tmppath / "models" / "marts"
+        gold_dir.mkdir(parents=True)
+
+        with open(gold_dir / "schema.yml", "w") as f:
+            yaml.dump(
+                {
+                    "version": 2,
+                    "models": [
+                        {"name": "dim_customer", "meta": {"concept": "customer"}}
+                    ],
+                },
+                f,
+            )
+
+        result = runner.invoke(validate, ["--project-dir", str(tmppath)])
+
+        assert result.exit_code == 0
+        assert "PASSED" in result.output
+
+
+def test_cli_validate_exit_code_on_failure() -> None:
+    """Test validate command returns exit code 1 on validation errors."""
+    runner = CliRunner()
+
+    with TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        # Create dbt_project.yml
+        with open(tmppath / "dbt_project.yml", "w") as f:
+            yaml.dump({"name": "test"}, f)
+
+        # Create conceptual.yml with relationship referencing unknown concept
+        conceptual_data = {
+            "version": 1,
+            "concepts": {
+                "customer": {"name": "Customer"},
+            },
+            "relationships": [
+                {"verb": "places", "from": "customer", "to": "unknown_concept"}
+            ],
+        }
+
+        with open(tmppath / "conceptual.yml", "w") as f:
+            yaml.dump(conceptual_data, f)
+
+        result = runner.invoke(validate, ["--project-dir", str(tmppath)])
+
+        assert result.exit_code == 1
+        assert "FAILED" in result.output
+        assert "E002" in result.output
