@@ -1,0 +1,23 @@
+name: herd_analytics
+version: 0.1.0
+config-version: 2
+
+profile: herd
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+target-path: target
+
+models:
+  herd_analytics:
+    staging:
+      +materialized: view
+      +schema: herd
+    vault:
+      +materialized: incremental
+      +schema: dwh
+    marts:
+      +materialized: table
+      +schema: mart

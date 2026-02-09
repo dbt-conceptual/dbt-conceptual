@@ -1,0 +1,8 @@
+herd:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('HERD_DB_PATH', '../herd.duckdb') }}"
+      schema: herd
+      threads: 4

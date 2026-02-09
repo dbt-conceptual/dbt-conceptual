@@ -1,0 +1,4 @@
+model_code,model_provider,model_context_window,model_input_cost_per_m,model_output_cost_per_m,model_cache_read_cost_per_m,model_cache_create_cost_per_m
+sonnet-4.5,anthropic,200000,3.00,15.00,0.30,3.75
+opus-4.6,anthropic,200000,15.00,75.00,1.50,18.75
+haiku-4.5,anthropic,200000,0.80,4.00,0.08,1.00
