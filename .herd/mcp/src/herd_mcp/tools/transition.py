@@ -5,6 +5,7 @@ from __future__ import annotations
 import uuid
 
 from herd_mcp.db import connection
+from herd_mcp.vault_refresh import get_manager
 
 
 async def execute(
@@ -131,7 +132,7 @@ async def execute(
             [to_status, ticket_id],
         )
 
-        return {
+        result = {
             "transition_id": transition_id,
             "ticket": {
                 "id": ticket[0],
@@ -148,3 +149,18 @@ async def execute(
                 "No active agent instance found" if not agent_instance_code else None
             ),
         }
+
+    # Trigger vault refresh if ticket transitioned to done
+    if to_status == "done":
+        refresh_manager = get_manager()
+        await refresh_manager.trigger_refresh(
+            "ticket_done",
+            {
+                "ticket_id": ticket_id,
+                "ticket_title": ticket[1],
+                "agent": agent_name,
+                "previous_status": current_status,
+            },
+        )
+
+    return result

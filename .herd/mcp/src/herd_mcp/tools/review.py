@@ -9,6 +9,7 @@ import uuid
 from typing import Any
 
 from herd_mcp.db import connection
+from herd_mcp.vault_refresh import get_manager
 
 
 def _post_to_slack(message: str, channel: str = "#herd-feed") -> dict[str, Any]:
@@ -265,7 +266,7 @@ async def execute(
         )
         slack_result = _post_to_slack(slack_message)
 
-        return {
+        result = {
             "review_id": review_code,
             "posted": github_posted and slack_result.get("success", False),
             "github_posted": github_posted,
@@ -277,3 +278,18 @@ async def execute(
             "ticket": ticket_id,
             "reviewer": agent_name,
         }
+
+    # Trigger vault refresh after review submission
+    refresh_manager = get_manager()
+    await refresh_manager.trigger_refresh(
+        "review_submitted",
+        {
+            "pr_number": pr_number,
+            "ticket_id": ticket_id,
+            "verdict": verdict,
+            "review_code": review_code,
+            "reviewer": agent_name,
+        },
+    )
+
+    return result

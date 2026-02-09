@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from herd_mcp.db import connection
+from herd_mcp.vault_refresh import get_manager
 
 
 async def decommission(agent_name: str, current_agent: str | None) -> dict:
@@ -87,7 +88,7 @@ async def decommission(agent_name: str, current_agent: str | None) -> dict:
 
             ended_count += 1
 
-        return {
+        result = {
             "success": True,
             "target_agent": agent_name,
             "previous_status": agent_def[1],
@@ -95,6 +96,19 @@ async def decommission(agent_name: str, current_agent: str | None) -> dict:
             "instances_ended": ended_count,
             "requested_by": current_agent,
         }
+
+    # Trigger vault refresh after agent decommission
+    refresh_manager = get_manager()
+    await refresh_manager.trigger_refresh(
+        "agent_decommissioned",
+        {
+            "agent_name": agent_name,
+            "instances_ended": ended_count,
+            "requested_by": current_agent,
+        },
+    )
+
+    return result
 
 
 async def standdown(agent_name: str, current_agent: str | None) -> dict:
