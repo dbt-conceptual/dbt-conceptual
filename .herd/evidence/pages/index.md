@@ -6,35 +6,49 @@
 
 ```sql active_agents
 SELECT
-    COUNT(DISTINCT agent_name) as total_agents,
-    SUM(CASE WHEN current_status = 'Active' THEN 1 ELSE 0 END) as active_agents,
-    SUM(CASE WHEN current_status = 'Idle' THEN 1 ELSE 0 END) as idle_agents,
-    SUM(CASE WHEN current_status = 'Blocked' THEN 1 ELSE 0 END) as blocked_agents
-FROM dim_agent
-WHERE is_active = true
+    COUNT(DISTINCT agent_code) as total_agents,
+    SUM(CASE WHEN agent_status = 'Active' THEN 1 ELSE 0 END) as active_agents,
+    SUM(CASE WHEN agent_status = 'Idle' THEN 1 ELSE 0 END) as idle_agents,
+    SUM(CASE WHEN agent_status = 'Blocked' THEN 1 ELSE 0 END) as blocked_agents
+FROM herd_dm.dim_agent
+WHERE is_current = true AND NOT is_deleted
 ```
 
 ```sql open_tickets
 SELECT COUNT(*) as count
-FROM dim_ticket
-WHERE current_state NOT IN ('Done', 'Canceled', 'Archived')
+FROM herd_dm.dim_ticket
+WHERE is_current = true
+  AND NOT is_deleted
+  AND ticket_current_status NOT IN ('Done', 'Canceled', 'Cancelled', 'Archived')
 ```
 
 ```sql prs_this_week
 SELECT COUNT(*) as count
-FROM fact_pr_delivery fpd
-JOIN dim_date dd ON fpd.merged_date_key = dd.date_key
-WHERE dd.week_start_date = DATE_TRUNC('week', CURRENT_DATE)
+FROM herd_dm.fact_pr_delivery fpd
+JOIN herd_dm.dim_date dd ON CAST(strftime(fpd.pr_merged_at, '%Y%m%d') AS INTEGER) = dd.date_sk
+WHERE dd.date_actual >= DATE_TRUNC('week', CURRENT_DATE)
+  AND fpd.pr_merged_at IS NOT NULL
 ```
 
 ```sql cost_this_week
-SELECT COALESCE(SUM(total_cost_usd), 0) as total_cost
-FROM fact_agent_instance_cost faic
-JOIN dim_date dd ON faic.date_key = dd.date_key
-WHERE dd.week_start_date = DATE_TRUNC('week', CURRENT_DATE)
+SELECT COALESCE(SUM(total_token_cost_usd), 0) as total_cost
+FROM herd_dm.fact_agent_instance_cost
 ```
 
-<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+```sql cost_per_line
+SELECT
+    CASE
+        WHEN SUM(fpd.pr_lines_added + fpd.pr_lines_deleted) > 0
+        THEN SUM(faic.total_token_cost_usd) / SUM(fpd.pr_lines_added + fpd.pr_lines_deleted)
+        ELSE 0
+    END as cost_per_line
+FROM herd_dm.fact_pr_delivery fpd
+LEFT JOIN herd_dm.fact_agent_instance_cost faic
+    ON fpd.agent_sk = faic.agent_sk
+WHERE fpd.pr_merged_at >= CURRENT_DATE - INTERVAL '7 days'
+```
+
+<div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
   <BigValue
     data={active_agents}
     value="active_agents"
@@ -58,8 +72,15 @@ WHERE dd.week_start_date = DATE_TRUNC('week', CURRENT_DATE)
   <BigValue
     data={cost_this_week}
     value="total_cost"
-    title="Cost This Week"
+    title="Total Cost"
     fmt="usd"
+  />
+
+  <BigValue
+    data={cost_per_line}
+    value="cost_per_line"
+    title="Cost/Line"
+    fmt="usd2"
   />
 </div>
 
@@ -69,38 +90,30 @@ WHERE dd.week_start_date = DATE_TRUNC('week', CURRENT_DATE)
 
 ```sql agent_work_summary
 SELECT
-    da.agent_name,
-    da.current_status,
-    da.current_ticket,
-    dt.title as ticket_title,
-    dt.priority,
-    SUM(faiw.total_tokens) as tokens_used,
-    SUM(faic.total_cost_usd) as cost_usd,
-    MAX(dd.full_date) as last_active
-FROM dim_agent da
-LEFT JOIN dim_ticket dt ON da.current_ticket = dt.ticket_id
-LEFT JOIN fact_agent_instance_work faiw ON da.agent_key = faiw.agent_key
-LEFT JOIN fact_agent_instance_cost faic ON faiw.agent_instance_key = faic.agent_instance_key
-LEFT JOIN dim_date dd ON faic.date_key = dd.date_key
-WHERE da.is_active = true
+    da.agent_code,
+    da.agent_role,
+    da.agent_status,
+    SUM(faic.total_token_input_count + faic.total_token_output_count) as tokens_used,
+    SUM(faic.total_token_cost_usd) as cost_usd,
+    COUNT(DISTINCT faic.agent_instance_tk) as instances
+FROM herd_dm.dim_agent da
+LEFT JOIN herd_dm.fact_agent_instance_cost faic
+    ON da.agent_sk = faic.agent_sk
+WHERE da.is_current = true AND NOT da.is_deleted
 GROUP BY
-    da.agent_name,
-    da.current_status,
-    da.current_ticket,
-    dt.title,
-    dt.priority
-ORDER BY da.agent_name
+    da.agent_code,
+    da.agent_role,
+    da.agent_status
+ORDER BY cost_usd DESC NULLS LAST, da.agent_code
 ```
 
 <DataTable data={agent_work_summary}>
-  <Column id="agent_name" title="Agent" />
-  <Column id="current_status" title="Status" />
-  <Column id="current_ticket" title="Ticket" />
-  <Column id="ticket_title" title="Description" />
-  <Column id="priority" title="Priority" />
+  <Column id="agent_code" title="Agent" />
+  <Column id="agent_role" title="Role" />
+  <Column id="agent_status" title="Status" />
+  <Column id="instances" title="Instances" fmt="num0" />
   <Column id="tokens_used" title="Tokens" fmt="num0" />
   <Column id="cost_usd" title="Cost" fmt="usd2" />
-  <Column id="last_active" title="Last Active" fmt="date" />
 </DataTable>
 
 ---
@@ -109,17 +122,22 @@ ORDER BY da.agent_name
 
 ```sql cost_trends
 SELECT
-    dd.full_date as date,
-    SUM(faic.total_cost_usd) as daily_cost,
-    SUM(SUM(faic.total_cost_usd)) OVER (
-        ORDER BY dd.full_date
+    dd.date_actual as date,
+    COALESCE(SUM(faic.total_token_cost_usd), 0) as daily_cost,
+    SUM(COALESCE(SUM(faic.total_token_cost_usd), 0)) OVER (
+        ORDER BY dd.date_actual
         ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
     ) as cumulative_cost
-FROM fact_agent_instance_cost faic
-JOIN dim_date dd ON faic.date_key = dd.date_key
-WHERE dd.full_date >= CURRENT_DATE - INTERVAL '30 days'
-GROUP BY dd.full_date
-ORDER BY dd.full_date
+FROM herd_dm.dim_date dd
+LEFT JOIN herd_dm.fact_agent_instance_cost faic
+    ON faic.agent_sk IN (
+        SELECT agent_sk FROM herd_dm.dim_agent
+        WHERE valid_from::DATE = dd.date_actual
+    )
+WHERE dd.date_actual >= CURRENT_DATE - INTERVAL '30 days'
+  AND dd.date_actual <= CURRENT_DATE
+GROUP BY dd.date_actual
+ORDER BY dd.date_actual
 ```
 
 <LineChart
@@ -130,6 +148,10 @@ ORDER BY dd.full_date
   yAxisTitle="Daily Cost (USD)"
   y2AxisTitle="Cumulative Cost (USD)"
   title="Daily & Cumulative Costs"
+  series={[
+    { name: 'Daily Cost', color: '#3B82F6' },
+    { name: 'Cumulative Cost', color: '#10B981' }
+  ]}
 />
 
 ---
@@ -138,68 +160,58 @@ ORDER BY dd.full_date
 
 ```sql recent_prs
 SELECT
-    dpr.pr_number,
-    dpr.title,
-    dpr.author,
-    da.agent_name,
-    dd.full_date as merged_date,
-    fpd.lines_added,
-    fpd.lines_deleted,
-    fpd.files_changed,
-    frq.review_depth_score
-FROM fact_pr_delivery fpd
-JOIN dim_pull_request dpr ON fpd.pr_key = dpr.pr_key
-JOIN dim_agent da ON fpd.agent_key = da.agent_key
-JOIN dim_date dd ON fpd.merged_date_key = dd.date_key
-LEFT JOIN fact_review_quality frq ON fpd.pr_key = frq.pr_key
-WHERE dd.full_date >= CURRENT_DATE - INTERVAL '7 days'
-ORDER BY dd.full_date DESC
+    dpr.pr_code,
+    dpr.pr_title,
+    dpr.ticket_code,
+    da.agent_code,
+    fpd.pr_merged_at as merged_date,
+    fpd.pr_lines_added as lines_added,
+    fpd.pr_lines_deleted as lines_deleted,
+    fpd.pr_files_changed as files_changed
+FROM herd_dm.fact_pr_delivery fpd
+JOIN herd_dm.dim_pull_request dpr
+    ON fpd.pull_request_sk = dpr.pull_request_sk
+LEFT JOIN herd_dm.dim_agent da
+    ON fpd.agent_sk = da.agent_sk
+WHERE fpd.pr_merged_at >= CURRENT_DATE - INTERVAL '7 days'
+  AND fpd.pr_merged_at IS NOT NULL
+ORDER BY fpd.pr_merged_at DESC
 LIMIT 10
 ```
 
 <DataTable data={recent_prs}>
-  <Column id="pr_number" title="PR#" />
-  <Column id="title" title="Title" />
-  <Column id="agent_name" title="Agent" />
+  <Column id="pr_code" title="PR" />
+  <Column id="pr_title" title="Title" />
+  <Column id="ticket_code" title="Ticket" />
+  <Column id="agent_code" title="Agent" />
   <Column id="merged_date" title="Merged" fmt="date" />
-  <Column id="files_changed" title="Files" />
+  <Column id="files_changed" title="Files" fmt="num0" />
   <Column id="lines_added" title="Added" fmt="num0" />
   <Column id="lines_deleted" title="Deleted" fmt="num0" />
-  <Column id="review_depth_score" title="Quality" fmt="pct1" />
 </DataTable>
 
 ---
 
-## Blocked Agents
+## Agent Status
 
-```sql blocked_agents
+```sql agent_status_summary
 SELECT
-    da.agent_name,
-    da.current_ticket,
-    dt.title as ticket_title,
-    dt.blocked_reason,
-    dd.full_date as blocked_since
-FROM dim_agent da
-JOIN dim_ticket dt ON da.current_ticket = dt.ticket_id
-LEFT JOIN dim_date dd ON dt.blocked_date_key = dd.date_key
-WHERE da.current_status = 'Blocked'
-ORDER BY dd.full_date
+    agent_status,
+    COUNT(*) as agent_count
+FROM herd_dm.dim_agent
+WHERE is_current = true AND NOT is_deleted
+GROUP BY agent_status
+ORDER BY agent_count DESC
 ```
 
-{#if blocked_agents.length > 0}
-<Alert status="warning">
-  <strong>{blocked_agents.length} agent(s) currently blocked</strong>
-</Alert>
-
-<DataTable data={blocked_agents}>
-  <Column id="agent_name" title="Agent" />
-  <Column id="current_ticket" title="Ticket" />
-  <Column id="ticket_title" title="Title" />
-  <Column id="blocked_reason" title="Reason" />
-  <Column id="blocked_since" title="Since" fmt="date" />
-</DataTable>
-{:else}
-<Alert status="success">
-  No agents currently blocked. All systems operational.
-</Alert>
-{/if}
+<BarChart
+  data={agent_status_summary}
+  x="agent_status"
+  y="agent_count"
+  title="Agents by Status"
+  xAxisTitle="Status"
+  yAxisTitle="Count"
+  series={[
+    { name: 'Agent Count', color: '#8B5CF6' }
+  ]}
+/>
