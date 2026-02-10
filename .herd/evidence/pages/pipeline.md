@@ -4,6 +4,8 @@
 
 ## Pipeline Summary
 
+**Question**: What is the current state of work in progress?
+
 ```sql pipeline_summary
 SELECT
     COUNT(DISTINCT dt.ticket_tk) as active_tickets,
@@ -55,6 +57,8 @@ WHERE dt.is_current = true
 
 ## Time in Status (Average Minutes)
 
+**Question**: Which statuses are bottlenecks in our workflow?
+
 ```sql time_in_status
 SELECT
     ftl.previous_status,
@@ -95,6 +99,8 @@ ORDER BY avg_minutes DESC
 
 ## Handoff Latency
 
+**Question**: Where do handoffs between states cause the most delay?
+
 ```sql handoff_latency
 SELECT
     CONCAT(ftl.previous_status, ' → ', ftl.ticket_status) as transition,
@@ -120,6 +126,8 @@ LIMIT 20
 ---
 
 ## Blocked Tickets
+
+**Question**: What tickets are currently blocked and by what?
 
 ```sql blocked_tickets
 SELECT
@@ -153,6 +161,8 @@ ORDER BY ftl.event_ts DESC
 
 ## Ticket Flow (Last 30 Days)
 
+**Question**: How many tickets are created, started, and completed each day?
+
 ```sql ticket_flow
 SELECT
     dd.date_actual as date,
@@ -184,6 +194,8 @@ ORDER BY dd.date_actual
 ---
 
 ## Cycle Time by Ticket Size
+
+**Question**: Does ticket size correlate with cycle time as expected?
 
 ```sql cycle_time_by_size
 WITH ticket_cycle_time AS (
@@ -242,6 +254,8 @@ ORDER BY
 ---
 
 ## Longest In-Progress Tickets
+
+**Question**: Which in-progress tickets have been active the longest?
 
 ```sql longest_in_progress
 WITH ticket_start_times AS (

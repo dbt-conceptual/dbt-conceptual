@@ -4,6 +4,8 @@
 
 ## Prompt Overview
 
+**Question**: How successful are agent sessions at achieving their goals?
+
 ```sql prompt_overview
 SELECT
     COUNT(DISTINCT faiw.agent_instance_tk) as total_sessions,
@@ -49,6 +51,8 @@ LEFT JOIN herd_dm.dim_ticket dt
 ---
 
 ## First-Pass Success by Ticket Size
+
+**Question**: Do smaller tickets have higher first-pass success rates?
 
 ```sql success_by_size
 SELECT
@@ -97,6 +101,8 @@ ORDER BY
 
 ## Success Rate by Agent Role
 
+**Question**: Which agent roles have the highest success rates?
+
 ```sql success_by_role
 SELECT
     da.agent_role,
@@ -139,6 +145,8 @@ ORDER BY success_rate DESC
 
 ## Clean vs Churn (Session Outcomes)
 
+**Question**: What are the most common session outcomes?
+
 ```sql session_outcomes
 SELECT
     faiw.agent_instance_outcome,
@@ -176,6 +184,8 @@ ORDER BY count DESC
 
 ## Craft Impact on Success
 
+**Question**: Do specific craft standards correlate with higher success rates?
+
 ```sql craft_impact
 SELECT
     dc.craft_code,
@@ -201,6 +211,8 @@ ORDER BY success_rate DESC
 ---
 
 ## Success Trend (Last 30 Days)
+
+**Question**: Is prompt quality improving over time?
 
 ```sql success_trend
 SELECT
@@ -234,6 +246,8 @@ ORDER BY dd.date_actual
 ---
 
 ## Correlation: First-Pass QA vs Prompt Quality
+
+**Question**: Does initial session success predict QA pass rate?
 
 ```sql qa_prompt_correlation
 WITH first_session_per_ticket AS (
@@ -296,6 +310,8 @@ ORDER BY first_pass_rate DESC
 ---
 
 ## Model Performance by Outcome
+
+**Question**: Which models achieve the highest success rates?
 
 ```sql model_outcomes
 SELECT

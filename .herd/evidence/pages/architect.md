@@ -4,6 +4,8 @@
 
 ## Architect Overview
 
+**Question**: How much coordination overhead does the architect require?
+
 ```sql architect_overview
 SELECT
     COUNT(DISTINCT faiw.agent_instance_tk) as total_sessions,
@@ -54,6 +56,8 @@ WHERE da.agent_code = 'mini-mao'
 
 ## Intervention Trend (Last 30 Days)
 
+**Question**: Is architect intervention increasing or decreasing over time?
+
 ```sql intervention_trend
 SELECT
     dd.date_actual as date,
@@ -92,6 +96,8 @@ ORDER BY dd.date_actual
 ---
 
 ## Autonomy Ratio
+
+**Question**: What percentage of work happens without architect involvement?
 
 ```sql autonomy_ratio
 WITH all_work AS (
@@ -140,6 +146,8 @@ FROM all_work, architect_work
 
 ## Tickets Requiring Intervention
 
+**Question**: Which tickets required the most architect coordination?
+
 ```sql tickets_needing_intervention
 SELECT
     dt.ticket_code,
@@ -178,6 +186,8 @@ LIMIT 20
 ---
 
 ## Coordination Cost by Ticket Size
+
+**Question**: Do larger tickets require more coordination effort?
 
 ```sql cost_by_ticket_size
 SELECT
@@ -234,6 +244,8 @@ ORDER BY
 
 ## Session Duration Distribution
 
+**Question**: How long are typical coordination sessions?
+
 ```sql session_duration
 SELECT
     faiw.instance_duration_minutes as duration,
@@ -258,6 +270,8 @@ WHERE da.agent_code = 'mini-mao'
 ---
 
 ## Recent Coordination Activity
+
+**Question**: What has the architect been working on recently?
 
 ```sql recent_activity
 SELECT
@@ -292,6 +306,8 @@ LIMIT 50
 ---
 
 ## Intervention Types
+
+**Question**: What types of work require architect involvement?
 
 ```sql intervention_types
 SELECT

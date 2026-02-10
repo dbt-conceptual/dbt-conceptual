@@ -4,6 +4,8 @@
 
 ## Sprint Selection
 
+**Select a sprint to analyze its metrics and burndown.**
+
 ```sql sprints
 SELECT
     sprint_code,
@@ -33,6 +35,8 @@ ORDER BY sprint_started_at DESC
 ---
 
 ## Sprint Overview
+
+**Question**: What is the status of work in this sprint?
 
 ```sql sprint_summary
 SELECT
@@ -88,6 +92,8 @@ GROUP BY ds.sprint_title, ds.sprint_code, ds.sprint_started_at, ds.sprint_planne
 
 ## Burndown Chart
 
+**Question**: Are we completing work at the expected pace?
+
 ```sql burndown
 SELECT
     dd.date_actual as date,
@@ -118,6 +124,8 @@ ORDER BY dd.date_actual
 ---
 
 ## Agent Contributions
+
+**Question**: Which agents contributed the most to this sprint?
 
 ```sql agent_contributions
 SELECT
@@ -166,6 +174,8 @@ ORDER BY cost_usd DESC NULLS LAST
 
 ## Velocity Trends (Last 6 Sprints)
 
+**Question**: How does this sprint's velocity compare to historical performance?
+
 ```sql velocity_history
 SELECT
     ds.sprint_title,
@@ -206,6 +216,8 @@ LIMIT 6
 
 ## Sprint Tickets Detail
 
+**Question**: What is the detailed status of each ticket in this sprint?
+
 ```sql sprint_tickets
 SELECT
     dt.ticket_code,
@@ -244,6 +256,8 @@ ORDER BY
 ---
 
 ## Recent Activity
+
+**Question**: What recent events have occurred in this sprint?
 
 ```sql recent_activity
 SELECT

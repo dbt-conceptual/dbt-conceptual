@@ -4,6 +4,8 @@
 
 ## QA Overview
 
+**Question**: How effective is our QA process at catching issues early?
+
 ```sql qa_overview
 SELECT
     COUNT(DISTINCT frq.review_submission_tk) as total_reviews,
@@ -49,6 +51,8 @@ FROM herd_dm.fact_review_quality frq
 
 ## First-Pass Rate Trend (Last 30 Days)
 
+**Question**: Is code quality improving over time?
+
 ```sql first_pass_trend
 SELECT
     dd.date_actual as date,
@@ -83,6 +87,8 @@ ORDER BY dd.date_actual
 
 ## Findings by Category
 
+**Question**: What types of issues are most common in reviews?
+
 ```sql findings_by_category
 SELECT
     CASE
@@ -105,7 +111,7 @@ ORDER BY review_count DESC
   xAxisTitle="Category"
   yAxisTitle="Review Count"
   series={[
-    { name: 'Reviews', color: '#EF4444' }
+    { name: 'Reviews', color: '#3B82F6' }
   ]}
 />
 
@@ -118,6 +124,8 @@ ORDER BY review_count DESC
 ---
 
 ## Findings by Agent (Reviewed Work)
+
+**Question**: Which agents generate the most QA findings?
 
 ```sql findings_by_agent
 SELECT
@@ -165,6 +173,8 @@ ORDER BY total_findings DESC
 
 ## Review Rounds Distribution
 
+**Question**: How many review rounds does typical work require?
+
 ```sql review_rounds
 SELECT
     frq.review_round,
@@ -195,6 +205,8 @@ ORDER BY frq.review_round
 ---
 
 ## Rework Cost Analysis
+
+**Question**: What is the cost of rework due to failed QA?
 
 ```sql rework_cost
 SELECT
@@ -232,6 +244,8 @@ LIMIT 20
 ---
 
 ## Review Duration Distribution
+
+**Question**: How long do reviews typically take?
 
 ```sql review_duration
 SELECT

@@ -4,6 +4,8 @@
 
 ## System Health
 
+**Question**: What is the current state of the system and recent activity?
+
 ```sql active_agents
 SELECT
     COUNT(DISTINCT agent_code) as total_agents,
@@ -88,6 +90,8 @@ WHERE fpd.pr_merged_at >= CURRENT_DATE - INTERVAL '7 days'
 
 ## Agent Utilization
 
+**Question**: Which agents are working and what are they costing?
+
 ```sql agent_work_summary
 SELECT
     da.agent_code,
@@ -119,6 +123,8 @@ ORDER BY cost_usd DESC NULLS LAST, da.agent_code
 ---
 
 ## Cost Trends (Last 30 Days)
+
+**Question**: How are costs trending recently?
 
 ```sql cost_trends
 SELECT
@@ -158,6 +164,8 @@ ORDER BY dd.date_actual
 
 ## Recent Pull Requests
 
+**Question**: What work has been delivered recently?
+
 ```sql recent_prs
 SELECT
     dpr.pr_code,
@@ -193,6 +201,8 @@ LIMIT 10
 ---
 
 ## Agent Status
+
+**Question**: How are agents distributed across status categories?
 
 ```sql agent_status_summary
 SELECT

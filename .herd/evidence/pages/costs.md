@@ -4,6 +4,8 @@
 
 ## Cost Summary
 
+**Question**: What is the total cost of agent operations?
+
 ```sql cost_summary
 SELECT
     SUM(faic.total_token_cost_usd) as total_cost,
@@ -44,6 +46,8 @@ LEFT JOIN herd_dm.dim_ticket dt
 
 ## Daily Cost Trend (Last 60 Days)
 
+**Question**: How are costs trending over time?
+
 ```sql daily_cost
 SELECT
     dd.date_actual as date,
@@ -80,6 +84,8 @@ ORDER BY dd.date_actual
 ---
 
 ## Cost by Model
+
+**Question**: Which models consume the most budget?
 
 ```sql cost_by_model
 SELECT
@@ -127,6 +133,8 @@ ORDER BY total_cost DESC
 
 ## Cache Efficiency
 
+**Question**: How effectively are we using prompt caching to reduce costs?
+
 ```sql cache_efficiency
 SELECT
     dd.date_actual as date,
@@ -159,6 +167,8 @@ ORDER BY dd.date_actual
 ---
 
 ## Cost per Line of Code
+
+**Question**: How much does each line of delivered code cost?
 
 ```sql cost_per_line
 SELECT
@@ -197,6 +207,8 @@ ORDER BY dd.date_actual
 ---
 
 ## Cost Projection (30 Days)
+
+**Question**: What are projected costs for the coming month and year?
 
 ```sql cost_projection
 WITH recent_costs AS (
@@ -245,6 +257,8 @@ FROM recent_costs
 ---
 
 ## Most Expensive Tickets
+
+**Question**: Which tickets consumed the most resources?
 
 ```sql expensive_tickets
 SELECT

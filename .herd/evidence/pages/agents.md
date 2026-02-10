@@ -4,6 +4,8 @@
 
 ## Agent Summary
 
+**Question**: Which agents are delivering the most value relative to their cost?
+
 ```sql agent_summary
 SELECT
     da.agent_code,
@@ -43,6 +45,8 @@ ORDER BY total_cost DESC NULLS LAST
 ---
 
 ## QA Pass Rates by Agent
+
+**Question**: Which agents produce clean code that passes QA on the first attempt?
 
 ```sql qa_pass_rates
 SELECT
@@ -88,6 +92,8 @@ ORDER BY first_pass_rate DESC NULLS LAST
 ---
 
 ## Cost Efficiency by Agent
+
+**Question**: What is the cost per line of code for each agent?
 
 ```sql cost_efficiency
 SELECT
@@ -139,6 +145,8 @@ ORDER BY cost_per_line ASC
 
 ## Model Comparison by Agent
 
+**Question**: How do model choices affect agent costs?
+
 ```sql model_usage
 SELECT
     da.agent_code,
@@ -184,6 +192,8 @@ ORDER BY da.agent_code, total_cost DESC
 
 ## Agent Skillsets
 
+**Question**: What skills has each agent demonstrated in their work?
+
 ```sql agent_skillsets
 SELECT
     da.agent_code,
@@ -209,6 +219,8 @@ ORDER BY da.agent_code
 ---
 
 ## Agent Work Distribution
+
+**Question**: How active is each agent across different activity types?
 
 ```sql work_distribution
 SELECT

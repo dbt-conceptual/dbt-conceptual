@@ -4,6 +4,8 @@
 
 ## Ticket Details
 
+**Explore the complete history and metrics for this ticket.**
+
 ```sql ticket_details
 SELECT
     dt.ticket_code,
@@ -54,6 +56,8 @@ WHERE dt.ticket_code = '${inputs.ticket_code}'
 ---
 
 ## Ticket Summary
+
+**Question**: What resources were consumed to deliver this ticket?
 
 ```sql ticket_summary
 SELECT
@@ -123,6 +127,8 @@ WHERE dt.ticket_code = '${inputs.ticket_code}'
 
 ## Ticket Lifecycle
 
+**Question**: How did this ticket progress through its workflow?
+
 ```sql ticket_lifecycle
 SELECT
     ftl.event_ts,
@@ -157,6 +163,8 @@ ORDER BY ftl.event_ts
 ---
 
 ## Agent Sessions
+
+**Question**: Which agents worked on this ticket and what did they accomplish?
 
 ```sql agent_sessions
 SELECT
@@ -201,6 +209,8 @@ ORDER BY faiw.agent_instance_started_at
 
 ## Review History
 
+**Question**: What QA feedback was provided on this ticket?
+
 ```sql review_history
 SELECT
     frq.review_completed_at,
@@ -236,6 +246,8 @@ ORDER BY frq.review_completed_at
 ---
 
 ## Cost Breakdown by Agent
+
+**Question**: How did token costs break down by agent and model?
 
 ```sql cost_by_agent
 SELECT
@@ -289,6 +301,8 @@ ORDER BY total_cost DESC
 
 ## Pull Requests
 
+**Question**: What PRs were created for this ticket?
+
 ```sql pull_requests
 SELECT
     dpr.pr_code,
@@ -322,6 +336,8 @@ ORDER BY fpd.pr_merged_at DESC NULLS LAST
 ---
 
 ## Time Distribution
+
+**Question**: Where did this ticket spend the most time?
 
 ```sql time_distribution
 SELECT

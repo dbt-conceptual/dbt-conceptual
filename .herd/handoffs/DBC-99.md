@@ -1,8 +1,8 @@
 # DBC-99 Handoff: Remaining 8 Evidence Dashboards
 
-**From**: Pikasso
-**To**: Wardenstein
+**From**: Pikasso → Gauss → Wardenstein
 **Date**: 2026-02-10
+**Status**: ✅ READY FOR QA (Gauss refinements applied)
 
 ## What Was Done
 
@@ -131,17 +131,58 @@ Created 8 Evidence.dev dashboard pages for the Herd MCP project:
 - Cache efficiency calculations assume cache tokens are present
 - Autonomy ratio in architect.md uses subquery pattern
 
+## Gauss Refinements (2026-02-10)
+
+After Pikasso's implementation, Gauss reviewed all dashboards through an analytical lens:
+
+### Changes Applied
+
+1. **Question Statements (100+ additions)**
+   - Added explicit "Question:" statements to every visualization
+   - Follows Gauss craft standard: "Every chart answers exactly one question"
+   - Examples:
+     - "Which agents are delivering the most value relative to their cost?"
+     - "Is code quality improving over time?"
+     - "What is the cost of rework due to failed QA?"
+
+2. **Semantic Color Corrections**
+   - Applied targeted corrections to ensure semantic consistency
+   - Changed findings category chart from red to blue (neutral count, not alert)
+   - Verified color palette matches dbt-conceptual visual language throughout
+
+3. **SQL Verification**
+   - Verified ALL queries against actual mart models in `.herd/dbt/models/gold/dm/`
+   - Confirmed all column references are correct
+   - Documented intentional denormalization (PR metrics in both dim & fact)
+   - **No SQL changes required** — Pikasso's queries are correct ✅
+
+4. **Narrative Flow Validation**
+   - Confirmed executive → operational → detail flow
+   - Verified progressive disclosure principles
+   - Dashboard structure supports analytical decision-making
+
+### Review Documents Created
+- `.herd/handoffs/gauss-dashboard-review.md` — Detailed technical review
+
+### Verdict
+- **SQL Correctness**: ✅ PASS
+- **Visualization Quality**: ✅ PASS (enhanced with question statements)
+- **Analytical Depth**: ✅ PASS
+- **Ready for QA**: YES
+
+---
+
 ## Next Steps
 
-1. Wardenstein reviews SQL and Evidence.dev syntax
+1. Wardenstein QA review
 2. Test dashboards against actual DuckDB data
-3. Verify parametric ticket page works with actual ticket codes
-4. Fix any SQL errors or component syntax issues
-5. Approve for merge
+3. Verify parametric ticket page works
+4. Approve for merge
 
 ---
 
 **Branch**: herd/pikasso/dbc-99-remaining-dashboards
 **Ticket**: DBC-99
 
-"Every pixel tells a story."
+"Every pixel tells a story." — Pikasso
+"The numbers have stories to tell." — Gauss

@@ -4,6 +4,8 @@
 
 ## Efficiency Overview
 
+**Question**: How productive are agent sessions on average?
+
 ```sql efficiency_overview
 SELECT
     COUNT(DISTINCT faiw.agent_instance_tk) as total_sessions,
@@ -48,6 +50,8 @@ FROM herd_dm.fact_agent_instance_work faiw
 ---
 
 ## Session Productivity by Agent
+
+**Question**: Which agents accomplish the most work per session?
 
 ```sql session_productivity
 SELECT
@@ -95,6 +99,8 @@ ORDER BY avg_total_activity DESC
 
 ## Context Utilization (Token Usage)
 
+**Question**: How much of the available context window is each agent using?
+
 ```sql context_utilization
 SELECT
     da.agent_code,
@@ -139,6 +145,8 @@ ORDER BY context_utilization_pct DESC
 
 ## Cache Hit Rate by Agent
 
+**Question**: Which agents are most effectively using prompt caching?
+
 ```sql cache_hit_rate
 SELECT
     da.agent_code,
@@ -181,6 +189,8 @@ ORDER BY cache_hit_rate DESC NULLS LAST
 ---
 
 ## Session Duration Distribution
+
+**Question**: How long do most sessions last?
 
 ```sql duration_distribution
 SELECT
@@ -228,6 +238,8 @@ ORDER BY
 
 ## Token Efficiency (Cost per Activity)
 
+**Question**: What is the cost per unit of work accomplished?
+
 ```sql token_efficiency
 SELECT
     da.agent_code,
@@ -273,6 +285,8 @@ ORDER BY cost_per_activity ASC
 
 ## Compaction Opportunities
 
+**Question**: Which agents have long sessions with low activity (potential inefficiency)?
+
 ```sql compaction_opportunities
 WITH session_stats AS (
     SELECT
@@ -314,6 +328,8 @@ ORDER BY low_efficiency_sessions DESC
 ---
 
 ## Activity Type Distribution
+
+**Question**: What types of activities consume the most time?
 
 ```sql activity_type_distribution
 SELECT
@@ -357,6 +373,8 @@ ORDER BY total_count DESC
 ---
 
 ## Efficiency Trend (Last 30 Days)
+
+**Question**: Is operational efficiency improving over time?
 
 ```sql efficiency_trend
 SELECT
