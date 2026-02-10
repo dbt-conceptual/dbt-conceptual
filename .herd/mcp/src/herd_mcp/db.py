@@ -78,7 +78,9 @@ def init_schema(conn: duckdb.DuckDBPyConnection) -> None:
 
 
 @contextmanager
-def connection(db_path: str | None = None) -> Generator[duckdb.DuckDBPyConnection, None, None]:
+def connection(
+    db_path: str | None = None,
+) -> Generator[duckdb.DuckDBPyConnection, None, None]:
     """Context manager for DuckDB connections.
 
     Args:

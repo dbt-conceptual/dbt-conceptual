@@ -24,7 +24,7 @@ def _classify_event_type(message: str) -> str:
     message_lower = message.lower()
 
     # Use word boundaries and more specific patterns
-    if re.search(r'\bpr\b|pull request|pull-request', message_lower):
+    if re.search(r"\bpr\b|pull request|pull-request", message_lower):
         return "pr_submitted"
     elif "review" in message_lower or "qa" in message_lower:
         return "review_complete"
@@ -56,12 +56,14 @@ def _post_to_slack(message: str, channel: str, agent_name: str) -> dict[str, Any
     try:
         import urllib.request
 
-        data = json.dumps({
-            "channel": channel,
-            "text": message,
-            "username": agent_name,
-            "icon_emoji": ":hammer:",
-        }).encode()
+        data = json.dumps(
+            {
+                "channel": channel,
+                "text": message,
+                "username": agent_name,
+                "icon_emoji": ":hammer:",
+            }
+        ).encode()
 
         req = urllib.request.Request(
             "https://slack.com/api/chat.postMessage",

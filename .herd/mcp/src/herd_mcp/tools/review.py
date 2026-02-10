@@ -28,12 +28,14 @@ def _post_to_slack(message: str, channel: str = "#herd-feed") -> dict[str, Any]:
     try:
         import urllib.request
 
-        data = json.dumps({
-            "channel": channel,
-            "text": message,
-            "username": "Herd Review Bot",
-            "icon_emoji": ":mag:",
-        }).encode()
+        data = json.dumps(
+            {
+                "channel": channel,
+                "text": message,
+                "username": "Herd Review Bot",
+                "icon_emoji": ":mag:",
+            }
+        ).encode()
 
         req = urllib.request.Request(
             "https://slack.com/api/chat.postMessage",

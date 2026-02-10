@@ -14,31 +14,26 @@ def seeded_db(in_memory_db):
     conn = in_memory_db
 
     # Insert test agents
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.agent_def
           (agent_code, agent_role, agent_status, default_model_code, created_at)
         VALUES
           ('grunt', 'backend', 'active', 'claude-sonnet-4', CURRENT_TIMESTAMP),
           ('pikasso', 'frontend', 'active', 'claude-sonnet-4', CURRENT_TIMESTAMP),
           ('mini-mao', 'architect', 'active', 'claude-opus-4', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     # Insert test sprint
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.sprint_def
           (sprint_code, sprint_title, sprint_goal, sprint_started_at,
            sprint_planned_end_at, created_at)
         VALUES ('SP-001', 'Sprint 1', 'Build core tools', CURRENT_TIMESTAMP,
                 CURRENT_TIMESTAMP + INTERVAL '2 weeks', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     # Insert test tickets
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.ticket_def
           (ticket_code, ticket_title, ticket_description, ticket_current_status,
            current_sprint_code, created_at)
@@ -46,31 +41,26 @@ def seeded_db(in_memory_db):
           ('DBC-91', 'Core tools', 'Implement core MCP tools', 'in_progress', 'SP-001', CURRENT_TIMESTAMP),
           ('DBC-92', 'Documentation', 'Write docs', 'backlog', 'SP-001', CURRENT_TIMESTAMP),
           ('DBC-93', 'Blocked ticket', 'Cannot proceed', 'blocked', NULL, CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     # Insert test agent instances
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.agent_instance
           (agent_instance_code, agent_code, model_code, ticket_code,
            agent_instance_started_at)
         VALUES
           ('inst-001', 'grunt', 'claude-sonnet-4', 'DBC-91', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     # Insert ticket activity (for blocked ticket)
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.agent_instance_ticket_activity
           (agent_instance_code, ticket_code, ticket_event_type, ticket_status,
            blocker_ticket_code, blocker_description, created_at)
         VALUES
           ('inst-001', 'DBC-93', 'blocked', 'blocked', 'DBC-91',
            'Waiting for core tools', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     yield conn
 

@@ -26,8 +26,7 @@ def temp_db():
 def seeded_db(temp_db):
     """Create a seeded database with agent and model definitions."""
     # Insert test agents
-    temp_db.execute(
-        """
+    temp_db.execute("""
         INSERT INTO herd.agent_def
           (agent_code, agent_role, agent_status, agent_branch_prefix,
            agent_email, default_model_code, created_at, modified_at)
@@ -36,12 +35,10 @@ def seeded_db(temp_db):
            'grunt@herd.local', 'claude-sonnet-4-5', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
           ('pikasso', 'frontend', 'active', 'herd/pikasso',
            'pikasso@herd.local', 'claude-sonnet-4-5', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     # Insert test models
-    temp_db.execute(
-        """
+    temp_db.execute("""
         INSERT INTO herd.model_def
           (model_code, model_provider, model_context_window,
            model_input_cost_per_m, model_output_cost_per_m,
@@ -52,8 +49,7 @@ def seeded_db(temp_db):
            CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
           ('claude-haiku-4', 'anthropic', 200000, 0.80, 4.00, 0.08, 1.00,
            CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     return temp_db
 
@@ -125,7 +121,9 @@ class TestIdentityResolution:
             assert activity is not None
             assert activity[0] == "spawned"
 
-    def test_resolve_or_create_agent_instance_returns_existing_instance(self, seeded_db):
+    def test_resolve_or_create_agent_instance_returns_existing_instance(
+        self, seeded_db
+    ):
         """Test that resolve_or_create_agent_instance returns existing active instance."""
         with mock.patch("herd_mcp.identity.connection") as mock_conn:
             mock_conn.return_value.__enter__.return_value = seeded_db
@@ -139,14 +137,12 @@ class TestIdentityResolution:
             assert instance1 == instance2
 
             # Verify only one instance exists
-            count = seeded_db.execute(
-                """
+            count = seeded_db.execute("""
                 SELECT COUNT(*)
                 FROM herd.agent_instance
                 WHERE agent_code = 'grunt'
                   AND agent_instance_ended_at IS NULL
-                """
-            ).fetchone()[0]
+                """).fetchone()[0]
 
             assert count == 1
 
@@ -231,18 +227,14 @@ class TestSeedScript:
             mock_conn.return_value.__enter__.return_value = temp_db
             seed_db.seed_agent_def(temp_db)
 
-        count1 = temp_db.execute(
-            "SELECT COUNT(*) FROM herd.agent_def"
-        ).fetchone()[0]
+        count1 = temp_db.execute("SELECT COUNT(*) FROM herd.agent_def").fetchone()[0]
 
         # Second run
         with mock.patch("herd_mcp.db.connection") as mock_conn:
             mock_conn.return_value.__enter__.return_value = temp_db
             seed_db.seed_agent_def(temp_db)
 
-        count2 = temp_db.execute(
-            "SELECT COUNT(*) FROM herd.agent_def"
-        ).fetchone()[0]
+        count2 = temp_db.execute("SELECT COUNT(*) FROM herd.agent_def").fetchone()[0]
 
         # Counts should be the same (no duplicates)
         assert count1 == count2
@@ -263,18 +255,14 @@ class TestSeedScript:
             mock_conn.return_value.__enter__.return_value = temp_db
             seed_db.seed_model_def(temp_db)
 
-        count1 = temp_db.execute(
-            "SELECT COUNT(*) FROM herd.model_def"
-        ).fetchone()[0]
+        count1 = temp_db.execute("SELECT COUNT(*) FROM herd.model_def").fetchone()[0]
 
         # Second run
         with mock.patch("herd_mcp.db.connection") as mock_conn:
             mock_conn.return_value.__enter__.return_value = temp_db
             seed_db.seed_model_def(temp_db)
 
-        count2 = temp_db.execute(
-            "SELECT COUNT(*) FROM herd.model_def"
-        ).fetchone()[0]
+        count2 = temp_db.execute("SELECT COUNT(*) FROM herd.model_def").fetchone()[0]
 
         # Counts should be the same (no duplicates)
         assert count1 == count2
@@ -291,16 +279,14 @@ class TestSeedScript:
         import seed_db
 
         # First insert
-        temp_db.execute(
-            """
+        temp_db.execute("""
             INSERT INTO herd.agent_def
               (agent_code, agent_role, agent_status, agent_branch_prefix,
                agent_email, default_model_code, created_at, modified_at)
             VALUES
               ('grunt', 'backend', 'active', 'old/prefix',
                'old@email.com', 'claude-haiku-4', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-            """
-        )
+            """)
 
         # Run seed script
         with mock.patch("herd_mcp.db.connection") as mock_conn:
@@ -308,13 +294,11 @@ class TestSeedScript:
             seed_db.seed_agent_def(temp_db)
 
         # Verify record was updated
-        result = temp_db.execute(
-            """
+        result = temp_db.execute("""
             SELECT agent_branch_prefix, agent_email, default_model_code
             FROM herd.agent_def
             WHERE agent_code = 'grunt'
-            """
-        ).fetchone()
+            """).fetchone()
 
         assert result[0] == "herd/grunt"  # Updated prefix
         assert result[1] == "grunt@herd.local"  # Updated email

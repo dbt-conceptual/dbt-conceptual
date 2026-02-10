@@ -81,14 +81,16 @@ async def execute(agent_name: str | None) -> dict:
 
         ticket_updates = []
         for row in ticket_activity:
-            ticket_updates.append({
-                "ticket": row[0],
-                "event_type": row[1],
-                "status": row[2],
-                "comment": row[3],
-                "timestamp": str(row[4]),
-                "by_agent": row[5],
-            })
+            ticket_updates.append(
+                {
+                    "ticket": row[0],
+                    "event_type": row[1],
+                    "status": row[2],
+                    "comment": row[3],
+                    "timestamp": str(row[4]),
+                    "by_agent": row[5],
+                }
+            )
 
         # Build summary
         if not ticket_updates:

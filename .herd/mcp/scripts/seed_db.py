@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import os
 import sys
-from datetime import datetime
 from pathlib import Path
 
 # Add src to path so we can import herd_mcp

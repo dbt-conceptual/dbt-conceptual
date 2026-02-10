@@ -14,30 +14,25 @@ def seeded_db(in_memory_db):
     conn = in_memory_db
 
     # Insert test agents
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.agent_def
           (agent_code, agent_role, agent_status, default_model_code, created_at)
         VALUES
           ('grunt', 'backend', 'active', 'claude-sonnet-4', CURRENT_TIMESTAMP),
           ('pikasso', 'frontend', 'active', 'claude-opus-4', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     # Insert test agent instances
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.agent_instance
           (agent_instance_code, agent_code, model_code, ticket_code, agent_instance_started_at)
         VALUES
           ('inst-001', 'grunt', 'claude-sonnet-4', 'DBC-100', CURRENT_TIMESTAMP),
           ('inst-002', 'pikasso', 'claude-opus-4', 'DBC-101', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     # Insert token activity
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.agent_instance_token_activity
           (agent_instance_code, model_code, token_input_count, token_output_count,
            token_cost_usd, created_at)
@@ -45,59 +40,49 @@ def seeded_db(in_memory_db):
           ('inst-001', 'claude-sonnet-4', 1000, 500, 0.50, CURRENT_TIMESTAMP),
           ('inst-001', 'claude-sonnet-4', 2000, 1000, 1.00, CURRENT_TIMESTAMP),
           ('inst-002', 'claude-opus-4', 500, 250, 2.00, CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     # Insert lifecycle activities
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.agent_instance_lifecycle_activity
           (agent_instance_code, lifecycle_event_type, lifecycle_detail, created_at)
         VALUES
           ('inst-001', 'pr_submitted', 'PR #123', CURRENT_TIMESTAMP),
           ('inst-002', 'pr_submitted', 'PR #456', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     # Insert reviews
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.review_def
           (review_code, pr_code, reviewer_agent_instance_code, review_round,
            review_verdict, created_at)
         VALUES
           ('REV-001', 'PR-123', 'inst-001', 1, 'pass', CURRENT_TIMESTAMP),
           ('REV-002', 'PR-456', 'inst-002', 1, 'fail', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     # Insert review findings
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.review_finding
           (review_finding_code, review_code, finding_category, finding_severity,
            finding_description, created_at)
         VALUES
           ('RF-001', 'REV-002', 'correctness', 'blocking', 'Bug in logic', CURRENT_TIMESTAMP),
           ('RF-002', 'REV-002', 'style', 'advisory', 'Format issue', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     # Insert review activity
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.agent_instance_review_activity
           (agent_instance_code, review_code, pr_code, review_event_type,
            review_activity_detail, created_at)
         VALUES
           ('inst-001', 'REV-001', 'PR-123', 'review_submitted', 'pass', CURRENT_TIMESTAMP),
           ('inst-002', 'REV-002', 'PR-456', 'review_submitted', 'fail', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     # Insert tickets
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.ticket_def
           (ticket_code, ticket_title, ticket_description, ticket_current_status,
            current_sprint_code, created_at)
@@ -105,20 +90,17 @@ def seeded_db(in_memory_db):
           ('DBC-100', 'Test ticket 1', 'Description 1', 'done', 'Sprint 1', CURRENT_TIMESTAMP),
           ('DBC-101', 'Test ticket 2', 'Description 2', 'done', 'Sprint 1', CURRENT_TIMESTAMP),
           ('DBC-102', 'Test ticket 3', 'Description 3', 'done', 'Sprint 2', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     # Insert ticket activity
-    conn.execute(
-        """
+    conn.execute("""
         INSERT INTO herd.agent_instance_ticket_activity
           (agent_instance_code, ticket_code, ticket_event_type, ticket_status,
            ticket_activity_comment, created_at)
         VALUES
           ('inst-001', 'DBC-100', 'status_changed', 'in_progress', 'Started work', CURRENT_TIMESTAMP),
           ('inst-001', 'DBC-100', 'status_changed', 'done', 'Completed', CURRENT_TIMESTAMP)
-        """
-    )
+        """)
 
     yield conn
 
@@ -375,7 +357,9 @@ def test_build_period_filter():
     assert "2026-02-01" in filter_clause
 
     # Test with custom column
-    filter_clause = metrics._build_period_filter("2026-01-01", "2026-02-01", "modified_at")
+    filter_clause = metrics._build_period_filter(
+        "2026-01-01", "2026-02-01", "modified_at"
+    )
     assert "modified_at" in filter_clause
 
     # Test with None

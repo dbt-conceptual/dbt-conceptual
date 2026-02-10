@@ -30,6 +30,9 @@ def resolve_agent_code(agent_name: str | None) -> str | None:
 
     Returns:
         Agent code from agent_def table, or None if not found.
+
+    Raises:
+        Exception: If database connection fails.
     """
     if not agent_name:
         return None
@@ -100,7 +103,9 @@ def resolve_or_create_agent_instance(
                 [agent_code],
             ).fetchone()
 
-            model_code = agent_def[0] if agent_def and agent_def[0] else "claude-sonnet-4"
+            model_code = (
+                agent_def[0] if agent_def and agent_def[0] else "claude-sonnet-4"
+            )
 
         # Create new instance
         instance_code = f"inst-{uuid.uuid4().hex[:8]}"
@@ -170,23 +175,32 @@ def resolve_identity() -> dict:
             "error": "HERD_AGENT_NAME not set in environment",
         }
 
-    agent_code = resolve_agent_code(agent_name)
+    try:
+        agent_code = resolve_agent_code(agent_name)
 
-    if not agent_code:
+        if not agent_code:
+            return {
+                "agent_name": agent_name,
+                "agent_code": None,
+                "agent_instance_code": None,
+                "is_resolved": False,
+                "error": f"Agent '{agent_name}' not found in agent_def table",
+            }
+
+        # Resolve or create agent instance
+        agent_instance_code = resolve_or_create_agent_instance(agent_code)
+
+        return {
+            "agent_name": agent_name,
+            "agent_code": agent_code,
+            "agent_instance_code": agent_instance_code,
+            "is_resolved": True,
+        }
+    except Exception as e:
         return {
             "agent_name": agent_name,
             "agent_code": None,
             "agent_instance_code": None,
             "is_resolved": False,
-            "error": f"Agent '{agent_name}' not found in agent_def table",
+            "error": f"Database connection failed: {e}",
         }
-
-    # Resolve or create agent instance
-    agent_instance_code = resolve_or_create_agent_instance(agent_code)
-
-    return {
-        "agent_name": agent_name,
-        "agent_code": agent_code,
-        "agent_instance_code": agent_instance_code,
-        "is_resolved": True,
-    }

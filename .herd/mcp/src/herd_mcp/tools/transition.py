@@ -151,5 +151,7 @@ async def execute(
             "blocked_by": blocked_by,
             "agent": agent_name,
             "agent_instance_code": agent_instance_code,
-            "note": "No active agent instance found" if not agent_instance_code else None,
+            "note": (
+                "No active agent instance found" if not agent_instance_code else None
+            ),
         }
