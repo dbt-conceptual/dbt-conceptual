@@ -1,5 +1,5 @@
 -- Herd Operational Schema Initialization
--- Creates all 23 tables for the Herd MCP Server operational database
+-- Creates all 26 tables for the Herd MCP Server operational database
 
 CREATE SCHEMA IF NOT EXISTS herd;
 
@@ -163,6 +163,37 @@ CREATE TABLE IF NOT EXISTS herd.skillset_version (
     skillset_code TEXT NOT NULL,
     skillset_version_content TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL
+);
+
+-- ============================================================================
+-- SKILLS (3 tables - individual fetchable skills composing into skillsets)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS herd.skill_def (
+    skill_code TEXT PRIMARY KEY,
+    skill_description TEXT,
+    skill_source_url TEXT,
+    skill_source_type TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL,
+    modified_at TIMESTAMP,
+    deleted_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS herd.skill_version (
+    skill_version_code TEXT PRIMARY KEY,
+    skill_code TEXT NOT NULL,
+    skill_version_content TEXT NOT NULL,
+    skill_source_url TEXT,
+    created_at TIMESTAMP NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS herd.skill_skillset (
+    skill_code TEXT NOT NULL,
+    skillset_code TEXT NOT NULL,
+    skill_order INTEGER,
+    created_at TIMESTAMP NOT NULL,
+    deleted_at TIMESTAMP,
+    PRIMARY KEY (skill_code, skillset_code)
 );
 
 -- ============================================================================

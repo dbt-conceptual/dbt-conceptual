@@ -1,5 +1,5 @@
 -- Herd MCP Schema
--- DuckDB DDL for all 23 operational tables
+-- DuckDB DDL for all 26 operational tables
 
 CREATE SCHEMA IF NOT EXISTS herd;
 
@@ -164,6 +164,37 @@ CREATE TABLE IF NOT EXISTS herd.skillset_version (
     skillset_code TEXT,
     skillset_version_content TEXT,
     created_at TIMESTAMP
+);
+
+-- ============================================================================
+-- Skills (3 tables — individual fetchable skills that compose into skillsets)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS herd.skill_def (
+    skill_code TEXT PRIMARY KEY,
+    skill_description TEXT,
+    skill_source_url TEXT,
+    skill_source_type TEXT,
+    created_at TIMESTAMP,
+    modified_at TIMESTAMP,
+    deleted_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS herd.skill_version (
+    skill_version_code TEXT PRIMARY KEY,
+    skill_code TEXT,
+    skill_version_content TEXT,
+    skill_source_url TEXT,
+    created_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS herd.skill_skillset (
+    skill_code TEXT,
+    skillset_code TEXT,
+    skill_order INTEGER,
+    created_at TIMESTAMP,
+    deleted_at TIMESTAMP,
+    PRIMARY KEY (skill_code, skillset_code)
 );
 
 -- ============================================================================
