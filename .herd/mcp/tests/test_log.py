@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 from unittest.mock import MagicMock, patch
 
@@ -179,3 +180,294 @@ def test_post_to_slack_with_token():
             assert result["success"] is True
             assert "response" in result
             assert result["response"]["ok"] is True
+
+
+@pytest.mark.asyncio
+async def test_execute_await_response_false(seeded_db):
+    """Test log execution with await_response=False returns empty responses."""
+    with patch("herd_mcp.tools.log.connection") as mock_context:
+        mock_context.return_value.__enter__ = MagicMock(return_value=seeded_db)
+        mock_context.return_value.__exit__ = MagicMock(return_value=None)
+
+        with patch("herd_mcp.tools.log._post_to_slack") as mock_slack:
+            mock_slack.return_value = {
+                "success": True,
+                "response": {
+                    "ok": True,
+                    "ts": "1234567890.123",
+                    "channel": "C12345",
+                },
+            }
+
+            result = await log.execute(
+                message="Test message",
+                channel="#herd-feed",
+                await_response=False,
+                agent_name="grunt",
+            )
+
+            assert result["posted"] is True
+            assert result["responses"] == []
+
+
+@pytest.mark.asyncio
+async def test_execute_await_response_with_replies(seeded_db):
+    """Test log execution with await_response=True finds replies."""
+    with patch("herd_mcp.tools.log.connection") as mock_context:
+        mock_context.return_value.__enter__ = MagicMock(return_value=seeded_db)
+        mock_context.return_value.__exit__ = MagicMock(return_value=None)
+
+        with patch("herd_mcp.tools.log._post_to_slack") as mock_slack:
+            mock_slack.return_value = {
+                "success": True,
+                "response": {
+                    "ok": True,
+                    "ts": "1234567890.123",
+                    "channel": "C12345",
+                },
+            }
+
+            with patch("herd_mcp.tools.log._get_thread_replies") as mock_replies:
+                mock_replies.return_value = [
+                    {
+                        "user": "U12345",
+                        "text": "Test reply",
+                        "ts": "1234567891.123",
+                    }
+                ]
+
+                with patch("asyncio.sleep"):
+                    with patch.dict(os.environ, {"HERD_SLACK_TOKEN": "xoxb-test"}):
+                        result = await log.execute(
+                            message="Test message",
+                            channel="#herd-feed",
+                            await_response=True,
+                            agent_name="grunt",
+                        )
+
+                        assert result["posted"] is True
+                        assert len(result["responses"]) == 1
+                        assert result["responses"][0]["user"] == "U12345"
+                        assert result["responses"][0]["text"] == "Test reply"
+                        assert result["responses"][0]["ts"] == "1234567891.123"
+
+
+@pytest.mark.asyncio
+async def test_execute_await_response_timeout(seeded_db):
+    """Test log execution with await_response=True times out after 24 polls."""
+    with patch("herd_mcp.tools.log.connection") as mock_context:
+        mock_context.return_value.__enter__ = MagicMock(return_value=seeded_db)
+        mock_context.return_value.__exit__ = MagicMock(return_value=None)
+
+        with patch("herd_mcp.tools.log._post_to_slack") as mock_slack:
+            mock_slack.return_value = {
+                "success": True,
+                "response": {
+                    "ok": True,
+                    "ts": "1234567890.123",
+                    "channel": "C12345",
+                },
+            }
+
+            with patch("herd_mcp.tools.log._get_thread_replies") as mock_replies:
+                mock_replies.return_value = []
+
+                with patch("asyncio.sleep") as mock_sleep:
+                    with patch.dict(os.environ, {"HERD_SLACK_TOKEN": "xoxb-test"}):
+                        result = await log.execute(
+                            message="Test message",
+                            channel="#herd-feed",
+                            await_response=True,
+                            agent_name="grunt",
+                        )
+
+                        assert result["posted"] is True
+                        assert result["responses"] == []
+                        # Verify we polled 24 times
+                        assert mock_sleep.call_count == 24
+
+
+def test_get_thread_replies_success():
+    """Test get_thread_replies helper returns filtered replies."""
+    with patch("urllib.request.urlopen") as mock_urlopen:
+        mock_response = MagicMock()
+        mock_response.read.return_value = json.dumps({
+            "ok": True,
+            "messages": [
+                {"user": "U00000", "text": "Parent message", "ts": "1234567890.123"},
+                {"user": "U12345", "text": "Reply 1", "ts": "1234567891.123"},
+                {"user": "U67890", "text": "Reply 2", "ts": "1234567892.123"},
+            ],
+        }).encode()
+        mock_response.__enter__ = MagicMock(return_value=mock_response)
+        mock_response.__exit__ = MagicMock(return_value=None)
+        mock_urlopen.return_value = mock_response
+
+        replies = log._get_thread_replies("C12345", "1234567890.123", "xoxb-token")
+
+        assert len(replies) == 2
+        assert replies[0]["text"] == "Reply 1"
+        assert replies[1]["text"] == "Reply 2"
+
+
+def test_get_thread_replies_no_replies():
+    """Test get_thread_replies helper with empty thread."""
+    with patch("urllib.request.urlopen") as mock_urlopen:
+        mock_response = MagicMock()
+        mock_response.read.return_value = json.dumps({
+            "ok": True,
+            "messages": [
+                {"user": "U00000", "text": "Parent message", "ts": "1234567890.123"},
+            ],
+        }).encode()
+        mock_response.__enter__ = MagicMock(return_value=mock_response)
+        mock_response.__exit__ = MagicMock(return_value=None)
+        mock_urlopen.return_value = mock_response
+
+        replies = log._get_thread_replies("C12345", "1234567890.123", "xoxb-token")
+
+        assert replies == []
+
+
+def test_get_thread_replies_api_error():
+    """Test get_thread_replies helper graceful error handling."""
+    with patch("urllib.request.urlopen") as mock_urlopen:
+        mock_urlopen.side_effect = Exception("Network error")
+
+        replies = log._get_thread_replies("C12345", "1234567890.123", "xoxb-token")
+
+        assert replies == []
+
+
+@pytest.mark.asyncio
+async def test_execute_await_response_slack_post_fails(seeded_db):
+    """Test await_response=True when Slack post fails - polling should be skipped."""
+    with patch("herd_mcp.tools.log.connection") as mock_context:
+        mock_context.return_value.__enter__ = MagicMock(return_value=seeded_db)
+        mock_context.return_value.__exit__ = MagicMock(return_value=None)
+
+        with patch("herd_mcp.tools.log._post_to_slack") as mock_slack:
+            mock_slack.return_value = {"success": False, "error": "Token not set"}
+
+            with patch("herd_mcp.tools.log._get_thread_replies") as mock_replies:
+                mock_replies.return_value = []
+
+                with patch("asyncio.sleep") as mock_sleep:
+                    result = await log.execute(
+                        message="Test message",
+                        channel="#herd-feed",
+                        await_response=True,
+                        agent_name="grunt",
+                    )
+
+                    assert result["posted"] is False
+                    assert result["responses"] == []
+                    # Verify polling was NOT triggered (sleep never called)
+                    assert mock_sleep.call_count == 0
+                    # Verify _get_thread_replies was NOT called
+                    assert mock_replies.call_count == 0
+
+
+@pytest.mark.asyncio
+async def test_execute_await_response_token_missing_at_poll_time(seeded_db):
+    """Test await_response=True when token is missing at poll time - polling should be skipped."""
+    with patch("herd_mcp.tools.log.connection") as mock_context:
+        mock_context.return_value.__enter__ = MagicMock(return_value=seeded_db)
+        mock_context.return_value.__exit__ = MagicMock(return_value=None)
+
+        with patch("herd_mcp.tools.log._post_to_slack") as mock_slack:
+            mock_slack.return_value = {
+                "success": True,
+                "response": {
+                    "ok": True,
+                    "ts": "1234567890.123",
+                    "channel": "C12345",
+                },
+            }
+
+            with patch("herd_mcp.tools.log._get_thread_replies") as mock_replies:
+                mock_replies.return_value = []
+
+                with patch("asyncio.sleep") as mock_sleep:
+                    # Token present for post, but missing at poll time
+                    with patch.dict(os.environ, {}, clear=True):
+                        result = await log.execute(
+                            message="Test message",
+                            channel="#herd-feed",
+                            await_response=True,
+                            agent_name="grunt",
+                        )
+
+                        assert result["posted"] is True
+                        assert result["responses"] == []
+                        # Verify polling was NOT triggered (sleep never called)
+                        assert mock_sleep.call_count == 0
+                        # Verify _get_thread_replies was NOT called
+                        assert mock_replies.call_count == 0
+
+
+@pytest.mark.asyncio
+async def test_execute_await_response_replies_on_third_poll(seeded_db):
+    """Test await_response=True when replies arrive on 3rd poll (not immediately)."""
+    with patch("herd_mcp.tools.log.connection") as mock_context:
+        mock_context.return_value.__enter__ = MagicMock(return_value=seeded_db)
+        mock_context.return_value.__exit__ = MagicMock(return_value=None)
+
+        with patch("herd_mcp.tools.log._post_to_slack") as mock_slack:
+            mock_slack.return_value = {
+                "success": True,
+                "response": {
+                    "ok": True,
+                    "ts": "1234567890.123",
+                    "channel": "C12345",
+                },
+            }
+
+            with patch("herd_mcp.tools.log._get_thread_replies") as mock_replies:
+                # Return empty on first two calls, replies on third call
+                mock_replies.side_effect = [
+                    [],
+                    [],
+                    [
+                        {
+                            "user": "U12345",
+                            "text": "Late reply",
+                            "ts": "1234567893.123",
+                        }
+                    ],
+                ]
+
+                with patch("asyncio.sleep") as mock_sleep:
+                    with patch.dict(os.environ, {"HERD_SLACK_TOKEN": "xoxb-test"}):
+                        result = await log.execute(
+                            message="Test message",
+                            channel="#herd-feed",
+                            await_response=True,
+                            agent_name="grunt",
+                        )
+
+                        assert result["posted"] is True
+                        assert len(result["responses"]) == 1
+                        assert result["responses"][0]["user"] == "U12345"
+                        assert result["responses"][0]["text"] == "Late reply"
+                        # Verify asyncio.sleep called 3 times (before each poll)
+                        assert mock_sleep.call_count == 3
+                        # Verify _get_thread_replies called 3 times
+                        assert mock_replies.call_count == 3
+
+
+def test_get_thread_replies_api_returns_not_ok():
+    """Test get_thread_replies when API returns ok:false."""
+    with patch("urllib.request.urlopen") as mock_urlopen:
+        mock_response = MagicMock()
+        mock_response.read.return_value = json.dumps({
+            "ok": False,
+            "error": "channel_not_found",
+        }).encode()
+        mock_response.__enter__ = MagicMock(return_value=mock_response)
+        mock_response.__exit__ = MagicMock(return_value=None)
+        mock_urlopen.return_value = mock_response
+
+        replies = log._get_thread_replies("C12345", "1234567890.123", "xoxb-token")
+
+        assert replies == []
