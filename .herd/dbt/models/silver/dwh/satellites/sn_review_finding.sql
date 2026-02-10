@@ -9,6 +9,8 @@ SELECT
     finding_description,
     finding_file_path,
     finding_line_number,
+    finding_pattern_id,
+    finding_outcome,
     load_ts,
     rsrc
 FROM {{ ref('stg_herd__review_finding') }}
