@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import duckdb
 import pytest
+from unittest.mock import AsyncMock, MagicMock, patch
+
 from herd_mcp import db
 
 
@@ -30,3 +32,22 @@ def empty_db() -> duckdb.DuckDBPyConnection:
     conn = duckdb.connect(":memory:")
     yield conn
     conn.close()
+
+
+@pytest.fixture(autouse=True)
+def mock_vault_refresh():
+    """Mock VaultRefreshManager in all integration tests.
+
+    This prevents integration tests from executing real dbt run subprocesses
+    when vault refresh is triggered by lifecycle/review/transition operations.
+    """
+    # Create a mock manager instance
+    mock_manager = MagicMock()
+    mock_manager.trigger_refresh = AsyncMock(
+        return_value={"status": "mocked", "milestone": "test"}
+    )
+
+    # Patch both the singleton instance and get_manager to return our mock
+    with patch("herd_mcp.vault_refresh.VaultRefreshManager._instance", mock_manager):
+        with patch("herd_mcp.vault_refresh.get_manager", return_value=mock_manager):
+            yield mock_manager
