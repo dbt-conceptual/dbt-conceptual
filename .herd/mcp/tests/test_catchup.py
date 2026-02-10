@@ -222,7 +222,7 @@ async def test_catchup_multiple_tickets(seeded_db):
         result = await catchup.execute(agent_name="grunt")
 
         # Should include updates from both tickets
-        tickets = set(u["ticket"] for u in result["ticket_updates"])
+        tickets = {u["ticket"] for u in result["ticket_updates"]}
         assert len(tickets) > 0
         assert "ticket" in result["summary"]
 

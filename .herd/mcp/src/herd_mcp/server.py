@@ -16,6 +16,7 @@ from .tools import (
     review,
     spawn,
     status,
+    token_harvest,
     transition,
 )
 
@@ -208,3 +209,20 @@ async def herd_standdown(agent_name: str) -> dict:
     """
     current_agent = get_agent_identity()
     return await lifecycle.standdown(agent_name, current_agent)
+
+
+@mcp.tool()
+async def herd_harvest_tokens(agent_instance_code: str, project_path: str) -> dict:
+    """Harvest token usage from Claude Code session files.
+
+    Parses JSONL session files for a project, extracts token counts, calculates costs
+    based on model pricing, and writes activity records to the token ledger.
+
+    Args:
+        agent_instance_code: Agent instance identifier to attribute tokens to.
+        project_path: Absolute path to the project directory.
+
+    Returns:
+        Dict with harvest results including records written and total cost.
+    """
+    return await token_harvest.execute(agent_instance_code, project_path)

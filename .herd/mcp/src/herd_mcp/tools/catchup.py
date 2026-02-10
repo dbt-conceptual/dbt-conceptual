@@ -96,7 +96,7 @@ async def execute(agent_name: str | None) -> dict:
         if not ticket_updates:
             summary = f"No updates on your tickets since {ended_at}."
         else:
-            ticket_count = len(set(u["ticket"] for u in ticket_updates))
+            ticket_count = len({u["ticket"] for u in ticket_updates})
             event_count = len(ticket_updates)
             summary = (
                 f"Since {ended_at}: {event_count} updates across {ticket_count} "
