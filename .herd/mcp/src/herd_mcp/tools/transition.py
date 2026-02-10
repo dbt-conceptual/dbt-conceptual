@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 
 from herd_mcp.db import connection
 from herd_mcp.vault_refresh import get_manager
+
+logger = logging.getLogger(__name__)
 
 
 async def execute(
@@ -153,7 +156,7 @@ async def execute(
     # Trigger vault refresh if ticket transitioned to done
     if to_status == "done":
         refresh_manager = get_manager()
-        await refresh_manager.trigger_refresh(
+        refresh_result = await refresh_manager.trigger_refresh(
             "ticket_done",
             {
                 "ticket_id": ticket_id,
@@ -161,6 +164,10 @@ async def execute(
                 "agent": agent_name,
                 "previous_status": current_status,
             },
+        )
+        logger.info(
+            f"Vault refresh triggered after ticket done: {refresh_result.get('status')}",
+            extra={"refresh_result": refresh_result}
         )
 
     return result

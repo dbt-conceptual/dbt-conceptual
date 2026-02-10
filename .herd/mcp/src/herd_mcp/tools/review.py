@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import subprocess
 import uuid
@@ -10,6 +11,8 @@ from typing import Any
 
 from herd_mcp.db import connection
 from herd_mcp.vault_refresh import get_manager
+
+logger = logging.getLogger(__name__)
 
 
 def _post_to_slack(message: str, channel: str = "#herd-feed") -> dict[str, Any]:
@@ -281,7 +284,7 @@ async def execute(
 
     # Trigger vault refresh after review submission
     refresh_manager = get_manager()
-    await refresh_manager.trigger_refresh(
+    refresh_result = await refresh_manager.trigger_refresh(
         "review_submitted",
         {
             "pr_number": pr_number,
@@ -290,6 +293,10 @@ async def execute(
             "review_code": review_code,
             "reviewer": agent_name,
         },
+    )
+    logger.info(
+        f"Vault refresh triggered after review: {refresh_result.get('status')}",
+        extra={"refresh_result": refresh_result}
     )
 
     return result

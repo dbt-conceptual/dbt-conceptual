@@ -33,7 +33,9 @@ class VaultRefreshManager:
 
     _instance: ClassVar[VaultRefreshManager | None] = None
     _lock: asyncio.Lock
+    _running: bool
     _pending_refresh: bool
+    _pending_context: dict | None
     _project_dir: str
     _profiles_dir: str
 
@@ -47,7 +49,9 @@ class VaultRefreshManager:
     def _initialize(self) -> None:
         """Initialize the manager state."""
         self._lock = asyncio.Lock()
+        self._running = False
         self._pending_refresh = False
+        self._pending_context = None
         self._project_dir = ".herd/dbt"
         self._profiles_dir = ".herd/dbt"
         logger.info("VaultRefreshManager initialized")
@@ -69,11 +73,12 @@ class VaultRefreshManager:
         """
         context = context or {}
 
-        # Try to acquire lock without blocking
-        if self._lock.locked():
+        # Check if already running (no TOCTOU race - single flag check)
+        if self._running:
             # A refresh is already running
             if not self._pending_refresh:
                 self._pending_refresh = True
+                self._pending_context = context  # A1: Preserve queued context
                 logger.info(
                     f"Vault refresh in progress, queued refresh for milestone: {milestone}",
                     extra={"milestone": milestone, "context": context}
@@ -84,7 +89,8 @@ class VaultRefreshManager:
                     "message": "Refresh queued - run already in progress",
                 }
             else:
-                # Collapse redundant trigger
+                # Collapse redundant trigger (keep most recent context)
+                self._pending_context = context
                 logger.info(
                     f"Vault refresh already queued, collapsed trigger for milestone: {milestone}",
                     extra={"milestone": milestone, "context": context}
@@ -97,21 +103,27 @@ class VaultRefreshManager:
 
         # Acquire lock and run refresh
         async with self._lock:
-            result = await self._execute_refresh(milestone, context)
+            self._running = True
+            try:
+                result = await self._execute_refresh(milestone, context)
 
-            # If a refresh was queued during execution, run it now
-            if self._pending_refresh:
-                self._pending_refresh = False
-                logger.info("Executing queued vault refresh")
-                queued_result = await self._execute_refresh("queued_refresh", {"original_milestone": milestone})
-                return {
-                    "status": "completed_with_queued",
-                    "milestone": milestone,
-                    "primary_result": result,
-                    "queued_result": queued_result,
-                }
+                # If a refresh was queued during execution, run it now
+                while self._pending_refresh:
+                    self._pending_refresh = False
+                    queued_context = self._pending_context
+                    self._pending_context = None
+                    logger.info("Executing queued vault refresh")
+                    queued_result = await self._execute_refresh("queued_refresh", queued_context or {})
+                    result = {
+                        "status": "completed_with_queued",
+                        "milestone": milestone,
+                        "primary_result": result,
+                        "queued_result": queued_result,
+                    }
 
-            return result
+                return result
+            finally:
+                self._running = False  # A2: Always reset in finally
 
     async def _execute_refresh(self, milestone: str, context: dict) -> dict:
         """Execute the dbt run subprocess.

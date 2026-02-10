@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+import logging
+
 from herd_mcp.db import connection
 from herd_mcp.vault_refresh import get_manager
+
+logger = logging.getLogger(__name__)
 
 
 async def decommission(agent_name: str, current_agent: str | None) -> dict:
@@ -99,13 +103,17 @@ async def decommission(agent_name: str, current_agent: str | None) -> dict:
 
     # Trigger vault refresh after agent decommission
     refresh_manager = get_manager()
-    await refresh_manager.trigger_refresh(
+    refresh_result = await refresh_manager.trigger_refresh(
         "agent_decommissioned",
         {
             "agent_name": agent_name,
             "instances_ended": ended_count,
             "requested_by": current_agent,
         },
+    )
+    logger.info(
+        f"Vault refresh triggered after decommission: {refresh_result.get('status')}",
+        extra={"refresh_result": refresh_result}
     )
 
     return result
