@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: dim_agent_observation
+    description: Type 2 SCD dimension for agent observations
+    columns:
+      - name: observation_sk
+        description: Surrogate key (observation_tk + valid_from)
+      - name: observation_tk
+        description: Technical key from hub
+      - name: observation_id
+        description: Business key - observation identifier
+      - name: agent_code
+        description: Agent who made the observation
+      - name: session_code
+        description: Session during which observation was made
+      - name: observation_type
+        description: Type of observation (self-correction, pattern-recognition, etc.)
+      - name: observation_content
+        description: Observation content
+      - name: confidence
+        description: Confidence level in the observation
+      - name: is_deleted
+        description: Soft delete flag
+      - name: valid_from
+        description: SCD valid from timestamp
+      - name: valid_to
+        description: SCD valid to timestamp (9999-12-31 for current)
+      - name: is_current
+        description: Flag indicating current version

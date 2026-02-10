@@ -1,0 +1,24 @@
+version: 2
+
+models:
+  - name: stg_herd__agent_observation
+    description: Staging model for agent reflexive observations
+    columns:
+      - name: observation_id
+        description: Unique observation identifier
+      - name: agent_code
+        description: Agent who made the observation
+      - name: session_code
+        description: Session during which observation was made
+      - name: observation_type
+        description: Type of observation (self-correction, pattern-recognition, efficiency-note, workflow-insight, etc.)
+      - name: observation_content
+        description: Observation content
+      - name: confidence
+        description: Confidence level in the observation
+      - name: is_deleted
+        description: Soft delete flag
+      - name: load_ts
+        description: Load timestamp
+      - name: rsrc
+        description: Source system identifier

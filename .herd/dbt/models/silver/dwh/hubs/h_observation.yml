@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: h_observation
+    description: Hub for agent observations
+    config:
+      materialized: incremental
+      unique_key: observation_tk
+    columns:
+      - name: observation_tk
+        description: Technical key (hash of observation_id)
+      - name: observation_id
+        description: Business key - observation identifier
+      - name: load_ts
+        description: Load timestamp
+      - name: rsrc
+        description: Source system
