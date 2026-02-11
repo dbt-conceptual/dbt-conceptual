@@ -31,4 +31,4 @@ Please do **not** open a public GitHub issue for security vulnerabilities.
 
 - Keep dbt-conceptual updated to the latest version
 - Don't commit sensitive data in your `model.yml` files
-- Review schema.yml files before running `sync --create-stubs` on untrusted projects
+- Review schema.yml files before running `sync` on untrusted projects (it creates stubs automatically)

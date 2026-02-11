@@ -80,7 +80,7 @@ concepts:
 ```
 
 **Don't let stubs pile up.**
-Stubs are placeholders, not permanent residents. If you run `sync --create-stubs` and then ignore them, you're just accumulating debt. Set a cadence — maybe one domain per sprint — to convert stubs to complete concepts.
+Stubs are placeholders, not permanent residents. If you run `sync` and then ignore the stubs it creates, you're just accumulating debt. Set a cadence — maybe one domain per sprint — to convert stubs to complete concepts.
 
 **Don't enforce too early.**
 Start with warnings (`orphan_models: warn`), not errors. Let the team see the gaps, understand the tool, build coverage. Then tighten enforcement once you're past 60-70% coverage. Enforcement on day one just generates resentment.

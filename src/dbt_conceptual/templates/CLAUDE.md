@@ -17,7 +17,7 @@ dbt-conceptual (DCM) keeps conceptual data models synchronized with dbt implemen
 dbc status              # Show coverage and validation summary
 dbc validate            # Run validation, exit 1 on errors
 dbc orphans             # List models not linked to concepts
-dbc sync --create-stubs # Generate concept stubs from model tags
+dbc sync                # Sync models and generate concept stubs for orphans
 dbc serve               # Start web UI at http://localhost:5050
 ```
 
@@ -39,7 +39,7 @@ When helping users with DCM:
 
 **Greenfield (new project)**: Define concepts first → tag models → validate
 
-**Brownfield (existing project)**: `dbc sync --create-stubs` → enrich stubs with domain/owner/definition → validate
+**Brownfield (existing project)**: `dbc sync` → enrich stubs with domain/owner/definition → validate
 
 ---
 
@@ -263,8 +263,8 @@ This pattern:
 
 ### Brownfield Adoption (Existing Project)
 ```bash
-# 1. Generate stubs from existing model tags
-dbc sync --create-stubs
+# 1. Generate stubs from existing orphan models
+dbc sync
 
 # 2. Check what needs enrichment
 dbc status

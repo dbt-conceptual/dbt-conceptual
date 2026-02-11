@@ -660,7 +660,7 @@ def test_cli_sync_no_orphans() -> None:
 
 
 def test_cli_sync_with_orphans() -> None:
-    """Test sync command displays orphan models."""
+    """Test sync command creates stubs for orphan models."""
     runner = CliRunner()
 
     with TemporaryDirectory() as tmpdir:
@@ -671,7 +671,8 @@ def test_cli_sync_with_orphans() -> None:
             yaml.dump({"name": "test"}, f)
 
         # Create minimal conceptual.yml
-        with open(tmppath / "conceptual.yml", "w") as f:
+        conceptual_file = tmppath / "conceptual.yml"
+        with open(conceptual_file, "w") as f:
             yaml.dump({"version": 1}, f)
 
         # Create orphan model
@@ -685,7 +686,13 @@ def test_cli_sync_with_orphans() -> None:
         assert result.exit_code == 0
         assert "Found 1 orphan model" in result.output
         assert "dim_product" in result.output
-        assert "Use --create-stubs" in result.output
+        assert "Created 1 stub concept" in result.output
+        assert "product" in result.output
+
+        # Verify stub was created in file
+        with open(conceptual_file) as f:
+            data = yaml.safe_load(f)
+            assert "product" in data["concepts"]
 
 
 def test_cli_sync_create_stubs() -> None:
@@ -716,7 +723,7 @@ def test_cli_sync_create_stubs() -> None:
                 f,
             )
 
-        result = runner.invoke(sync, ["--project-dir", str(tmppath), "--create-stubs"])
+        result = runner.invoke(sync, ["--project-dir", str(tmppath)])
 
         assert result.exit_code == 0
         assert "Created 2 stub concept" in result.output
@@ -766,7 +773,6 @@ def test_cli_sync_specific_model() -> None:
             [
                 "--project-dir",
                 str(tmppath),
-                "--create-stubs",
                 "--model",
                 "dim_product",
             ],

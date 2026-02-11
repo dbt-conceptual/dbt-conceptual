@@ -138,7 +138,7 @@ Use `meta` for anything that's useful to your team but not part of the core sche
 
 ## Working with Stubs
 
-When you run `dbc sync --create-stubs`, you get placeholder concepts:
+When you run `dbc sync`, you get placeholder concepts for orphan models:
 
 ```yaml
 concepts:
