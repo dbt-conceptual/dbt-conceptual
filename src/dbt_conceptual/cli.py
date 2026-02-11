@@ -149,7 +149,7 @@ def status(
     if state.orphan_models:
         _display_orphan_models(state.orphan_models, show_header=True)
         console.print(
-            "\n[dim]Tip: Run 'dbt-conceptual sync --create-stubs' to create stub concepts[/dim]"
+            "\n[dim]Tip: Run 'dbt-conceptual sync' to create stub concepts[/dim]"
         )
 
     # Summary: Concepts needing attention
@@ -512,7 +512,7 @@ def orphans(
 
     console.print(
         "\n[dim]Next steps:[/dim]"
-        "\n[dim]  1. Run 'dbt-conceptual sync --create-stubs' to create stub concepts[/dim]"
+        "\n[dim]  1. Run 'dbt-conceptual sync' to create stub concepts[/dim]"
         "\n[dim]  2. Edit conceptual.yml to enrich the stubs[/dim]"
         "\n[dim]  3. Add meta.concept tags to model YAML files[/dim]"
     )
