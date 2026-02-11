@@ -220,8 +220,10 @@ SELECT
 FROM herd_dm.dim_ticket dt
 JOIN herd_dm.fact_agent_instance_cost faic
     ON dt.ticket_sk = faic.ticket_sk
+LEFT JOIN herd_dm.fact_pr_delivery fpd
+    ON dt.ticket_sk = fpd.ticket_sk
 LEFT JOIN herd_dm.fact_review_quality frq
-    ON faic.agent_sk = frq.agent_sk
+    ON fpd.pull_request_sk = frq.pull_request_sk
 WHERE dt.is_current = true
   AND NOT dt.is_deleted
   AND faic.total_token_cost_usd > 0

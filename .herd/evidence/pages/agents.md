@@ -190,30 +190,35 @@ ORDER BY da.agent_code, total_cost DESC
 
 ---
 
-## Agent Skillsets
+## Agent Craft Assignments
 
-**Question**: What skills has each agent demonstrated in their work?
+**Question**: What craft (role specialization) has each agent performed?
 
-```sql agent_skillsets
+```sql agent_crafts
 SELECT
     da.agent_code,
     da.agent_role,
-    ds.skill_codes
+    dc.craft_code,
+    dc.craft_description,
+    COUNT(DISTINCT faiw.agent_instance_tk) as instance_count
 FROM herd_dm.dim_agent da
 LEFT JOIN herd_dm.fact_agent_instance_work faiw
     ON da.agent_sk = faiw.agent_sk
-LEFT JOIN herd_dm.dim_skillset ds
-    ON faiw.craft_sk = ds.skillset_sk
+LEFT JOIN herd_dm.dim_craft dc
+    ON faiw.craft_sk = dc.craft_sk
 WHERE da.is_current = true
   AND NOT da.is_deleted
-GROUP BY da.agent_code, da.agent_role, ds.skill_codes
-ORDER BY da.agent_code
+  AND dc.craft_code IS NOT NULL
+GROUP BY da.agent_code, da.agent_role, dc.craft_code, dc.craft_description
+ORDER BY da.agent_code, instance_count DESC
 ```
 
-<DataTable data={agent_skillsets} search=true>
+<DataTable data={agent_crafts} search=true>
   <Column id="agent_code" title="Agent" />
   <Column id="agent_role" title="Role" />
-  <Column id="skill_codes" title="Skills" />
+  <Column id="craft_code" title="Craft" />
+  <Column id="craft_description" title="Description" />
+  <Column id="instance_count" title="Instances" fmt="num0" />
 </DataTable>
 
 ---

@@ -135,11 +135,10 @@ SELECT
         ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
     ) as cumulative_cost
 FROM herd_dm.dim_date dd
+LEFT JOIN herd_dm.fact_agent_instance_work faiw
+    ON CAST(strftime(faiw.agent_instance_started_at, '%Y%m%d') AS INTEGER) = dd.date_sk
 LEFT JOIN herd_dm.fact_agent_instance_cost faic
-    ON faic.agent_sk IN (
-        SELECT agent_sk FROM herd_dm.dim_agent
-        WHERE valid_from::DATE = dd.date_actual
-    )
+    ON faiw.agent_instance_tk = faic.agent_instance_tk
 WHERE dd.date_actual >= CURRENT_DATE - INTERVAL '30 days'
   AND dd.date_actual <= CURRENT_DATE
 GROUP BY dd.date_actual

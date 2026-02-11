@@ -128,25 +128,50 @@ ORDER BY dd.date_actual
 **Question**: Which agents contributed the most to this sprint?
 
 ```sql agent_contributions
+WITH sprint_window AS (
+    SELECT
+        sprint_started_at,
+        COALESCE(sprint_actual_end_at, sprint_planned_end_at) as sprint_end_at
+    FROM herd_dm.dim_sprint
+    WHERE sprint_code = '${inputs.selected_sprint}'
+      AND is_current = true
+),
+pr_metrics AS (
+    SELECT
+        fpd.agent_sk,
+        COUNT(DISTINCT fpd.pull_request_sk) as prs_merged,
+        SUM(fpd.pr_lines_added + fpd.pr_lines_deleted) as total_lines_changed
+    FROM herd_dm.fact_pr_delivery fpd
+    CROSS JOIN sprint_window sw
+    WHERE fpd.pr_merged_at IS NOT NULL
+      AND fpd.pr_merged_at BETWEEN sw.sprint_started_at AND sw.sprint_end_at
+    GROUP BY fpd.agent_sk
+),
+cost_metrics AS (
+    SELECT
+        faic.agent_sk,
+        SUM(faic.total_token_cost_usd) as cost_usd
+    FROM herd_dm.fact_agent_instance_cost faic
+    JOIN herd_dm.dim_ticket dt
+        ON faic.ticket_sk = dt.ticket_sk
+    CROSS JOIN sprint_window sw
+    WHERE dt.is_current = true
+    GROUP BY faic.agent_sk
+)
 SELECT
     da.agent_code,
     da.agent_role,
-    COUNT(DISTINCT fpd.pull_request_sk) as prs_merged,
-    SUM(fpd.pr_lines_added + fpd.pr_lines_deleted) as total_lines_changed,
-    SUM(faic.total_token_cost_usd) as cost_usd
+    COALESCE(pm.prs_merged, 0) as prs_merged,
+    COALESCE(pm.total_lines_changed, 0) as total_lines_changed,
+    COALESCE(cm.cost_usd, 0) as cost_usd
 FROM herd_dm.dim_agent da
-LEFT JOIN herd_dm.fact_pr_delivery fpd
-    ON da.agent_sk = fpd.agent_sk
-LEFT JOIN herd_dm.fact_agent_instance_cost faic
-    ON da.agent_sk = faic.agent_sk
-LEFT JOIN herd_dm.dim_sprint ds
-    ON ds.sprint_code = '${inputs.selected_sprint}'
-    AND ds.is_current = true
+LEFT JOIN pr_metrics pm
+    ON da.agent_sk = pm.agent_sk
+LEFT JOIN cost_metrics cm
+    ON da.agent_sk = cm.agent_sk
 WHERE da.is_current = true
   AND NOT da.is_deleted
-  AND (fpd.pr_merged_at IS NULL OR fpd.pr_merged_at BETWEEN ds.sprint_started_at AND COALESCE(ds.sprint_actual_end_at, ds.sprint_planned_end_at))
-GROUP BY da.agent_code, da.agent_role
-HAVING COUNT(DISTINCT fpd.pull_request_sk) > 0
+  AND (pm.prs_merged > 0 OR cm.cost_usd > 0)
 ORDER BY cost_usd DESC NULLS LAST
 ```
 
@@ -219,6 +244,13 @@ LIMIT 6
 **Question**: What is the detailed status of each ticket in this sprint?
 
 ```sql sprint_tickets
+WITH ticket_assignees AS (
+    SELECT
+        faic.ticket_sk,
+        faic.agent_sk,
+        ROW_NUMBER() OVER (PARTITION BY faic.ticket_sk ORDER BY faic.agent_instance_tk DESC) as rn
+    FROM herd_dm.fact_agent_instance_cost faic
+)
 SELECT
     dt.ticket_code,
     dt.ticket_title,
@@ -226,12 +258,11 @@ SELECT
     dt.ticket_tshirt_size,
     da.agent_code as assignee
 FROM herd_dm.dim_ticket dt
+LEFT JOIN ticket_assignees ta
+    ON dt.ticket_sk = ta.ticket_sk
+    AND ta.rn = 1
 LEFT JOIN herd_dm.dim_agent da
-    ON dt.ticket_tk IN (
-        SELECT ticket_tk
-        FROM herd_dm.fact_agent_instance_cost
-        WHERE agent_sk = da.agent_sk
-    )
+    ON ta.agent_sk = da.agent_sk
 WHERE dt.current_sprint_code = '${inputs.selected_sprint}'
   AND dt.is_current = true
   AND NOT dt.is_deleted
