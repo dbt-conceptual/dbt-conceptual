@@ -346,7 +346,7 @@ See [Validation Guide](docs/validation.md) for resolution steps.
 **Bottom-up:** Already have a dbt project with `meta.concept` tags? Generate stubs:
 
 ```bash
-dbc sync --create-stubs
+dbc sync
 
 # Output:
 # Created 12 concept stubs
@@ -453,8 +453,7 @@ vars:
 | `dbc orphans` | List untagged models (no meta.concept) |
 | `dbc validate` | Validate model integrity |
 | `dbc validate --no-drafts` | Fail CI if drafts/stubs exist |
-| `dbc sync` | Sync from dbt project |
-| `dbc sync --create-stubs` | Create stubs for undefined concepts |
+| `dbc sync` | Sync from dbt project and create stubs for orphans |
 | `dbc serve` | Launch web UI |
 | `dbc export --type <type> --format <fmt>` | Export reports (see matrix above) |
 | `dbc diff` | Show changes vs HEAD |

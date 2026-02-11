@@ -118,10 +118,9 @@ dbc sync [OPTIONS]
 | Option | Description |
 |--------|-------------|
 | `--project-dir PATH` | Path to dbt project |
-| `--create-stubs` | Create placeholder concepts for untagged models |
 | `--model TEXT` | Sync only a specific model |
 
-The `--create-stubs` option is helpful when adopting dbt-conceptual in an existing project — it gives you a starting point to enrich.
+The sync command automatically creates placeholder concepts for orphan models, giving you a starting point to enrich when adopting dbt-conceptual in an existing project.
 
 ---
 

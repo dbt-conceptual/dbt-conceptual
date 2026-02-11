@@ -785,15 +785,10 @@ def init(project_dir: Optional[Path], force: bool) -> None:
     help="Path to dbt project directory (default: current directory)",
 )
 @click.option(
-    "--create-stubs",
-    is_flag=True,
-    help="Create stub concepts for orphan models",
-)
-@click.option(
     "--model",
     help="Sync only a specific model by name",
 )
-def sync(project_dir: Optional[Path], create_stubs: bool, model: Optional[str]) -> None:
+def sync(project_dir: Optional[Path], model: Optional[str]) -> None:
     """Discover dbt models and sync with conceptual model."""
     # Load configuration
     config = Config.load(project_dir=project_dir)
@@ -823,12 +818,6 @@ def sync(project_dir: Optional[Path], create_stubs: bool, model: Optional[str]) 
     # Display orphans
     console.print(f"\n[bold]Found {len(orphans)} orphan model(s):[/bold]")
     _display_orphan_models(orphans, show_header=False)
-
-    if not create_stubs:
-        console.print(
-            "\n[yellow]Tip:[/yellow] Use --create-stubs to automatically create stub concepts"
-        )
-        return
 
     # Create stubs
     stubs_created = _create_stubs(orphans, config)

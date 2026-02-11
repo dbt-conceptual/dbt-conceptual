@@ -51,7 +51,7 @@ You're declaring: "this model implements the `customer` concept." The concept do
 Run sync to create placeholders for the concepts you've referenced:
 
 ```bash
-dbc sync --create-stubs
+dbc sync
 ```
 
 ```

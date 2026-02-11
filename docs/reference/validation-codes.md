@@ -160,7 +160,7 @@ vars:
 
 **Fix:** Either:
 - Define the concept in `conceptual.yml`
-- Run `dbc sync --create-stubs` to create a stub
+- Run `dbc sync` to create a stub automatically
 - Fix the typo in the model
 
 **Configure:** This is always an error.

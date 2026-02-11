@@ -167,7 +167,7 @@ Check file permissions on `conceptual.yml`. The UI needs write access.
 
 A model references a concept that doesn't exist. Either:
 - Define the concept in `conceptual.yml`
-- Run `dbc sync --create-stubs`
+- Run `dbc sync` (creates stubs automatically)
 - Fix the typo in `meta.concept`
 
 ---

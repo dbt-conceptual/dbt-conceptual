@@ -113,10 +113,10 @@ If you tag a model with a concept that doesn't exist, it becomes a **ghost conce
 If you have models tagged with concepts that don't exist yet:
 
 ```bash
-dbc sync --create-stubs
+dbc sync
 ```
 
-This creates stub entries in `conceptual.yml` for any referenced but undefined concepts.
+This creates stub entries in `conceptual.yml` for any orphan models automatically.
 
 ---
 
@@ -239,7 +239,7 @@ models:
 If you have many models without tags:
 
 1. **Start with gold layer** — Tag your mart/dimension/fact models first
-2. **Use sync** — `dbc sync --create-stubs` creates concepts for tagged models
+2. **Use sync** — `dbc sync` creates concepts for orphan models automatically
 3. **Work backward** — Add silver layer tags later if desired
 
 See [Adopting in Existing Projects](adoption.md) for a full guide.
