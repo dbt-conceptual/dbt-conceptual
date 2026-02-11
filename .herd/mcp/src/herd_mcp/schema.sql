@@ -138,6 +138,8 @@ CREATE TABLE IF NOT EXISTS herd.review_finding (
     finding_description TEXT,
     finding_file_path TEXT,
     finding_line_number INTEGER,
+    finding_pattern_id TEXT,
+    finding_outcome TEXT,
     created_at TIMESTAMP
 );
 
@@ -287,4 +289,32 @@ CREATE TABLE IF NOT EXISTS herd.agent_instance_token_activity (
     token_cost_usd DECIMAL(18,6),
     token_context_utilization_pct DECIMAL(18,6),
     created_at TIMESTAMP
+);
+
+-- ============================================================================
+-- Reflexive Learning (2 tables — agent self-awareness and decision tracking)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS herd.agent_observation (
+    observation_id TEXT PRIMARY KEY,
+    agent_code TEXT,
+    session_code TEXT,
+    observation_type TEXT,
+    observation_content TEXT,
+    confidence FLOAT,
+    created_at TIMESTAMP,
+    deleted_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS herd.decision_record (
+    decision_id TEXT PRIMARY KEY,
+    decision_type TEXT,
+    context TEXT,
+    decision TEXT,
+    rationale TEXT,
+    alternatives_considered TEXT,
+    decided_by TEXT,
+    ticket_code TEXT,
+    created_at TIMESTAMP,
+    deleted_at TIMESTAMP
 );

@@ -20,7 +20,11 @@ finding_aggregates AS (
         review_tk,
         COUNT(*) AS finding_count,
         SUM(CASE WHEN finding_severity = 'blocking' THEN 1 ELSE 0 END) AS blocking_finding_count,
-        SUM(CASE WHEN finding_severity = 'advisory' THEN 1 ELSE 0 END) AS advisory_finding_count
+        SUM(CASE WHEN finding_severity = 'advisory' THEN 1 ELSE 0 END) AS advisory_finding_count,
+        COUNT(DISTINCT finding_pattern_id) AS unique_pattern_count,
+        SUM(CASE WHEN finding_outcome = 'accepted' THEN 1 ELSE 0 END) AS accepted_finding_count,
+        SUM(CASE WHEN finding_outcome = 'disputed' THEN 1 ELSE 0 END) AS disputed_finding_count,
+        SUM(CASE WHEN finding_outcome = 'deferred' THEN 1 ELSE 0 END) AS deferred_finding_count
     FROM {{ ref('sn_review_finding') }}
     GROUP BY review_tk
 )
@@ -43,7 +47,11 @@ SELECT
     -- Finding metrics
     COALESCE(fa.finding_count, 0) AS finding_count,
     COALESCE(fa.blocking_finding_count, 0) AS blocking_finding_count,
-    COALESCE(fa.advisory_finding_count, 0) AS advisory_finding_count
+    COALESCE(fa.advisory_finding_count, 0) AS advisory_finding_count,
+    COALESCE(fa.unique_pattern_count, 0) AS unique_pattern_count,
+    COALESCE(fa.accepted_finding_count, 0) AS accepted_finding_count,
+    COALESCE(fa.disputed_finding_count, 0) AS disputed_finding_count,
+    COALESCE(fa.deferred_finding_count, 0) AS deferred_finding_count
 
 FROM review_base rb
 

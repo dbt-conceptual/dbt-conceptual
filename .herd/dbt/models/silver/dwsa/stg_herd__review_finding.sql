@@ -7,6 +7,8 @@ SELECT
     finding_description,
     finding_file_path,
     finding_line_number,
+    finding_pattern_id,
+    finding_outcome,
     FALSE AS is_deleted,
     created_at AS load_ts,
     'herd.review_finding' AS rsrc

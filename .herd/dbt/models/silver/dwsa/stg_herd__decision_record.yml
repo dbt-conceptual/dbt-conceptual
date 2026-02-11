@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: stg_herd__decision_record
+    description: Staging model for architectural and operational decision records
+    columns:
+      - name: decision_id
+        description: Unique decision identifier
+      - name: decision_type
+        description: Type of decision (schema, process, tooling, prompt, architectural)
+      - name: context
+        description: Context in which decision was made
+      - name: decision
+        description: The decision itself
+      - name: rationale
+        description: Rationale for the decision
+      - name: alternatives_considered
+        description: Alternative options that were considered
+      - name: decided_by
+        description: Who made the decision
+      - name: ticket_code
+        description: Related ticket code
+      - name: is_deleted
+        description: Soft delete flag
+      - name: load_ts
+        description: Load timestamp
+      - name: rsrc
+        description: Source system identifier

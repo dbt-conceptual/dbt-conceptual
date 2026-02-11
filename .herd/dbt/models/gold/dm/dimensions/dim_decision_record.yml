@@ -1,0 +1,34 @@
+version: 2
+
+models:
+  - name: dim_decision_record
+    description: Type 2 SCD dimension for decision records
+    columns:
+      - name: decision_sk
+        description: Surrogate key (decision_tk + valid_from)
+      - name: decision_tk
+        description: Technical key from hub
+      - name: decision_id
+        description: Business key - decision identifier
+      - name: decision_type
+        description: Type of decision (schema, process, tooling, prompt, architectural)
+      - name: context
+        description: Context in which decision was made
+      - name: decision
+        description: The decision itself
+      - name: rationale
+        description: Rationale for the decision
+      - name: alternatives_considered
+        description: Alternative options that were considered
+      - name: decided_by
+        description: Who made the decision
+      - name: ticket_code
+        description: Related ticket code
+      - name: is_deleted
+        description: Soft delete flag
+      - name: valid_from
+        description: SCD valid from timestamp
+      - name: valid_to
+        description: SCD valid to timestamp (9999-12-31 for current)
+      - name: is_current
+        description: Flag indicating current version

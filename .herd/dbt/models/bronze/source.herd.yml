@@ -60,3 +60,9 @@ sources:
         description: Agent instance review activity events (insert-only)
       - name: agent_instance_token_activity
         description: Agent instance token usage and cost tracking (insert-only)
+
+      # Reflexive Learning (2 tables)
+      - name: agent_observation
+        description: Agent reflexive observations and self-awareness notes
+      - name: decision_record
+        description: Architectural and operational decision records

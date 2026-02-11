@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: s_decision_base
+    description: Satellite for decision record descriptive attributes
+    config:
+      materialized: incremental
+      unique_key: decision_tk || load_ts
+    columns:
+      - name: decision_tk
+        description: Foreign key to h_decision
+      - name: decision_type
+        description: Type of decision (schema, process, tooling, prompt, architectural)
+      - name: context
+        description: Context in which decision was made
+      - name: decision
+        description: The decision itself
+      - name: rationale
+        description: Rationale for the decision
+      - name: alternatives_considered
+        description: Alternative options that were considered
+      - name: decided_by
+        description: Who made the decision
+      - name: ticket_code
+        description: Related ticket code
+      - name: is_deleted
+        description: Soft delete flag
+      - name: decision_base_hd
+        description: Hash diff for change detection
+      - name: load_ts
+        description: Load timestamp
+      - name: rsrc
+        description: Source system

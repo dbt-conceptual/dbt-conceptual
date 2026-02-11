@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: s_observation_base
+    description: Satellite for observation descriptive attributes
+    config:
+      materialized: incremental
+      unique_key: observation_tk || load_ts
+    columns:
+      - name: observation_tk
+        description: Foreign key to h_observation
+      - name: agent_code
+        description: Agent who made the observation
+      - name: session_code
+        description: Session during which observation was made
+      - name: observation_type
+        description: Type of observation
+      - name: observation_content
+        description: Observation content
+      - name: confidence
+        description: Confidence level
+      - name: is_deleted
+        description: Soft delete flag
+      - name: observation_base_hd
+        description: Hash diff for change detection
+      - name: load_ts
+        description: Load timestamp
+      - name: rsrc
+        description: Source system

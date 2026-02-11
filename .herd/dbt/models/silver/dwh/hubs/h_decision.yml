@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: h_decision
+    description: Hub for decision records
+    config:
+      materialized: incremental
+      unique_key: decision_tk
+    columns:
+      - name: decision_tk
+        description: Technical key (hash of decision_id)
+      - name: decision_id
+        description: Business key - decision identifier
+      - name: load_ts
+        description: Load timestamp
+      - name: rsrc
+        description: Source system
