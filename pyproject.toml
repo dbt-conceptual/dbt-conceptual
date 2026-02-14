@@ -112,8 +112,17 @@ warn_unused_ignores = false
 disallow_untyped_defs = true
 
 [[tool.mypy.overrides]]
-module = ["PIL.*", "flask.*", "waitress.*", "mcp.*"]
+module = ["PIL.*", "flask.*", "waitress.*"]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["mcp.*"]
+ignore_missing_imports = true
+follow_imports = "skip"
+
+[[tool.mypy.overrides]]
+module = ["dbt_conceptual.mcp.*"]
+ignore_errors = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
