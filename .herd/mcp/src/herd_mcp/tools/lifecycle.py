@@ -43,6 +43,8 @@ async def decommission(
                     "requested_by": current_agent,
                 }
 
+            previous_status = agent_record.status
+
             # Update agent status
             agent_record.status = "decommissioned"
             registry.store.save(agent_record)
@@ -65,7 +67,7 @@ async def decommission(
             result = {
                 "success": True,
                 "target_agent": agent_name,
-                "previous_status": agent_record.status,
+                "previous_status": previous_status,
                 "new_status": "decommissioned",
                 "instances_ended": ended_count,
                 "requested_by": current_agent,
