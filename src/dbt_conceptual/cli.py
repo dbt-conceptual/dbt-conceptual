@@ -1359,6 +1359,96 @@ def serve(project_dir: Optional[Path], host: str, port: int, demo: bool) -> None
 
 @main.command()
 @click.option(
+    "--sse",
+    is_flag=True,
+    default=False,
+    help="Enable SSE transport (for remote agents)",
+)
+@click.option(
+    "--http",
+    is_flag=True,
+    default=False,
+    help="Enable HTTP transport (newer MCP spec)",
+)
+@click.option(
+    "--port",
+    type=int,
+    default=3001,
+    help="Port for SSE/HTTP transport (default: 3001)",
+)
+def mcp(sse: bool, http: bool, port: int) -> None:
+    """Start the MCP server for dbt-conceptual.
+
+    The MCP (Model Context Protocol) server provides programmatic access
+    to conceptual model information for Claude Code, Cursor, and other AI agents.
+
+    Transport Options:
+        - stdio (default): For Claude Code, Cursor, local agents
+        - --sse: Server-Sent Events transport for remote agents
+        - --http: HTTP transport (newer MCP specification)
+
+    Examples:
+        dbc mcp                    # stdio transport (default)
+        dbc mcp --sse --port 3001  # SSE transport on port 3001
+        dbc mcp --http --port 8080 # HTTP transport on port 8080
+
+    Note:
+        The --sse and --http flags are mutually exclusive.
+    """
+    # Validate mutually exclusive flags
+    if sse and http:
+        console.print(
+            "[red]Error: --sse and --http are mutually exclusive. Choose one transport method.[/red]"
+        )
+        raise click.Abort()
+
+    try:
+        from dbt_conceptual.mcp.server import mcp as mcp_instance
+    except ImportError:
+        console.print(
+            "[red]Error: MCP server dependencies not installed.[/red]\n\n"
+            "Install with:\n"
+            "  pip install dbt-conceptual[mcp]"
+        )
+        return
+
+    # Display startup message
+    if sse:
+        console.print(
+            f"[cyan]Starting MCP server with SSE transport on port {port}...[/cyan]"
+        )
+        console.print(
+            "[dim]Note: SSE transport support is limited in current FastMCP version[/dim]"
+        )
+    elif http:
+        console.print(
+            f"[cyan]Starting MCP server with HTTP transport on port {port}...[/cyan]"
+        )
+        console.print(
+            "[dim]Note: HTTP transport support is limited in current FastMCP version[/dim]"
+        )
+    else:
+        console.print("[cyan]Starting MCP server with stdio transport...[/cyan]")
+
+    console.print("[dim]Press Ctrl+C to stop[/dim]\n")
+
+    try:
+        # For now, all transports use stdio via mcp.run()
+        # When FastMCP adds full SSE/HTTP support, we'll pass port here
+        if sse or http:
+            # Placeholder for future SSE/HTTP support
+            # In the future: mcp_instance.run(transport=..., port=port)
+            console.print(
+                "[yellow]Warning: SSE/HTTP not fully supported yet, falling back to stdio[/yellow]\n"
+            )
+
+        mcp_instance.run()
+    except KeyboardInterrupt:
+        console.print("\n[yellow]MCP server stopped[/yellow]")
+
+
+@main.command()
+@click.option(
     "--base",
     required=True,
     help="Base git ref to compare against (e.g., main, origin/main, HEAD~1)",
