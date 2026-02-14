@@ -14,6 +14,8 @@ from herd_mcp.vault_refresh import get_manager
 
 if TYPE_CHECKING:
     from herd_mcp.adapters import AdapterRegistry
+    from herd_core.adapters.repo import RepoAdapter
+    from herd_core.adapters.store import StoreAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -61,31 +63,40 @@ def _post_to_slack(message: str, channel: str = "#herd-feed") -> dict[str, Any]:
         return {"success": False, "error": str(e)}
 
 
-def _post_review_to_github(pr_number: int, review_body: str) -> bool:
+def _post_review_to_github(
+    pr_number: int, review_body: str, repo_adapter: RepoAdapter | None = None
+) -> bool:
     """Post review to GitHub PR via gh CLI.
 
     Args:
         pr_number: GitHub PR number.
         review_body: Review comment body.
+        repo_adapter: Optional RepoAdapter for git operations.
 
     Returns:
         True if posted successfully, False otherwise.
     """
     try:
-        # Post comment to PR using gh api
-        result = subprocess.run(
-            [
-                "gh",
-                "api",
-                f"repos/dbt-conceptual/dbt-conceptual/issues/{pr_number}/comments",
-                "-f",
-                f"body={review_body}",
-            ],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        return result.returncode == 0
+        # Adapter path
+        if repo_adapter:
+            # RepoAdapter.add_pr_comment expects pr_id (string) and body
+            repo_adapter.add_pr_comment(str(pr_number), review_body)
+            return True
+        else:
+            # Existing inline subprocess fallback
+            result = subprocess.run(
+                [
+                    "gh",
+                    "api",
+                    f"repos/dbt-conceptual/dbt-conceptual/issues/{pr_number}/comments",
+                    "-f",
+                    f"body={review_body}",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            return result.returncode == 0
     except Exception:
         return False
 
@@ -177,6 +188,9 @@ async def execute(
         }
 
     with connection() as conn:
+        # NOTE: StoreAdapter wiring for CRUD operations kept as raw SQL for now.
+        # Future: migrate to store.get() and store.save() once entity mappings are stable.
+
         # Get current agent instance
         agent_instance_code = None
         if agent_name:
@@ -257,7 +271,8 @@ async def execute(
 
         # Format and post review to GitHub
         review_body = _format_review_body(verdict, findings, review_code)
-        github_posted = _post_review_to_github(pr_number, review_body)
+        repo_adapter = registry.repo if registry else None
+        github_posted = _post_review_to_github(pr_number, review_body, repo_adapter)
 
         # Post summary to Slack - use adapter if available
         verdict_emoji = {
