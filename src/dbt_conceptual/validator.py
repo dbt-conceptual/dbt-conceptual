@@ -2,13 +2,16 @@
 
 v1.0 Validation Rules:
 - E002: Relationship references undefined concept (always error, creates ghost)
+- E003: Duplicate guidance rule name within concept (always error)
 - W101: Orphan model not linked to any concept (configurable)
 - W102: Unimplemented concept - no models tagged (configurable)
 - W104: Missing definition on concept/relationship (configurable)
+- W105: Guidance rule name not in snake_case (always warning)
 - I001: Stub concept needs domain (info)
 - I002: Stub relationship needs verb (info)
 """
 
+import re
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
@@ -71,6 +74,9 @@ class Validator:
         # Hardcoded as errors - unknown refs are always errors
         self._validate_relationship_endpoints()
 
+        # Guidance validation (always run)
+        self._validate_guidance_rules()
+
         # Configurable rules
         self._validate_orphan_models()
         self._validate_unimplemented_concepts()
@@ -115,6 +121,52 @@ class Validator:
                         },
                     )
                 )
+
+    def _validate_guidance_rules(self) -> None:
+        """Validate guidance rules in concepts.
+
+        E003: Duplicate rule names within a concept (always error)
+        W105: Rule names not in snake_case (always warning)
+        """
+        snake_case_pattern = re.compile(r"^[a-z][a-z0-9_]*$")
+
+        for concept_id, concept in self.state.concepts.items():
+            if not concept.guidance or not concept.guidance.rules:
+                continue
+
+            # Check for duplicate rule names
+            rule_names_seen: dict[str, int] = {}
+            for i, rule in enumerate(concept.guidance.rules):
+                if rule.name in rule_names_seen:
+                    self.issues.append(
+                        ValidationIssue(
+                            severity=Severity.ERROR,
+                            code="E003",
+                            message=f"Duplicate rule name '{rule.name}' in concept '{concept_id}' guidance block. Rule names must be unique within a concept.",
+                            context={
+                                "concept": concept_id,
+                                "rule_name": rule.name,
+                                "first_occurrence": rule_names_seen[rule.name],
+                                "duplicate_occurrence": i,
+                            },
+                        )
+                    )
+                else:
+                    rule_names_seen[rule.name] = i
+
+                # Check snake_case
+                if not snake_case_pattern.match(rule.name):
+                    self.issues.append(
+                        ValidationIssue(
+                            severity=Severity.WARNING,
+                            code="W105",
+                            message=f"Rule name '{rule.name}' in concept '{concept_id}' is not in snake_case. Use lowercase with underscores.",
+                            context={
+                                "concept": concept_id,
+                                "rule_name": rule.name,
+                            },
+                        )
+                    )
 
     def _validate_orphan_models(self) -> None:
         """Check for models not linked to any concept.
