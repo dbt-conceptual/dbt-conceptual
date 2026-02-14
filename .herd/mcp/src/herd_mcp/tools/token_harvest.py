@@ -9,9 +9,13 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from herd_mcp.db import connection
+
+if TYPE_CHECKING:
+    from herd_mcp.adapters import AdapterRegistry
+    from herd_core.adapters.store import StoreAdapter
 
 
 def _find_project_session_dir(project_path: str) -> Path | None:
@@ -223,7 +227,9 @@ def _write_token_activity(
     return records_written
 
 
-async def execute(agent_instance_code: str, project_path: str) -> dict:
+async def execute(
+    agent_instance_code: str, project_path: str, registry: AdapterRegistry | None = None
+) -> dict:
     """Harvest token usage from Claude Code session files.
 
     Parses JSONL session files, extracts token counts, calculates costs,
@@ -232,6 +238,7 @@ async def execute(agent_instance_code: str, project_path: str) -> dict:
     Args:
         agent_instance_code: Agent instance identifier.
         project_path: Absolute path to the project directory.
+        registry: Optional adapter registry for dependency injection.
 
     Returns:
         Dict with harvest results including records written and total cost.
