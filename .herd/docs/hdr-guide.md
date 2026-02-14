@@ -125,7 +125,7 @@ When a new decision supersedes an old one:
 
 ## Existing HDRs
 
-Eight decisions have been captured as of the project's current state.
+Fourteen decisions have been captured as of the project's current state.
 
 | HDR | Title | Scope | Principle |
 |-----|-------|-------|-----------|
@@ -137,6 +137,12 @@ Eight decisions have been captured as of the project's current state.
 | 0006 | Never push to main -- all work on feature branches | workflow | fail fast, fail clearly |
 | 0007 | Data Vault 2.0 for Herd MCP analytics | architecture | Principles > Capabilities |
 | 0008 | Evidence.dev for Herd dashboards | architecture | Unix philosophy |
+| 0009 | All agents must be aware of MCP and docs, and report inconsistencies | herd | fail fast, fail clearly |
+| 0010 | Herd MCP is the single pane of glass for ticket operations | architecture | Unix philosophy |
+| 0011 | Herd MCP must be the single pane for all common agent flows | architecture | Unix philosophy |
+| 0012 | The Herd will be extracted into a standalone, reusable framework | herd | Principles > Capabilities |
+| 0013 | Agent Decision Records flow through Slack for human feedback | workflow | informed ownership |
+| 0014 | Backfill HerdDB with historical data from Linear and GitHub | architecture | Principles > Capabilities |
 
 ### HDR-0001: Remove --create-stubs flag
 

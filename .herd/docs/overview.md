@@ -90,7 +90,7 @@ dbt-conceptual/
 | `.herd/STATUS.md` | Current state of all active work, blocks, and backlogs |
 | `.herd/craft.md` | Craft standards for each agent role |
 | `CLAUDE.md` | Project conventions, pre-commit checklist, design decisions |
-| `.herd/decisions/*.md` | Captured architectural decisions (HDRs 0001-0008) |
+| `.herd/decisions/*.md` | Captured architectural decisions (HDRs 0001-0014) |
 
 ### Herd MCP Server
 
