@@ -6,9 +6,12 @@ import json
 import os
 import urllib.request
 import uuid
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from herd_mcp.db import connection
+
+if TYPE_CHECKING:
+    from herd_mcp.adapters import AdapterRegistry
 
 
 def _post_to_slack_decisions(
@@ -69,6 +72,7 @@ async def execute(
     alternatives_considered: str | None,
     ticket_code: str | None,
     agent_name: str | None,
+    registry: AdapterRegistry | None = None,
 ) -> dict:
     """Record an agent decision to DuckDB and post to #herd-decisions.
 
@@ -80,6 +84,7 @@ async def execute(
         alternatives_considered: Optional alternatives that were considered.
         ticket_code: Optional associated ticket code.
         agent_name: Current agent identity.
+        registry: Optional adapter registry for dependency injection.
 
     Returns:
         Dict with decision_id, posted status, and Slack response.
@@ -118,8 +123,25 @@ async def execute(
     if alternatives_considered:
         decision_text += f"\n**Alternatives**: {alternatives_considered}"
 
-    # Post to Slack
-    slack_result = _post_to_slack_decisions(decision_text, ticket_code, agent_name)
+    # Post to Slack - use adapter if available
+    if registry and registry.notify:
+        try:
+            # Format message with ticket link if available
+            if ticket_code:
+                message = f"{agent_name} decision on <https://linear.app/dbt-conceptual/issue/{ticket_code}|{ticket_code}>:\n{decision_text}"
+            else:
+                message = f"{agent_name} decision:\n{decision_text}"
+
+            await registry.notify.post(
+                message=message,
+                channel="#herd-decisions",
+                username=agent_name,
+            )
+            slack_result = {"success": True}
+        except Exception as e:
+            slack_result = {"success": False, "error": str(e)}
+    else:
+        slack_result = _post_to_slack_decisions(decision_text, ticket_code, agent_name)
 
     return {
         "success": True,

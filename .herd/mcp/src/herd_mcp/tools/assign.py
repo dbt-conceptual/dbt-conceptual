@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 from herd_mcp import linear_client
 from herd_mcp.db import connection
+
+if TYPE_CHECKING:
+    from herd_mcp.adapters import AdapterRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +18,7 @@ async def execute(
     ticket_id: str,
     agent_name: str | None,
     priority: str,
+    registry: AdapterRegistry | None = None,
 ) -> dict:
     """Assign a ticket to an agent.
 
@@ -21,6 +26,7 @@ async def execute(
         ticket_id: Linear ticket ID.
         agent_name: Agent to assign to.
         priority: Assignment priority.
+        registry: Optional adapter registry for dependency injection.
 
     Returns:
         Dict with assignment confirmation, agent, and ticket details.
@@ -48,7 +54,10 @@ async def execute(
         # Auto-register from Linear if not found and looks like Linear ID
         if not ticket and linear_client.is_linear_identifier(ticket_id):
             logger.info(f"Ticket {ticket_id} not found in DB, attempting Linear fetch")
-            linear_issue = linear_client.get_issue(ticket_id)
+            if registry and registry.tickets:
+                linear_issue = await registry.tickets.get(ticket_id)
+            else:
+                linear_issue = linear_client.get_issue(ticket_id)
 
             if linear_issue:
                 # Extract project code from Linear if available
@@ -183,20 +192,25 @@ async def execute(
             "linear_synced": False,
         }
 
-    # Sync to Linear if ticket looks like a Linear identifier
+    # Sync to Linear if ticket looks like a Linear identifier - use adapter if available
     if linear_client.is_linear_identifier(ticket_id):
         try:
-            linear_issue = linear_client.get_issue(ticket_id)
-            if linear_issue:
-                # Update to "Assigned" state in Linear
-                # State UUID for "Assigned": 408b4cda-4d6e-403a-8030-78e8b0a6ffee
-                linear_client.update_issue_state(
-                    linear_issue["id"], "408b4cda-4d6e-403a-8030-78e8b0a6ffee"
-                )
+            if registry and registry.tickets:
+                await registry.tickets.transition(ticket_id, "assigned")
                 result["linear_synced"] = True
-                logger.info(f"Synced ticket {ticket_id} assignment to Linear")
+                logger.info(f"Synced ticket {ticket_id} assignment to Linear (via adapter)")
             else:
-                logger.warning(f"Could not find Linear issue {ticket_id} for sync")
+                linear_issue = linear_client.get_issue(ticket_id)
+                if linear_issue:
+                    # Update to "Assigned" state in Linear
+                    # State UUID for "Assigned": 408b4cda-4d6e-403a-8030-78e8b0a6ffee
+                    linear_client.update_issue_state(
+                        linear_issue["id"], "408b4cda-4d6e-403a-8030-78e8b0a6ffee"
+                    )
+                    result["linear_synced"] = True
+                    logger.info(f"Synced ticket {ticket_id} assignment to Linear")
+                else:
+                    logger.warning(f"Could not find Linear issue {ticket_id} for sync")
         except Exception as e:
             logger.warning(f"Failed to sync ticket {ticket_id} to Linear: {e}")
             result["linear_sync_error"] = str(e)

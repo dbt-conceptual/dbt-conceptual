@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import logging
 import os
 
 from mcp.server.fastmcp import FastMCP
+
+from .adapters import AdapterRegistry
 
 # Import all tool modules
 from .tools import (
@@ -21,8 +24,59 @@ from .tools import (
     transition,
 )
 
+logger = logging.getLogger(__name__)
+
 # Initialize FastMCP server
 mcp = FastMCP("herd")
+
+# Global adapter registry (initialized on first access)
+_registry: AdapterRegistry | None = None
+
+
+def get_adapter_registry() -> AdapterRegistry:
+    """Get or create the global adapter registry.
+
+    Attempts to import and instantiate concrete adapter implementations.
+    Falls back gracefully if adapters are not installed.
+
+    Returns:
+        AdapterRegistry instance with available adapters.
+    """
+    global _registry
+
+    if _registry is not None:
+        return _registry
+
+    registry = AdapterRegistry()
+
+    # Try to instantiate NotifyAdapter (Slack)
+    try:
+        from herd_notify_slack import SlackNotifyAdapter
+
+        slack_token = os.getenv("HERD_SLACK_TOKEN")
+        if slack_token:
+            registry.notify = SlackNotifyAdapter(token=slack_token)
+            logger.info("Initialized SlackNotifyAdapter")
+        else:
+            logger.warning("HERD_SLACK_TOKEN not set, NotifyAdapter unavailable")
+    except ImportError:
+        logger.info("herd-notify-slack not installed, using fallback Slack implementation")
+
+    # Try to instantiate TicketAdapter (Linear)
+    try:
+        from herd_ticket_linear import LinearTicketAdapter
+
+        linear_token = os.getenv("LINEAR_API_KEY")
+        if linear_token:
+            registry.tickets = LinearTicketAdapter(api_key=linear_token)
+            logger.info("Initialized LinearTicketAdapter")
+        else:
+            logger.warning("LINEAR_API_KEY not set, TicketAdapter unavailable")
+    except ImportError:
+        logger.info("herd-ticket-linear not installed, using fallback Linear implementation")
+
+    _registry = registry
+    return registry
 
 
 def get_agent_identity() -> str | None:
@@ -52,7 +106,8 @@ async def herd_log(
         Dict with posted timestamp, event_id, and optional responses.
     """
     agent_name = get_agent_identity()
-    return await log.execute(message, channel, await_response, agent_name)
+    registry = get_adapter_registry()
+    return await log.execute(message, channel, await_response, agent_name, registry)
 
 
 @mcp.tool()
@@ -86,7 +141,8 @@ async def herd_spawn(
         Dict with list of spawned agent instance codes.
     """
     agent_name = get_agent_identity()
-    return await spawn.execute(count, role, model, agent_name)
+    registry = get_adapter_registry()
+    return await spawn.execute(count, role, model, agent_name, registry=registry)
 
 
 @mcp.tool()
@@ -106,7 +162,8 @@ async def herd_assign(
         Dict with assignment confirmation, agent, and ticket details.
     """
     current_agent = get_agent_identity()
-    return await assign.execute(ticket_id, agent_name or current_agent, priority)
+    registry = get_adapter_registry()
+    return await assign.execute(ticket_id, agent_name or current_agent, priority, registry)
 
 
 @mcp.tool()
@@ -128,7 +185,8 @@ async def herd_transition(
         Dict with transition_id and elapsed time in previous status.
     """
     agent_name = get_agent_identity()
-    return await transition.execute(ticket_id, to_status, blocked_by, note, agent_name)
+    registry = get_adapter_registry()
+    return await transition.execute(ticket_id, to_status, blocked_by, note, agent_name, registry)
 
 
 @mcp.tool()
@@ -150,7 +208,8 @@ async def herd_review(
         Dict with review_id and posted status.
     """
     agent_name = get_agent_identity()
-    return await review.execute(pr_number, ticket_id, verdict, findings, agent_name)
+    registry = get_adapter_registry()
+    return await review.execute(pr_number, ticket_id, verdict, findings, agent_name, registry)
 
 
 @mcp.tool()
@@ -181,7 +240,8 @@ async def herd_catchup() -> dict:
         Dict with timestamp, slack mentions, ticket updates, and summary.
     """
     agent_name = get_agent_identity()
-    return await catchup.execute(agent_name)
+    registry = get_adapter_registry()
+    return await catchup.execute(agent_name, registry)
 
 
 @mcp.tool()
@@ -256,6 +316,7 @@ async def herd_record_decision(
         Dict with decision_id, posted status, and Slack response.
     """
     agent_name = get_agent_identity()
+    registry = get_adapter_registry()
     return await record_decision.execute(
         decision_type,
         context,
@@ -264,4 +325,5 @@ async def herd_record_decision(
         alternatives_considered,
         ticket_code,
         agent_name,
+        registry,
     )
