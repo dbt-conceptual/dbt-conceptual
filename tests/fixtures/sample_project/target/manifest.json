@@ -1,0 +1,419 @@
+{
+  "metadata": {
+    "project_name": "sample_project",
+    "dbt_version": "1.7.0",
+    "generated_at": "2024-01-01T00:00:00.000000Z"
+  },
+  "nodes": {
+    "model.sample_project.stg_customers": {
+      "unique_id": "model.sample_project.stg_customers",
+      "name": "stg_customers",
+      "resource_type": "model",
+      "description": "Staging layer for customer data from source systems",
+      "schema": "staging",
+      "config": {
+        "materialized": "view"
+      },
+      "original_file_path": "models/staging/stg_customers.sql",
+      "columns": {
+        "customer_id": {
+          "name": "customer_id",
+          "description": "Unique identifier for the customer"
+        },
+        "customer_name": {
+          "name": "customer_name",
+          "description": "Full name of the customer"
+        },
+        "email": {
+          "name": "email",
+          "description": "Customer email address"
+        }
+      },
+      "depends_on": {
+        "nodes": ["source.sample_project.raw.customers"]
+      }
+    },
+    "model.sample_project.stg_orders": {
+      "unique_id": "model.sample_project.stg_orders",
+      "name": "stg_orders",
+      "resource_type": "model",
+      "description": "Staging layer for order transactions",
+      "schema": "staging",
+      "config": {
+        "materialized": "view"
+      },
+      "original_file_path": "models/staging/stg_orders.sql",
+      "columns": {
+        "order_id": {
+          "name": "order_id",
+          "description": "Unique identifier for the order"
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "description": "Foreign key to customer"
+        },
+        "order_date": {
+          "name": "order_date",
+          "description": "Date the order was placed"
+        }
+      },
+      "depends_on": {
+        "nodes": ["source.sample_project.raw.orders"]
+      }
+    },
+    "model.sample_project.stg_products": {
+      "unique_id": "model.sample_project.stg_products",
+      "name": "stg_products",
+      "resource_type": "model",
+      "description": "Staging layer for product catalog",
+      "schema": "staging",
+      "config": {
+        "materialized": "view"
+      },
+      "original_file_path": "models/staging/stg_products.sql",
+      "columns": {
+        "product_id": {
+          "name": "product_id",
+          "description": "Unique identifier for the product"
+        },
+        "product_name": {
+          "name": "product_name",
+          "description": "Name of the product"
+        },
+        "price": {
+          "name": "price",
+          "description": "Product price"
+        }
+      },
+      "depends_on": {
+        "nodes": ["source.sample_project.raw.products"]
+      }
+    },
+    "model.sample_project.dim_customer": {
+      "unique_id": "model.sample_project.dim_customer",
+      "name": "dim_customer",
+      "resource_type": "model",
+      "description": "Customer dimension table for analytics",
+      "schema": "analytics",
+      "config": {
+        "materialized": "table"
+      },
+      "original_file_path": "models/marts/dim_customer.sql",
+      "columns": {
+        "customer_id": {
+          "name": "customer_id",
+          "description": "Primary key - unique customer identifier"
+        },
+        "customer_name": {
+          "name": "customer_name",
+          "description": "Full name of the customer"
+        },
+        "customer_type": {
+          "name": "customer_type",
+          "description": "Customer segment classification"
+        }
+      },
+      "depends_on": {
+        "nodes": ["model.sample_project.stg_customers"]
+      }
+    },
+    "model.sample_project.dim_product": {
+      "unique_id": "model.sample_project.dim_product",
+      "name": "dim_product",
+      "resource_type": "model",
+      "description": "Product dimension table",
+      "schema": "analytics",
+      "config": {
+        "materialized": "table"
+      },
+      "original_file_path": "models/marts/dim_product.sql",
+      "columns": {
+        "product_id": {
+          "name": "product_id",
+          "description": "Primary key"
+        },
+        "product_name": {
+          "name": "product_name",
+          "description": "Product name"
+        },
+        "category": {
+          "name": "category",
+          "description": "Product category"
+        }
+      },
+      "depends_on": {
+        "nodes": ["model.sample_project.stg_products"]
+      }
+    },
+    "model.sample_project.dim_warehouse": {
+      "unique_id": "model.sample_project.dim_warehouse",
+      "name": "dim_warehouse",
+      "resource_type": "model",
+      "description": "Warehouse dimension table",
+      "schema": "analytics",
+      "config": {
+        "materialized": "table"
+      },
+      "original_file_path": "models/marts/dim_warehouse.sql",
+      "columns": {
+        "warehouse_id": {
+          "name": "warehouse_id",
+          "description": "Primary key"
+        },
+        "warehouse_name": {
+          "name": "warehouse_name",
+          "description": "Warehouse name"
+        },
+        "location": {
+          "name": "location",
+          "description": "Warehouse location"
+        }
+      },
+      "depends_on": {
+        "nodes": ["source.sample_project.raw.warehouses"]
+      }
+    },
+    "model.sample_project.fct_orders": {
+      "unique_id": "model.sample_project.fct_orders",
+      "name": "fct_orders",
+      "resource_type": "model",
+      "description": "Orders fact table with grain of one row per order",
+      "schema": "analytics",
+      "config": {
+        "materialized": "incremental"
+      },
+      "original_file_path": "models/marts/fct_orders.sql",
+      "columns": {
+        "order_id": {
+          "name": "order_id",
+          "description": "Primary key - unique order identifier"
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "description": "Foreign key to customer dimension"
+        },
+        "order_date": {
+          "name": "order_date",
+          "description": "Date order was placed"
+        },
+        "order_total": {
+          "name": "order_total",
+          "description": "Total order amount"
+        }
+      },
+      "depends_on": {
+        "nodes": [
+          "model.sample_project.stg_orders",
+          "model.sample_project.dim_customer"
+        ]
+      }
+    },
+    "model.sample_project.fct_order_items": {
+      "unique_id": "model.sample_project.fct_order_items",
+      "name": "fct_order_items",
+      "resource_type": "model",
+      "description": "Order line items fact table with grain of one row per product per order",
+      "schema": "analytics",
+      "config": {
+        "materialized": "table"
+      },
+      "original_file_path": "models/marts/fct_order_items.sql",
+      "columns": {
+        "order_id": {
+          "name": "order_id",
+          "description": "Part of composite key"
+        },
+        "product_id": {
+          "name": "product_id",
+          "description": "Part of composite key"
+        },
+        "quantity": {
+          "name": "quantity",
+          "description": "Quantity ordered"
+        },
+        "line_total": {
+          "name": "line_total",
+          "description": "Line item total"
+        }
+      },
+      "depends_on": {
+        "nodes": [
+          "model.sample_project.stg_orders",
+          "model.sample_project.dim_product"
+        ]
+      }
+    },
+    "test.sample_project.unique_dim_customer_customer_id": {
+      "unique_id": "test.sample_project.unique_dim_customer_customer_id",
+      "name": "unique_dim_customer_customer_id",
+      "resource_type": "test",
+      "test_metadata": {
+        "name": "unique",
+        "kwargs": {
+          "column_name": "customer_id"
+        }
+      },
+      "column_name": "customer_id",
+      "attached_node": "model.sample_project.dim_customer"
+    },
+    "test.sample_project.not_null_dim_customer_customer_id": {
+      "unique_id": "test.sample_project.not_null_dim_customer_customer_id",
+      "name": "not_null_dim_customer_customer_id",
+      "resource_type": "test",
+      "test_metadata": {
+        "name": "not_null",
+        "kwargs": {
+          "column_name": "customer_id"
+        }
+      },
+      "column_name": "customer_id",
+      "attached_node": "model.sample_project.dim_customer"
+    },
+    "test.sample_project.accepted_values_dim_customer_customer_type": {
+      "unique_id": "test.sample_project.accepted_values_dim_customer_customer_type",
+      "name": "accepted_values_dim_customer_customer_type",
+      "resource_type": "test",
+      "test_metadata": {
+        "name": "accepted_values",
+        "kwargs": {
+          "column_name": "customer_type",
+          "values": ["retail", "wholesale", "enterprise"]
+        }
+      },
+      "column_name": "customer_type",
+      "attached_node": "model.sample_project.dim_customer"
+    },
+    "test.sample_project.unique_dim_product_product_id": {
+      "unique_id": "test.sample_project.unique_dim_product_product_id",
+      "name": "unique_dim_product_product_id",
+      "resource_type": "test",
+      "test_metadata": {
+        "name": "unique",
+        "kwargs": {
+          "column_name": "product_id"
+        }
+      },
+      "column_name": "product_id",
+      "attached_node": "model.sample_project.dim_product"
+    },
+    "test.sample_project.not_null_dim_product_product_id": {
+      "unique_id": "test.sample_project.not_null_dim_product_product_id",
+      "name": "not_null_dim_product_product_id",
+      "resource_type": "test",
+      "test_metadata": {
+        "name": "not_null",
+        "kwargs": {
+          "column_name": "product_id"
+        }
+      },
+      "column_name": "product_id",
+      "attached_node": "model.sample_project.dim_product"
+    },
+    "test.sample_project.unique_dim_warehouse_warehouse_id": {
+      "unique_id": "test.sample_project.unique_dim_warehouse_warehouse_id",
+      "name": "unique_dim_warehouse_warehouse_id",
+      "resource_type": "test",
+      "test_metadata": {
+        "name": "unique",
+        "kwargs": {
+          "column_name": "warehouse_id"
+        }
+      },
+      "column_name": "warehouse_id",
+      "attached_node": "model.sample_project.dim_warehouse"
+    },
+    "test.sample_project.not_null_dim_warehouse_warehouse_id": {
+      "unique_id": "test.sample_project.not_null_dim_warehouse_warehouse_id",
+      "name": "not_null_dim_warehouse_warehouse_id",
+      "resource_type": "test",
+      "test_metadata": {
+        "name": "not_null",
+        "kwargs": {
+          "column_name": "warehouse_id"
+        }
+      },
+      "column_name": "warehouse_id",
+      "attached_node": "model.sample_project.dim_warehouse"
+    },
+    "test.sample_project.unique_fct_orders_order_id": {
+      "unique_id": "test.sample_project.unique_fct_orders_order_id",
+      "name": "unique_fct_orders_order_id",
+      "resource_type": "test",
+      "test_metadata": {
+        "name": "unique",
+        "kwargs": {
+          "column_name": "order_id"
+        }
+      },
+      "column_name": "order_id",
+      "attached_node": "model.sample_project.fct_orders"
+    },
+    "test.sample_project.not_null_fct_orders_order_id": {
+      "unique_id": "test.sample_project.not_null_fct_orders_order_id",
+      "name": "not_null_fct_orders_order_id",
+      "resource_type": "test",
+      "test_metadata": {
+        "name": "not_null",
+        "kwargs": {
+          "column_name": "order_id"
+        }
+      },
+      "column_name": "order_id",
+      "attached_node": "model.sample_project.fct_orders"
+    },
+    "test.sample_project.not_null_fct_orders_customer_id": {
+      "unique_id": "test.sample_project.not_null_fct_orders_customer_id",
+      "name": "not_null_fct_orders_customer_id",
+      "resource_type": "test",
+      "test_metadata": {
+        "name": "not_null",
+        "kwargs": {
+          "column_name": "customer_id"
+        }
+      },
+      "column_name": "customer_id",
+      "attached_node": "model.sample_project.fct_orders"
+    },
+    "test.sample_project.relationships_fct_orders_customer_id": {
+      "unique_id": "test.sample_project.relationships_fct_orders_customer_id",
+      "name": "relationships_fct_orders_customer_id",
+      "resource_type": "test",
+      "test_metadata": {
+        "name": "relationships",
+        "kwargs": {
+          "column_name": "customer_id",
+          "to": "ref('dim_customer')",
+          "field": "customer_id"
+        }
+      },
+      "column_name": "customer_id",
+      "attached_node": "model.sample_project.fct_orders"
+    },
+    "test.sample_project.not_null_fct_order_items_order_id": {
+      "unique_id": "test.sample_project.not_null_fct_order_items_order_id",
+      "name": "not_null_fct_order_items_order_id",
+      "resource_type": "test",
+      "test_metadata": {
+        "name": "not_null",
+        "kwargs": {
+          "column_name": "order_id"
+        }
+      },
+      "column_name": "order_id",
+      "attached_node": "model.sample_project.fct_order_items"
+    },
+    "test.sample_project.not_null_fct_order_items_product_id": {
+      "unique_id": "test.sample_project.not_null_fct_order_items_product_id",
+      "name": "not_null_fct_order_items_product_id",
+      "resource_type": "test",
+      "test_metadata": {
+        "name": "not_null",
+        "kwargs": {
+          "column_name": "product_id"
+        }
+      },
+      "column_name": "product_id",
+      "attached_node": "model.sample_project.fct_order_items"
+    }
+  }
+}
