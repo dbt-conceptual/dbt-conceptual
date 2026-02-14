@@ -213,8 +213,8 @@ class SessionManager:
                     data = json.loads(line.decode().strip())
                     if "session_id" in data:
                         session_id = data["session_id"]
-                    if "text" in data:
-                        response_text += data["text"]
+                    if data.get("type") == "result" and "result" in data:
+                        response_text = data["result"]
                 except (json.JSONDecodeError, UnicodeDecodeError):
                     # Skip malformed lines
                     pass
@@ -286,8 +286,8 @@ class SessionManager:
             async for line in process.stdout:
                 try:
                     data = json.loads(line.decode().strip())
-                    if "text" in data:
-                        response_text += data["text"]
+                    if data.get("type") == "result" and "result" in data:
+                        response_text = data["result"]
                 except (json.JSONDecodeError, UnicodeDecodeError):
                     pass
 
