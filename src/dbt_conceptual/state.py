@@ -46,6 +46,22 @@ class ValidationState:
 
 
 @dataclass
+class GuidanceRule:
+    """Represents a single guidance rule."""
+
+    name: str
+    description: str
+
+
+@dataclass
+class Guidance:
+    """Represents guidance for a concept."""
+
+    context: Optional[str] = None  # Free-text business context
+    rules: list[GuidanceRule] = field(default_factory=list)
+
+
+@dataclass
 class ConceptState:
     """Represents the state of a concept.
 
@@ -60,6 +76,7 @@ class ConceptState:
     owner: Optional[str] = None
     definition: Optional[str] = None  # Markdown definition
     color: Optional[str] = None  # Override domain color
+    guidance: Optional[Guidance] = None  # Implementation guidance
 
     # Models tagged with this concept (flat list, no layer separation)
     models: list[str] = field(default_factory=list)

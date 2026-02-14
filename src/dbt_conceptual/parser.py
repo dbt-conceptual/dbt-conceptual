@@ -13,6 +13,8 @@ from dbt_conceptual.scanner import DbtProjectScanner
 from dbt_conceptual.state import (
     ConceptState,
     DomainState,
+    Guidance,
+    GuidanceRule,
     Message,
     MessageSeverity,
     ModelInfo,
@@ -80,12 +82,31 @@ class ConceptualModelParser:
         # Parse concepts
         if "concepts" in data:
             for concept_id, concept_data in data["concepts"].items():
+                # Parse guidance block if present
+                guidance = None
+                if "guidance" in concept_data:
+                    guidance_data = concept_data["guidance"]
+                    rules = []
+                    if "rules" in guidance_data:
+                        for rule_data in guidance_data["rules"]:
+                            rules.append(
+                                GuidanceRule(
+                                    name=rule_data["name"],
+                                    description=rule_data["description"],
+                                )
+                            )
+                    guidance = Guidance(
+                        context=guidance_data.get("context"),
+                        rules=rules,
+                    )
+
                 state.concepts[concept_id] = ConceptState(
                     name=concept_data.get("name", concept_id),
                     domain=concept_data.get("domain"),
                     owner=concept_data.get("owner"),
                     definition=concept_data.get("definition"),
                     color=concept_data.get("color"),
+                    guidance=guidance,
                     # models list populated by StateBuilder, not from YAML
                 )
 
