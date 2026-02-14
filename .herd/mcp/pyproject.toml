@@ -7,6 +7,7 @@ dependencies = [
     "mcp>=1.0",
     "duckdb>=1.0",
     "aiohttp>=3.9",
+    "slack_sdk>=3.27",
 ]
 
 [project.optional-dependencies]
