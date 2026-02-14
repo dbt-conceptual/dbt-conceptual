@@ -16,9 +16,12 @@ dev = [
     "pytest-asyncio>=0.23",
 ]
 adapters = [
-    "herd-core @ git+https://github.com/dbt-conceptual/herd-core.git",
-    "herd-notify-slack @ git+https://github.com/dbt-conceptual/herd-notify-slack.git",
-    "herd-ticket-linear @ git+https://github.com/dbt-conceptual/herd-ticket-linear.git",
+    "herd-core @ git+https://github.com/herd-ag/herd-core.git",
+    "herd-notify-slack @ git+https://github.com/herd-ag/herd-notify-slack.git",
+    "herd-ticket-linear @ git+https://github.com/herd-ag/herd-ticket-linear.git",
+    "herd-repo-github @ git+https://github.com/herd-ag/herd-repo-github.git",
+    "herd-agent-claude @ git+https://github.com/herd-ag/herd-agent-claude.git",
+    "herd-store-duckdb @ git+https://github.com/herd-ag/herd-store-duckdb.git",
 ]
 
 [tool.hatch.metadata]
