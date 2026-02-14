@@ -125,7 +125,7 @@ def handle_list_concepts(
 
         # Filter concepts
         filtered_concepts = []
-        for concept_name, concept in project_state.concepts.items():
+        for _concept_name, concept in project_state.concepts.items():
             # Skip ghosts in listing
             if concept.is_ghost:
                 continue
