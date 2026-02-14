@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from herd_mcp.tools import transition
@@ -166,7 +166,7 @@ async def test_transition_linear_sync_success(seeded_db):
         mock_context.return_value.__exit__ = MagicMock(return_value=None)
 
         with patch("herd_mcp.tools.transition.get_manager") as mock_manager:
-            mock_manager.return_value.trigger_refresh.return_value = {"status": "success"}
+            mock_manager.return_value.trigger_refresh = AsyncMock(return_value={"status": "success"})
 
             with patch("herd_mcp.linear_client.is_linear_identifier", return_value=True):
                 with patch("herd_mcp.linear_client.get_issue", return_value=linear_issue):
@@ -193,33 +193,39 @@ async def test_transition_linear_sync_success(seeded_db):
 @pytest.mark.asyncio
 async def test_transition_linear_sync_failure(seeded_db):
     """Test graceful handling of Linear sync failure."""
+    linear_issue = {
+        "id": "linear-uuid-100",
+        "identifier": "DBC-100",
+    }
+
     with patch("herd_mcp.tools.transition.connection") as mock_context:
         mock_context.return_value.__enter__ = MagicMock(return_value=seeded_db)
         mock_context.return_value.__exit__ = MagicMock(return_value=None)
 
         with patch("herd_mcp.tools.transition.get_manager") as mock_manager:
-            mock_manager.return_value.trigger_refresh.return_value = {"status": "success"}
+            mock_manager.return_value.trigger_refresh = AsyncMock(return_value={"status": "success"})
 
             with patch("herd_mcp.linear_client.is_linear_identifier", return_value=True):
-                with patch("herd_mcp.linear_client.update_issue_state", side_effect=Exception("API error")):
-                    result = await transition.execute(
-                        ticket_id="DBC-100",
-                        to_status="done",
-                        blocked_by=None,
-                        note="Completed",
-                        agent_name="grunt",
-                    )
+                with patch("herd_mcp.linear_client.get_issue", return_value=linear_issue):
+                    with patch("herd_mcp.linear_client.update_issue_state", side_effect=Exception("API error")):
+                        result = await transition.execute(
+                            ticket_id="DBC-100",
+                            to_status="done",
+                            blocked_by=None,
+                            note="Completed",
+                            agent_name="grunt",
+                        )
 
-                    # Transition should still succeed in DuckDB
-                    assert result["transition_id"] is not None
-                    assert result["linear_synced"] is False
-                    assert "linear_sync_error" in result
+                        # Transition should still succeed in DuckDB
+                        assert result["transition_id"] is not None
+                        assert result["linear_synced"] is False
+                        assert "linear_sync_error" in result
 
-                    # Verify DuckDB was updated despite Linear failure
-                    ticket_status = seeded_db.execute(
-                        "SELECT ticket_current_status FROM herd.ticket_def WHERE ticket_code = 'DBC-100'"
-                    ).fetchone()[0]
-                    assert ticket_status == "done"
+                        # Verify DuckDB was updated despite Linear failure
+                        ticket_status = seeded_db.execute(
+                            "SELECT ticket_current_status FROM herd.ticket_def WHERE ticket_code = 'DBC-100'"
+                        ).fetchone()[0]
+                        assert ticket_status == "done"
 
 
 @pytest.mark.asyncio
