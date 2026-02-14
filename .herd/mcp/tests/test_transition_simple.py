@@ -312,3 +312,5 @@ async def test_transition_unmapped_status_no_sync(seeded_db):
                         "SELECT ticket_current_status FROM herd.ticket_def WHERE ticket_code = 'DBC-100'"
                     ).fetchone()[0]
                     assert ticket_status == "blocked"
+
+

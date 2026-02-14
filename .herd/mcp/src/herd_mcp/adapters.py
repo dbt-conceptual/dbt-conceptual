@@ -11,11 +11,11 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from herd_core.adapters.notify import NotifyAdapter
-    from herd_core.adapters.tickets import TicketAdapter
-    from herd_core.adapters.repo import RepoAdapter
     from herd_core.adapters.agent import AgentAdapter
+    from herd_core.adapters.notify import NotifyAdapter
+    from herd_core.adapters.repo import RepoAdapter
     from herd_core.adapters.store import StoreAdapter
+    from herd_core.adapters.tickets import TicketAdapter
 
 
 @dataclass

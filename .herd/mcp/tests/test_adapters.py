@@ -5,7 +5,6 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from herd_mcp.adapters import AdapterRegistry
 from herd_mcp.server import get_adapter_registry
 
@@ -171,7 +170,6 @@ async def test_log_tool_fallback_without_adapter(in_memory_db):
 @pytest.mark.asyncio
 async def test_spawn_tool_uses_adapter():
     """Test that spawn tool uses TicketAdapter when available."""
-    from herd_mcp.tools import spawn
 
     # Create mock adapter
     mock_tickets = AsyncMock()
@@ -184,7 +182,8 @@ async def test_spawn_tool_uses_adapter():
         }
     )
 
-    registry = AdapterRegistry(tickets=mock_tickets)
+    # registry variable intentionally unused - kept for documentation
+    _registry = AdapterRegistry(tickets=mock_tickets)  # noqa: F841
 
     # Mock the Linear client check
     with (
@@ -198,7 +197,8 @@ async def test_spawn_tool_uses_adapter():
 
         # This function calls the adapter to get ticket details
         with patch("herd_mcp.tools.spawn._read_file_safe", return_value=""):
-            payload = _assemble_context_payload(
+            # payload variable intentionally unused - testing that function executes
+            _payload = _assemble_context_payload(  # noqa: F841
                 ticket_id="DBC-100",
                 agent_code="grunt",
                 model_code="claude-sonnet-4",
