@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -299,3 +300,130 @@ async def test_no_auth_mode_allows_all_users(
 
         # Verify message was processed
         mock_session_manager.send_message.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_start_connects_to_slack(
+    mock_session_manager: MagicMock, mock_web_client: MagicMock
+) -> None:
+    """Test start() connects to Slack and finds #mao channel."""
+    listener = SlackListener(mock_session_manager, "xoxb-test", "xapp-test")
+
+    # Mock socket client
+    mock_socket_client = MagicMock()
+    mock_socket_client.socket_mode_request_listeners = []
+    mock_socket_client.connect = AsyncMock()
+    listener.socket_client = mock_socket_client
+
+    # Inject mocked web client
+    listener.web_client = mock_web_client
+
+    await listener.start()
+
+    # Verify auth_test was called
+    mock_web_client.auth_test.assert_called_once()
+
+    # Verify conversations_list was called
+    mock_web_client.conversations_list.assert_called_once()
+
+    # Verify channel ID was found
+    assert listener.mao_channel_id == "C_MAO123"
+    assert listener.bot_user_id == "U_MINIMAO"
+
+    # Verify socket client connected
+    mock_socket_client.connect.assert_called_once()
+
+    # Verify event handler was registered
+    assert len(mock_socket_client.socket_mode_request_listeners) == 1
+
+
+@pytest.mark.asyncio
+async def test_stop_disconnects_from_slack(
+    mock_session_manager: MagicMock,
+) -> None:
+    """Test stop() disconnects from Slack gracefully."""
+    listener = SlackListener(mock_session_manager, "xoxb-test", "xapp-test")
+
+    # Mock socket client
+    mock_socket_client = MagicMock()
+    mock_socket_client.disconnect = AsyncMock()
+    mock_socket_client.close = AsyncMock()
+    listener.socket_client = mock_socket_client
+
+    await listener.stop()
+
+    # Verify disconnect and close were called
+    mock_socket_client.disconnect.assert_called_once()
+    mock_socket_client.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_handle_socket_event_processes_events_api(
+    mock_session_manager: MagicMock, mock_web_client: MagicMock
+) -> None:
+    """Test _handle_socket_event processes events_api requests."""
+    listener = SlackListener(mock_session_manager, "xoxb-test", "xapp-test")
+
+    listener.web_client = mock_web_client
+    listener.mao_channel_id = "C_MAO123"
+    listener.bot_user_id = "U_MINIMAO"
+    listener.authorized_users = set()
+
+    # Mock socket client
+    mock_socket_client = MagicMock()
+    mock_socket_client.send_socket_mode_response = AsyncMock()
+
+    # Create a socket mode request
+    request = MagicMock()
+    request.type = "events_api"
+    request.envelope_id = "test-envelope-123"
+    request.payload = {
+        "event": {
+            "type": "message",
+            "channel": "C_MAO123",
+            "user": "U_ARCHITECT",
+            "text": "Test message",
+            "ts": "1234.5678",
+        }
+    }
+
+    # Handle the event
+    await listener._handle_socket_event(mock_socket_client, request)
+
+    # Verify acknowledgment was sent
+    mock_socket_client.send_socket_mode_response.assert_called_once()
+    response = mock_socket_client.send_socket_mode_response.call_args[0][0]
+    assert response.envelope_id == "test-envelope-123"
+
+    # Give async task time to process (the message handling is fire-and-forget)
+    await asyncio.sleep(0.1)
+
+    # Verify message was processed
+    mock_session_manager.send_message.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_handle_socket_event_ignores_non_events_api(
+    mock_session_manager: MagicMock,
+) -> None:
+    """Test _handle_socket_event ignores non-events_api requests."""
+    listener = SlackListener(mock_session_manager, "xoxb-test", "xapp-test")
+
+    # Mock socket client
+    mock_socket_client = MagicMock()
+    mock_socket_client.send_socket_mode_response = AsyncMock()
+
+    # Create a non-events_api request
+    request = MagicMock()
+    request.type = "slash_commands"
+    request.envelope_id = "test-envelope-123"
+    request.payload = {}
+
+    # Handle the event
+    await listener._handle_socket_event(mock_socket_client, request)
+
+    # Verify acknowledgment was sent
+    mock_socket_client.send_socket_mode_response.assert_called_once()
+
+    # Verify no message was processed
+    mock_session_manager.send_message.assert_not_called()

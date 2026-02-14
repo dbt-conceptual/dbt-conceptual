@@ -24,6 +24,7 @@ class Session:
         session_id: Claude's session ID for --resume.
         last_activity: Unix timestamp of last activity.
         message_count: Number of messages in session.
+        last_response: Last response text from Claude.
     """
 
     thread_ts: str
@@ -31,6 +32,7 @@ class Session:
     session_id: str | None
     last_activity: float
     message_count: int
+    last_response: str = ""
 
 
 class SessionManager:
@@ -51,6 +53,7 @@ class SessionManager:
         self.project_path = Path(project_path)
         self.idle_timeout = idle_timeout
         self.sessions: dict[str, Session] = {}
+        self._pending_sessions: set[str] = set()  # Track in-progress session creation
         self._idle_check_task: asyncio.Task[None] | None = None
 
     async def start(self) -> None:
@@ -91,18 +94,41 @@ class SessionManager:
 
         # Get or create session
         if thread_ts not in self.sessions:
-            session = await self._spawn_claude(thread_ts, text, user_name)
-            self.sessions[thread_ts] = session
+            # Check if session creation is already in progress
+            if thread_ts in self._pending_sessions:
+                # Another message triggered spawn; wait for it
+                while thread_ts in self._pending_sessions:
+                    await asyncio.sleep(0.1)
+                # Session should exist now; retry
+                if thread_ts in self.sessions:
+                    session = self.sessions[thread_ts]
+                    response = await self._send_to_claude(session, text, user_name)
+                    session.last_response = response
+                    session.message_count += 1
+                else:
+                    # Spawn failed; return error
+                    return "Error: Failed to create session. Please try again."
+            else:
+                # Mark session as pending
+                self._pending_sessions.add(thread_ts)
+                try:
+                    session = await self._spawn_claude(thread_ts, text, user_name)
+                    self.sessions[thread_ts] = session
+                    response = session.last_response
+                finally:
+                    # Remove from pending
+                    self._pending_sessions.discard(thread_ts)
         else:
             session = self.sessions[thread_ts]
             # Send follow-up message to existing session
             response = await self._send_to_claude(session, text, user_name)
+            session.last_response = response
             session.message_count += 1
 
         # Update activity timestamp
         session.last_activity = time.time()
 
-        return session.session_id or ""  # Return response captured during spawn
+        return response
 
     async def close_session(self, thread_ts: str, reason: str = "idle") -> None:
         """Close a session and clean up.
@@ -182,6 +208,10 @@ class SessionManager:
         # Wait for process to finish
         await process.wait()
 
+        # Handle empty response
+        if not response_text:
+            response_text = "No response from Mini-Mao. Check if claude CLI is available."
+
         # Create session object
         session = Session(
             thread_ts=thread_ts,
@@ -189,6 +219,7 @@ class SessionManager:
             session_id=session_id,
             last_activity=time.time(),
             message_count=1,
+            last_response=response_text,
         )
 
         return session
@@ -241,6 +272,10 @@ class SessionManager:
 
         # Wait for process to finish
         await process.wait()
+
+        # Handle empty response
+        if not response_text:
+            response_text = "No response from Mini-Mao. Check if claude CLI is available."
 
         # Update session process reference (though we don't keep it running)
         session.process = process
