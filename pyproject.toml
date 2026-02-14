@@ -50,9 +50,13 @@ serve = [
     "flask>=3.0",
     "waitress>=3.0",
 ]
+mcp = [
+    "mcp>=1.0",
+]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
+    "pytest-asyncio>=0.23",
     "black>=24.0",
     "ruff>=0.1.0",
     "mypy>=1.0",
@@ -63,7 +67,7 @@ docs = [
     "mkdocs-material>=9.0",
 ]
 all = [
-    "dbt-conceptual[serve,dev,docs]",
+    "dbt-conceptual[serve,mcp,dev,docs]",
 ]
 
 [project.scripts]
@@ -108,7 +112,7 @@ warn_unused_ignores = false
 disallow_untyped_defs = true
 
 [[tool.mypy.overrides]]
-module = ["PIL.*", "flask.*", "waitress.*"]
+module = ["PIL.*", "flask.*", "waitress.*", "mcp.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
