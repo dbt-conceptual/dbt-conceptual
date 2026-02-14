@@ -14,6 +14,9 @@ from herd_mcp.db import connection
 
 if TYPE_CHECKING:
     from herd_mcp.adapters import AdapterRegistry
+    from herd_core.adapters.repo import RepoAdapter
+    from herd_core.adapters.agent import AgentAdapter
+    from herd_core.adapters.store import StoreAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -35,13 +38,19 @@ def _find_repo_root() -> Path:
     raise RuntimeError("Could not find repository root (.git directory)")
 
 
-def _create_worktree(ticket_id: str, agent_code: str, repo_root: Path) -> Path:
+def _create_worktree(
+    ticket_id: str,
+    agent_code: str,
+    repo_root: Path,
+    repo_adapter: RepoAdapter | None = None,
+) -> Path:
     """Create a git worktree for the agent.
 
     Args:
         ticket_id: Linear ticket ID (e.g., DBC-126).
         agent_code: Agent code (e.g., grunt, pikasso).
         repo_root: Repository root path.
+        repo_adapter: Optional RepoAdapter for git operations.
 
     Returns:
         Path to created worktree.
@@ -54,19 +63,31 @@ def _create_worktree(ticket_id: str, agent_code: str, repo_root: Path) -> Path:
     branch_name = f"herd/{agent_code}/{ticket_id.lower()}-herd-spawn"
 
     try:
-        # Create the branch and worktree
-        subprocess.run(
-            ["git", "worktree", "add", str(worktree_path), "-b", branch_name],
-            cwd=str(repo_root),
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        logger.info(f"Created worktree at {worktree_path} on branch {branch_name}")
-        return worktree_path
+        # Adapter path
+        if repo_adapter:
+            repo_adapter.create_worktree(branch_name, str(worktree_path))
+            logger.info(
+                f"Created worktree at {worktree_path} on branch {branch_name} (via adapter)"
+            )
+            return worktree_path
+        else:
+            # Existing inline subprocess fallback
+            subprocess.run(
+                ["git", "worktree", "add", str(worktree_path), "-b", branch_name],
+                cwd=str(repo_root),
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            logger.info(f"Created worktree at {worktree_path} on branch {branch_name}")
+            return worktree_path
     except subprocess.CalledProcessError as e:
         raise RuntimeError(
             f"Failed to create worktree at {worktree_path}: {e.stderr}"
+        ) from e
+    except Exception as e:
+        raise RuntimeError(
+            f"Failed to create worktree at {worktree_path}: {e}"
         ) from e
 
 
@@ -241,6 +262,9 @@ async def execute(
             }
 
         with connection() as conn:
+            # NOTE: StoreAdapter wiring for CRUD operations kept as raw SQL for now.
+            # Future: migrate to store.get() and store.save() once entity mappings are stable.
+
             # Verify agent_def exists for the role
             agent_def = conn.execute(
                 """
@@ -326,7 +350,10 @@ async def execute(
 
             # Create worktree
             try:
-                worktree_path = _create_worktree(ticket_id, agent_code, repo_root)
+                repo_adapter = registry.repo if registry else None
+                worktree_path = _create_worktree(
+                    ticket_id, agent_code, repo_root, repo_adapter
+                )
             except RuntimeError as e:
                 return {
                     "agents": [],
