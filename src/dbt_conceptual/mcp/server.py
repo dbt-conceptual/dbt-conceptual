@@ -86,9 +86,16 @@ async def dbc_get_context(
         "# Concept: Customer\\n\\nDefinition: ...\\n\\nRelationships:\\n..."
     """
     try:
-        _get_resolver()
-        # Handler implementation will come in DBC-60
-        return f"Not yet implemented: dbc_get_context(selector={selector}, format={format}, depth={depth})"
+        resolver = _get_resolver()
+        from .handlers import handle_get_context
+
+        return handle_get_context(
+            selector=selector,
+            format=format,
+            depth=depth,
+            project_state=resolver["state"],
+            config=resolver["config"],
+        )
     except Exception as e:
         return f"Error: {e}"
 
@@ -105,7 +112,7 @@ async def dbc_list_concepts(
 
     Args:
         domain: Optional domain filter (e.g., 'sales', 'finance')
-        status: Optional status filter (e.g., 'implemented', 'planned')
+        status: Optional status filter (e.g., 'stub', 'draft', 'complete')
 
     Returns:
         Formatted list of concepts with basic metadata
@@ -115,15 +122,14 @@ async def dbc_list_concepts(
         "Found 5 concepts in domain 'sales':\\n- Customer\\n- Order\\n..."
     """
     try:
-        _get_resolver()
-        # Handler implementation will come in DBC-60
-        filters = []
-        if domain:
-            filters.append(f"domain={domain}")
-        if status:
-            filters.append(f"status={status}")
-        filter_str = ", ".join(filters) if filters else "no filters"
-        return f"Not yet implemented: dbc_list_concepts({filter_str})"
+        resolver = _get_resolver()
+        from .handlers import handle_list_concepts
+
+        return handle_list_concepts(
+            domain=domain,
+            status=status,
+            project_state=resolver["state"],
+        )
     except Exception as e:
         return f"Error: {e}"
 
@@ -143,16 +149,21 @@ async def dbc_get_relationships(
         depth: Relationship traversal depth (1-3)
 
     Returns:
-        Formatted relationship information
+        Formatted relationship information with grain warnings
 
     Example:
         >>> await dbc_get_relationships("customer", depth=2)
         "Relationships for Customer:\\n- has many Orders\\n- belongs to CustomerSegment\\n..."
     """
     try:
-        _get_resolver()
-        # Handler implementation will come in DBC-60
-        return f"Not yet implemented: dbc_get_relationships(concept={concept}, depth={depth})"
+        resolver = _get_resolver()
+        from .handlers import handle_get_relationships
+
+        return handle_get_relationships(
+            concept=concept,
+            depth=depth,
+            project_state=resolver["state"],
+        )
     except Exception as e:
         return f"Error: {e}"
 
@@ -172,8 +183,12 @@ async def dbc_validate() -> str:
         "Validation Results:\\n✓ All concepts have definitions\\n⚠ Warning: Orphan model detected: stg_users\\n..."
     """
     try:
-        _get_resolver()
-        # Handler implementation will come in DBC-60
-        return "Not yet implemented: dbc_validate()"
+        resolver = _get_resolver()
+        from .handlers import handle_validate
+
+        return handle_validate(
+            project_state=resolver["state"],
+            config=resolver["config"],
+        )
     except Exception as e:
         return f"Error: {e}"
