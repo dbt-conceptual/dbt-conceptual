@@ -160,6 +160,7 @@ PUBLISHING.md
 !.herd/dbt/
 !.herd/mcp/
 !.herd/docs/
+!.herd/handoffs/
 
 # Local testing folder (for development)
 user_testing/
