@@ -58,8 +58,12 @@ def _schema_exists(conn: duckdb.DuckDBPyConnection) -> bool:
         # Use sentinel table check instead of counting all tables
         # Just checking if the query executes (table exists) is sufficient
         # We don't care if the table has data
-        conn.execute("SELECT 1 FROM information_schema.tables WHERE table_schema = 'herd' AND table_name = 'agent_def'").fetchone()
-        result = conn.execute("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'herd' AND table_name = 'agent_def'").fetchone()
+        conn.execute(
+            "SELECT 1 FROM information_schema.tables WHERE table_schema = 'herd' AND table_name = 'agent_def'"
+        ).fetchone()
+        result = conn.execute(
+            "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'herd' AND table_name = 'agent_def'"
+        ).fetchone()
         return result is not None and result[0] > 0
     except Exception:
         return False

@@ -5,9 +5,9 @@ from __future__ import annotations
 import logging
 import uuid
 
+from herd_mcp import linear_client
 from herd_mcp.db import connection
 from herd_mcp.vault_refresh import get_manager
-from herd_mcp import linear_client
 
 logger = logging.getLogger(__name__)
 
@@ -176,9 +176,13 @@ async def execute(
             try:
                 linear_issue = linear_client.get_issue(ticket_id)
                 if linear_issue:
-                    linear_client.update_issue_state(linear_issue["id"], linear_state_id)
+                    linear_client.update_issue_state(
+                        linear_issue["id"], linear_state_id
+                    )
                     result["linear_synced"] = True
-                    logger.info(f"Synced ticket {ticket_id} transition to {to_status} in Linear")
+                    logger.info(
+                        f"Synced ticket {ticket_id} transition to {to_status} in Linear"
+                    )
                 else:
                     logger.warning(f"Could not find Linear issue {ticket_id} for sync")
             except Exception as e:
@@ -202,7 +206,7 @@ async def execute(
         )
         logger.info(
             f"Vault refresh triggered after ticket done: {refresh_result.get('status')}",
-            extra={"refresh_result": refresh_result}
+            extra={"refresh_result": refresh_result},
         )
 
     return result

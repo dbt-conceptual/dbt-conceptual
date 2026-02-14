@@ -38,9 +38,7 @@ def _get_agent_name(request: web.Request) -> str | None:
 
 
 @web.middleware
-async def auth_middleware(
-    request: web.Request, handler: Any
-) -> web.Response:
+async def auth_middleware(request: web.Request, handler: Any) -> web.Response:
     """Authenticate requests using bearer token.
 
     Args:
@@ -96,9 +94,7 @@ async def handle_log(request: web.Request) -> web.Response:
     try:
         body = await request.json()
     except Exception:
-        return web.json_response(
-            {"error": "invalid JSON in request body"}, status=400
-        )
+        return web.json_response({"error": "invalid JSON in request body"}, status=400)
 
     if "message" not in body:
         return web.json_response(
@@ -148,18 +144,12 @@ async def handle_spawn(request: web.Request) -> web.Response:
     try:
         body = await request.json()
     except Exception:
-        return web.json_response(
-            {"error": "invalid JSON in request body"}, status=400
-        )
+        return web.json_response({"error": "invalid JSON in request body"}, status=400)
 
     if "count" not in body:
-        return web.json_response(
-            {"error": "missing required field: count"}, status=400
-        )
+        return web.json_response({"error": "missing required field: count"}, status=400)
     if "role" not in body:
-        return web.json_response(
-            {"error": "missing required field: role"}, status=400
-        )
+        return web.json_response({"error": "missing required field: role"}, status=400)
 
     try:
         agent_name = _get_agent_name(request)
@@ -186,9 +176,7 @@ async def handle_assign(request: web.Request) -> web.Response:
     try:
         body = await request.json()
     except Exception:
-        return web.json_response(
-            {"error": "invalid JSON in request body"}, status=400
-        )
+        return web.json_response({"error": "invalid JSON in request body"}, status=400)
 
     if "ticket_id" not in body:
         return web.json_response(
@@ -219,9 +207,7 @@ async def handle_transition(request: web.Request) -> web.Response:
     try:
         body = await request.json()
     except Exception:
-        return web.json_response(
-            {"error": "invalid JSON in request body"}, status=400
-        )
+        return web.json_response({"error": "invalid JSON in request body"}, status=400)
 
     if "ticket_id" not in body:
         return web.json_response(
@@ -258,9 +244,7 @@ async def handle_review(request: web.Request) -> web.Response:
     try:
         body = await request.json()
     except Exception:
-        return web.json_response(
-            {"error": "invalid JSON in request body"}, status=400
-        )
+        return web.json_response({"error": "invalid JSON in request body"}, status=400)
 
     if "pr_number" not in body:
         return web.json_response(
@@ -350,9 +334,7 @@ async def handle_decommission(request: web.Request) -> web.Response:
     try:
         body = await request.json()
     except Exception:
-        return web.json_response(
-            {"error": "invalid JSON in request body"}, status=400
-        )
+        return web.json_response({"error": "invalid JSON in request body"}, status=400)
 
     if "agent_name" not in body:
         return web.json_response(
@@ -379,9 +361,7 @@ async def handle_standdown(request: web.Request) -> web.Response:
     try:
         body = await request.json()
     except Exception:
-        return web.json_response(
-            {"error": "invalid JSON in request body"}, status=400
-        )
+        return web.json_response({"error": "invalid JSON in request body"}, status=400)
 
     if "agent_name" not in body:
         return web.json_response(
@@ -408,9 +388,7 @@ async def handle_harvest(request: web.Request) -> web.Response:
     try:
         body = await request.json()
     except Exception:
-        return web.json_response(
-            {"error": "invalid JSON in request body"}, status=400
-        )
+        return web.json_response({"error": "invalid JSON in request body"}, status=400)
 
     if "agent_instance_code" not in body:
         return web.json_response(

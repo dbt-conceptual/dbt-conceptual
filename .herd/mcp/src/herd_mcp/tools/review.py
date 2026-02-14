@@ -296,7 +296,7 @@ async def execute(
     )
     logger.info(
         f"Vault refresh triggered after review: {refresh_result.get('status')}",
-        extra={"refresh_result": refresh_result}
+        extra={"refresh_result": refresh_result},
     )
 
     return result

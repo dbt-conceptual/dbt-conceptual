@@ -39,7 +39,9 @@ def _classify_event_type(message: str) -> str:
         return "status_update"
 
 
-def _get_thread_replies(channel_id: str, thread_ts: str, token: str) -> list[dict[str, Any]]:
+def _get_thread_replies(
+    channel_id: str, thread_ts: str, token: str
+) -> list[dict[str, Any]]:
     """Get thread replies from Slack using urllib.
 
     Args:
@@ -51,8 +53,8 @@ def _get_thread_replies(channel_id: str, thread_ts: str, token: str) -> list[dic
         List of reply messages (excluding parent message).
     """
     try:
-        import urllib.request
         import urllib.parse
+        import urllib.request
 
         params = urllib.parse.urlencode({"channel": channel_id, "ts": thread_ts})
         url = f"https://slack.com/api/conversations.replies?{params}"

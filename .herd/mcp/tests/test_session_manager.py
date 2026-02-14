@@ -7,7 +7,6 @@ import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from herd_mcp.session_manager import Session, SessionManager
 
 
@@ -33,9 +32,7 @@ async def test_session_creation() -> None:
     """Test creating a new session spawns Claude process."""
     manager = SessionManager(project_path="/tmp/test", idle_timeout=180)
 
-    with patch(
-        "herd_mcp.session_manager.asyncio.create_subprocess_exec"
-    ) as mock_exec:
+    with patch("herd_mcp.session_manager.asyncio.create_subprocess_exec") as mock_exec:
         # Mock process with stdout that returns session_id
         mock_process = MagicMock()
         mock_process.returncode = 0
@@ -96,9 +93,7 @@ async def test_message_routing_to_existing_session() -> None:
     )
     manager.sessions["1234.5678"] = existing_session
 
-    with patch(
-        "herd_mcp.session_manager.asyncio.create_subprocess_exec"
-    ) as mock_exec:
+    with patch("herd_mcp.session_manager.asyncio.create_subprocess_exec") as mock_exec:
         # Mock follow-up process
         followup_process = MagicMock()
         followup_process.returncode = 0
@@ -279,9 +274,7 @@ async def test_session_id_capture_from_claude_output() -> None:
     """Test session_id is captured from Claude CLI streaming JSON."""
     manager = SessionManager(project_path="/tmp/test", idle_timeout=180)
 
-    with patch(
-        "herd_mcp.session_manager.asyncio.create_subprocess_exec"
-    ) as mock_exec:
+    with patch("herd_mcp.session_manager.asyncio.create_subprocess_exec") as mock_exec:
         # Mock process with multiple JSON lines
         mock_process = MagicMock()
         mock_process.returncode = 0
@@ -425,9 +418,7 @@ async def test_json_decode_error_handling_in_spawn() -> None:
     """Test _spawn_claude handles JSON decode errors gracefully."""
     manager = SessionManager(project_path="/tmp/test", idle_timeout=180)
 
-    with patch(
-        "herd_mcp.session_manager.asyncio.create_subprocess_exec"
-    ) as mock_exec:
+    with patch("herd_mcp.session_manager.asyncio.create_subprocess_exec") as mock_exec:
         # Mock process with malformed JSON
         mock_process = MagicMock()
         mock_process.returncode = 0
@@ -435,15 +426,13 @@ async def test_json_decode_error_handling_in_spawn() -> None:
 
         async def mock_stdout_lines() -> list[bytes]:
             yield b'{"session_id": "test-123"}\n'
-            yield b'invalid json line\n'  # Should be skipped
+            yield b"invalid json line\n"  # Should be skipped
             yield b'{"type": "result", "result": "Hello", "session_id": "test-123"}\n'
 
         mock_process.stdout = mock_stdout_lines()
         mock_exec.return_value = mock_process
 
-        response = await manager.send_message(
-            "1234.5678", "Test", "Architect"
-        )
+        response = await manager.send_message("1234.5678", "Test", "Architect")
 
         # Verify session was created despite malformed line
         assert "1234.5678" in manager.sessions
@@ -469,24 +458,20 @@ async def test_json_decode_error_handling_in_send() -> None:
     )
     manager.sessions["1234.5678"] = existing_session
 
-    with patch(
-        "herd_mcp.session_manager.asyncio.create_subprocess_exec"
-    ) as mock_exec:
+    with patch("herd_mcp.session_manager.asyncio.create_subprocess_exec") as mock_exec:
         # Mock follow-up process with malformed JSON
         followup_process = MagicMock()
         followup_process.returncode = 0
         followup_process.wait = AsyncMock()
 
         async def mock_stdout_lines() -> list[bytes]:
-            yield b'malformed line\n'  # Should be skipped
+            yield b"malformed line\n"  # Should be skipped
             yield b'{"type": "result", "result": "Response", "session_id": "existing-session-id"}\n'
 
         followup_process.stdout = mock_stdout_lines()
         mock_exec.return_value = followup_process
 
-        response = await manager.send_message(
-            "1234.5678", "Follow-up", "Architect"
-        )
+        response = await manager.send_message("1234.5678", "Follow-up", "Architect")
 
         # Verify response was captured despite malformed line
         assert response == "Response"
@@ -497,9 +482,7 @@ async def test_empty_response_from_spawn() -> None:
     """Test _spawn_claude returns error message when Claude produces no text."""
     manager = SessionManager(project_path="/tmp/test", idle_timeout=180)
 
-    with patch(
-        "herd_mcp.session_manager.asyncio.create_subprocess_exec"
-    ) as mock_exec:
+    with patch("herd_mcp.session_manager.asyncio.create_subprocess_exec") as mock_exec:
         # Mock process with no text output
         mock_process = MagicMock()
         mock_process.returncode = 0
@@ -512,9 +495,7 @@ async def test_empty_response_from_spawn() -> None:
         mock_process.stdout = mock_stdout_lines()
         mock_exec.return_value = mock_process
 
-        response = await manager.send_message(
-            "1234.5678", "Test", "Architect"
-        )
+        response = await manager.send_message("1234.5678", "Test", "Architect")
 
         # Verify error message is returned
         assert "No response from Mini-Mao" in response
@@ -538,9 +519,7 @@ async def test_empty_response_from_send() -> None:
     )
     manager.sessions["1234.5678"] = existing_session
 
-    with patch(
-        "herd_mcp.session_manager.asyncio.create_subprocess_exec"
-    ) as mock_exec:
+    with patch("herd_mcp.session_manager.asyncio.create_subprocess_exec") as mock_exec:
         # Mock follow-up process with no text output
         followup_process = MagicMock()
         followup_process.returncode = 0
@@ -553,9 +532,7 @@ async def test_empty_response_from_send() -> None:
         followup_process.stdout = mock_stdout_lines()
         mock_exec.return_value = followup_process
 
-        response = await manager.send_message(
-            "1234.5678", "Follow-up", "Architect"
-        )
+        response = await manager.send_message("1234.5678", "Follow-up", "Architect")
 
         # Verify error message is returned
         assert "No response from Mini-Mao" in response
@@ -566,9 +543,7 @@ async def test_race_condition_prevention() -> None:
     """Test race condition prevention when multiple messages arrive simultaneously."""
     manager = SessionManager(project_path="/tmp/test", idle_timeout=180)
 
-    with patch(
-        "herd_mcp.session_manager.asyncio.create_subprocess_exec"
-    ) as mock_exec:
+    with patch("herd_mcp.session_manager.asyncio.create_subprocess_exec") as mock_exec:
         # Mock process
         mock_process = MagicMock()
         mock_process.returncode = 0

@@ -2,26 +2,319 @@
 
 from __future__ import annotations
 
+import json
+import os
+import re
+import subprocess
 from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Any
 
 from herd_mcp.db import connection
+from herd_mcp.linear_client import search_issues
+
+
+def _read_status_md(repo_root: Path) -> dict[str, Any]:
+    """Read and parse STATUS.md file.
+
+    Args:
+        repo_root: Repository root path.
+
+    Returns:
+        Dict with parsed STATUS.md contents or empty dict if not found.
+    """
+    status_file = repo_root / ".herd" / "STATUS.md"
+    if not status_file.exists():
+        return {"exists": False, "content": None}
+
+    try:
+        content = status_file.read_text()
+        return {"exists": True, "content": content}
+    except Exception as e:
+        return {"exists": False, "error": str(e)}
+
+
+def _get_git_log(repo_root: Path, since: datetime) -> list[dict[str, str]]:
+    """Get git log since a given timestamp.
+
+    Args:
+        repo_root: Repository root path.
+        since: Start timestamp for git log.
+
+    Returns:
+        List of commit dicts with sha, author, date, and message.
+    """
+    try:
+        # Format: %H (hash), %an (author name), %ai (ISO date), %s (subject)
+        result = subprocess.run(
+            [
+                "git",
+                "log",
+                f"--since={since.isoformat()}",
+                "--format=%H|||%an|||%ai|||%s",
+            ],
+            cwd=str(repo_root),
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+
+        commits = []
+        for line in result.stdout.strip().split("\n"):
+            if not line:
+                continue
+            parts = line.split("|||")
+            if len(parts) == 4:
+                commits.append(
+                    {
+                        "sha": parts[0],
+                        "author": parts[1],
+                        "date": parts[2],
+                        "message": parts[3],
+                    }
+                )
+
+        return commits
+    except Exception:
+        return []
+
+
+def _get_linear_tickets(agent_name: str) -> list[dict[str, Any]]:
+    """Get Linear tickets for the agent.
+
+    Args:
+        agent_name: Agent name to search for.
+
+    Returns:
+        List of Linear ticket dicts.
+    """
+    try:
+        # Search for tickets assigned to this agent or mentioning them
+        tickets = search_issues(f"assignee:{agent_name}")
+        return tickets
+    except Exception:
+        # Linear API may not be available
+        return []
+
+
+def _get_handoffs(repo_root: Path, since: datetime) -> list[dict[str, str]]:
+    """Get recent handoff files.
+
+    Args:
+        repo_root: Repository root path.
+        since: Start timestamp for filtering handoffs.
+
+    Returns:
+        List of handoff dicts with filename and modified time.
+    """
+    handoffs_dir = repo_root / ".herd" / "handoffs"
+    if not handoffs_dir.exists():
+        return []
+
+    handoffs = []
+    for handoff_file in handoffs_dir.glob("*.md"):
+        try:
+            mtime = datetime.fromtimestamp(handoff_file.stat().st_mtime)
+            if mtime >= since:
+                handoffs.append(
+                    {
+                        "filename": handoff_file.name,
+                        "modified": str(mtime),
+                        "ticket": handoff_file.stem,
+                    }
+                )
+        except Exception:
+            continue
+
+    return sorted(handoffs, key=lambda x: x["modified"], reverse=True)
+
+
+def _get_recent_hdrs(repo_root: Path, since: datetime) -> list[dict[str, str]]:
+    """Get recent Herd Decision Records.
+
+    Args:
+        repo_root: Repository root path.
+        since: Start timestamp for filtering HDRs.
+
+    Returns:
+        List of HDR dicts with filename and modified time.
+    """
+    decisions_dir = repo_root / ".herd" / "decisions"
+    if not decisions_dir.exists():
+        return []
+
+    hdrs = []
+    for hdr_file in decisions_dir.glob("*.md"):
+        try:
+            mtime = datetime.fromtimestamp(hdr_file.stat().st_mtime)
+            if mtime >= since:
+                # Extract title from filename
+                title = re.sub(r"^\d+-", "", hdr_file.stem).replace("-", " ").title()
+                hdrs.append(
+                    {
+                        "filename": hdr_file.name,
+                        "modified": str(mtime),
+                        "title": title,
+                    }
+                )
+        except Exception:
+            continue
+
+    return sorted(hdrs, key=lambda x: x["modified"], reverse=True)
+
+
+def _get_slack_decisions_threads(
+    agent_name: str, since: datetime
+) -> list[dict[str, Any]]:
+    """Get Slack #herd-decisions threads relevant to the agent.
+
+    Args:
+        agent_name: Agent name to search for.
+        since: Start timestamp for filtering threads.
+
+    Returns:
+        List of thread summary dicts.
+    """
+    token = os.getenv("HERD_SLACK_TOKEN")
+    if not token:
+        return []
+
+    try:
+        import urllib.parse
+        import urllib.request
+
+        # First, get the channel ID for #herd-decisions
+        channel_name = "herd-decisions"
+
+        # Search for messages in #herd-decisions since cutoff
+        params = urllib.parse.urlencode(
+            {
+                "query": f"in:#{channel_name} after:{int(since.timestamp())}",
+                "count": 50,
+            }
+        )
+        url = f"https://slack.com/api/search.messages?{params}"
+
+        req = urllib.request.Request(
+            url,
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        with urllib.request.urlopen(req) as resp:
+            result = json.loads(resp.read())
+
+        if not result.get("ok", False):
+            return []
+
+        messages = result.get("messages", {}).get("matches", [])
+
+        # Filter for threads mentioning this agent or relevant tickets
+        agent_pattern = re.compile(rf"\b{re.escape(agent_name)}\b", re.IGNORECASE)
+        ticket_pattern = re.compile(r"\bDBC-\d+\b")
+
+        relevant_threads = []
+        for msg in messages:
+            text = msg.get("text", "")
+            if agent_pattern.search(text) or ticket_pattern.search(text):
+                relevant_threads.append(
+                    {
+                        "text": text[:200],  # First 200 chars
+                        "user": msg.get("username", "unknown"),
+                        "timestamp": msg.get("ts", ""),
+                        "permalink": msg.get("permalink", ""),
+                    }
+                )
+
+        return relevant_threads[:10]  # Limit to 10 most relevant
+    except Exception:
+        return []
+
+
+def _get_decision_records(agent_name: str, since: datetime) -> list[dict[str, Any]]:
+    """Get decision records from DuckDB since timestamp.
+
+    Args:
+        agent_name: Agent name.
+        since: Start timestamp.
+
+    Returns:
+        List of decision record dicts.
+    """
+    with connection() as conn:
+        decisions = conn.execute(
+            """
+            SELECT
+                decision_id,
+                decision_type,
+                context,
+                decision,
+                rationale,
+                decided_by,
+                ticket_code,
+                created_at
+            FROM herd.decision_record
+            WHERE created_at >= ?
+              AND deleted_at IS NULL
+              AND (decided_by = ? OR ticket_code IN (
+                SELECT DISTINCT ticket_code
+                FROM herd.agent_instance
+                WHERE agent_code = ?
+                  AND ticket_code IS NOT NULL
+              ))
+            ORDER BY created_at DESC
+            LIMIT 20
+            """,
+            [str(since), agent_name, agent_name],
+        ).fetchall()
+
+        return [
+            {
+                "decision_id": row[0],
+                "decision_type": row[1],
+                "context": row[2],
+                "decision": row[3],
+                "rationale": row[4],
+                "decided_by": row[5],
+                "ticket_code": row[6],
+                "created_at": str(row[7]),
+            }
+            for row in decisions
+        ]
 
 
 async def execute(agent_name: str | None) -> dict:
     """Get a summary of what happened since agent was last active.
 
+    Aggregates:
+    - STATUS.md contents (parsed)
+    - Recent git log (since last session)
+    - Linear ticket states (active, blocked, pending review)
+    - DuckDB activity (events, assignments, transitions)
+    - Pending handoffs
+    - Recent HDRs
+    - #herd-decisions threads (relevant to agent)
+    - Agent decision records from DuckDB
+
     Args:
         agent_name: Current agent identity.
 
     Returns:
-        Dict with timestamp, ticket updates, and summary.
+        Dict with comprehensive catchup summary.
     """
     if not agent_name:
         return {
             "since": None,
-            "ticket_updates": [],
             "summary": "No agent identity provided. Cannot retrieve catchup.",
         }
+
+    # Find repository root
+    repo_root = Path.cwd()
+    while repo_root != repo_root.parent:
+        if (repo_root / ".git").exists():
+            break
+        repo_root = repo_root.parent
+    else:
+        repo_root = Path.cwd()
 
     with connection() as conn:
         # Find the most recent ENDED instance for this agent
@@ -38,11 +331,22 @@ async def execute(agent_name: str | None) -> dict:
         ).fetchone()
 
         if not previous_instance:
+            # First session - provide minimal context
+            status_md = _read_status_md(repo_root)
+            linear_tickets = _get_linear_tickets(agent_name)
+
             return {
                 "since": None,
-                "ticket_updates": [],
                 "summary": "No previous session found. You're starting fresh.",
                 "agent": agent_name,
+                "status_md": status_md,
+                "linear_tickets": linear_tickets,
+                "git_log": [],
+                "ticket_updates": [],
+                "handoffs": [],
+                "hdrs": [],
+                "slack_threads": [],
+                "decision_records": [],
             }
 
         instance_code = previous_instance[0]
@@ -52,8 +356,7 @@ async def execute(agent_name: str | None) -> dict:
         seven_days_ago = datetime.now() - timedelta(days=7)
         cutoff = max(ended_at, seven_days_ago) if ended_at else seven_days_ago
 
-        # Get ticket updates since the last session
-        # Look for transitions on this agent's tickets
+        # Get ticket updates since the last session (existing logic)
         ticket_activity = conn.execute(
             """
             SELECT
@@ -92,21 +395,71 @@ async def execute(agent_name: str | None) -> dict:
                 }
             )
 
-        # Build summary
-        if not ticket_updates:
-            summary = f"No updates on your tickets since {ended_at}."
-        else:
-            ticket_count = len({u["ticket"] for u in ticket_updates})
-            event_count = len(ticket_updates)
-            summary = (
-                f"Since {ended_at}: {event_count} updates across {ticket_count} "
-                f"ticket{'s' if ticket_count != 1 else ''}."
-            )
+    # Gather all data sources
+    status_md = _read_status_md(repo_root)
+    git_log = _get_git_log(repo_root, cutoff)
+    linear_tickets = _get_linear_tickets(agent_name)
+    handoffs = _get_handoffs(repo_root, cutoff)
+    hdrs = _get_recent_hdrs(repo_root, cutoff)
+    slack_threads = _get_slack_decisions_threads(agent_name, cutoff)
+    decision_records = _get_decision_records(agent_name, cutoff)
 
-        return {
-            "since": str(ended_at),
-            "ticket_updates": ticket_updates,
-            "summary": summary,
-            "agent": agent_name,
-            "previous_instance": instance_code,
-        }
+    # Build comprehensive summary
+    summary_parts = []
+    summary_parts.append(f"Since {ended_at}:")
+
+    if ticket_updates:
+        ticket_count = len({u["ticket"] for u in ticket_updates})
+        event_count = len(ticket_updates)
+        summary_parts.append(
+            f"- {event_count} ticket update{'s' if event_count != 1 else ''} "
+            f"across {ticket_count} ticket{'s' if ticket_count != 1 else ''}"
+        )
+
+    if git_log:
+        summary_parts.append(
+            f"- {len(git_log)} commit{'s' if len(git_log) != 1 else ''}"
+        )
+
+    if linear_tickets:
+        summary_parts.append(
+            f"- {len(linear_tickets)} Linear ticket{'s' if len(linear_tickets) != 1 else ''} assigned"
+        )
+
+    if handoffs:
+        summary_parts.append(
+            f"- {len(handoffs)} new handoff{'s' if len(handoffs) != 1 else ''}"
+        )
+
+    if hdrs:
+        summary_parts.append(f"- {len(hdrs)} new HDR{'s' if len(hdrs) != 1 else ''}")
+
+    if slack_threads:
+        summary_parts.append(
+            f"- {len(slack_threads)} #herd-decisions thread{'s' if len(slack_threads) != 1 else ''}"
+        )
+
+    if decision_records:
+        summary_parts.append(
+            f"- {len(decision_records)} agent decision{'s' if len(decision_records) != 1 else ''}"
+        )
+
+    if len(summary_parts) == 1:
+        summary_parts.append("- No significant activity")
+
+    summary = "\n".join(summary_parts)
+
+    return {
+        "since": str(ended_at),
+        "previous_instance": instance_code,
+        "agent": agent_name,
+        "summary": summary,
+        "status_md": status_md,
+        "git_log": git_log[:20],  # Last 20 commits
+        "linear_tickets": linear_tickets,
+        "ticket_updates": ticket_updates,
+        "handoffs": handoffs,
+        "hdrs": hdrs,
+        "slack_threads": slack_threads,
+        "decision_records": decision_records,
+    }

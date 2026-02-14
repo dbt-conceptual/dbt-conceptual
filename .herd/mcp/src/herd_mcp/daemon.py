@@ -52,12 +52,10 @@ async def start_daemon() -> None:
         sys.exit(1)
 
     if not app_token:
-        logger.error(
-            "SLACK_APP_TOKEN environment variable is required for Socket Mode"
-        )
+        logger.error("SLACK_APP_TOKEN environment variable is required for Socket Mode")
         sys.exit(1)
 
-    logger.info(f"Starting Herd MCP daemon")
+    logger.info("Starting Herd MCP daemon")
     logger.info(f"REST API: http://{host}:{port}")
     logger.info(f"Project path: {project_path}")
     logger.info(f"Idle timeout: {idle_timeout}s")

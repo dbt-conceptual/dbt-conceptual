@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import logging
 
-from herd_mcp.db import connection
 from herd_mcp import linear_client
+from herd_mcp.db import connection
 
 logger = logging.getLogger(__name__)
 
@@ -191,8 +191,7 @@ async def execute(
                 # Update to "Assigned" state in Linear
                 # State UUID for "Assigned": 408b4cda-4d6e-403a-8030-78e8b0a6ffee
                 linear_client.update_issue_state(
-                    linear_issue["id"],
-                    "408b4cda-4d6e-403a-8030-78e8b0a6ffee"
+                    linear_issue["id"], "408b4cda-4d6e-403a-8030-78e8b0a6ffee"
                 )
                 result["linear_synced"] = True
                 logger.info(f"Synced ticket {ticket_id} assignment to Linear")

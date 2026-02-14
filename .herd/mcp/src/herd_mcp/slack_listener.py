@@ -133,7 +133,9 @@ class SlackListener:
             channel_id = event.get("channel")
             user_id = event.get("user")
             text = event.get("text", "")
-            thread_ts = event.get("thread_ts") or event.get("ts")  # Use ts if not in thread
+            thread_ts = event.get("thread_ts") or event.get(
+                "ts"
+            )  # Use ts if not in thread
             message_ts = event.get("ts")
 
             # Filter: only #mao channel
@@ -146,9 +148,7 @@ class SlackListener:
 
             # Filter: only authorized users (if configured)
             if self.authorized_users and user_id not in self.authorized_users:
-                logger.warning(
-                    f"Ignoring message from unauthorized user: {user_id}"
-                )
+                logger.warning(f"Ignoring message from unauthorized user: {user_id}")
                 await self._post_message(
                     channel_id,
                     "Sorry, you are not authorized to activate Mini-Mao.",
@@ -158,9 +158,10 @@ class SlackListener:
 
             # Get user's display name
             user_info = await self.web_client.users_info(user=user_id)
-            user_name = user_info["user"]["profile"].get(
-                "display_name"
-            ) or user_info["user"]["name"]
+            user_name = (
+                user_info["user"]["profile"].get("display_name")
+                or user_info["user"]["name"]
+            )
 
             # Send message to session manager
             response = await self.session_manager.send_message(

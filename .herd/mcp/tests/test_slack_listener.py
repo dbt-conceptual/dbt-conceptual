@@ -6,7 +6,6 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from herd_mcp.session_manager import SessionManager
 from herd_mcp.slack_listener import SlackListener
 
@@ -57,12 +56,8 @@ async def test_authorized_user_filter(
     mock_session_manager: MagicMock, mock_web_client: MagicMock
 ) -> None:
     """Test messages from authorized users are processed."""
-    with patch.dict(
-        "os.environ", {"HERD_AUTHORIZED_USERS": "U_ARCHITECT,U_ADMIN"}
-    ):
-        listener = SlackListener(
-            mock_session_manager, "xoxb-test", "xapp-test"
-        )
+    with patch.dict("os.environ", {"HERD_AUTHORIZED_USERS": "U_ARCHITECT,U_ADMIN"}):
+        listener = SlackListener(mock_session_manager, "xoxb-test", "xapp-test")
 
         # Inject mocked web client
         listener.web_client = mock_web_client
@@ -98,9 +93,7 @@ async def test_unauthorized_user_ignored(
 ) -> None:
     """Test messages from unauthorized users are rejected."""
     with patch.dict("os.environ", {"HERD_AUTHORIZED_USERS": "U_ARCHITECT"}):
-        listener = SlackListener(
-            mock_session_manager, "xoxb-test", "xapp-test"
-        )
+        listener = SlackListener(mock_session_manager, "xoxb-test", "xapp-test")
 
         listener.web_client = mock_web_client
         listener.mao_channel_id = "C_MAO123"
@@ -252,9 +245,7 @@ async def test_error_handling_posts_error_to_thread(
     listener.authorized_users = set()
 
     # Make session manager raise an error
-    mock_session_manager.send_message.side_effect = Exception(
-        "Session error"
-    )
+    mock_session_manager.send_message.side_effect = Exception("Session error")
 
     event = {
         "type": "message",
@@ -279,9 +270,7 @@ async def test_no_auth_mode_allows_all_users(
 ) -> None:
     """Test with no HERD_AUTHORIZED_USERS set, all users are allowed."""
     with patch.dict("os.environ", {}, clear=True):
-        listener = SlackListener(
-            mock_session_manager, "xoxb-test", "xapp-test"
-        )
+        listener = SlackListener(mock_session_manager, "xoxb-test", "xapp-test")
 
         listener.web_client = mock_web_client
         listener.mao_channel_id = "C_MAO123"

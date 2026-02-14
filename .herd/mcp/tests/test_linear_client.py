@@ -4,18 +4,17 @@ from __future__ import annotations
 
 import json
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
-
 from herd_mcp.linear_client import (
     _get_api_key,
     _graphql_request,
-    get_issue,
     create_issue,
-    update_issue_state,
-    search_issues,
+    get_issue,
     is_linear_identifier,
+    search_issues,
+    update_issue_state,
 )
 
 
@@ -66,12 +65,9 @@ def test_graphql_request_missing_api_key():
 
 def test_graphql_request_with_errors():
     """Test GraphQL request that returns errors."""
-    mock_response = MockResponse({
-        "errors": [
-            {"message": "Field not found"},
-            {"message": "Invalid query"}
-        ]
-    })
+    mock_response = MockResponse(
+        {"errors": [{"message": "Field not found"}, {"message": "Invalid query"}]}
+    )
 
     with patch.dict(os.environ, {"LINEAR_API_KEY": "test-key"}):
         with patch("urllib.request.urlopen", return_value=mock_response):
@@ -81,22 +77,24 @@ def test_graphql_request_with_errors():
 
 def test_get_issue_found():
     """Test getting an issue that exists."""
-    mock_response = MockResponse({
-        "data": {
-            "issueSearch": {
-                "nodes": [
-                    {
-                        "id": "issue-uuid-123",
-                        "identifier": "DBC-120",
-                        "title": "Fix bug",
-                        "description": "Bug description",
-                        "state": {"id": "state-1", "name": "Todo"},
-                        "team": {"id": "team-1", "name": "DBC"},
-                    }
-                ]
+    mock_response = MockResponse(
+        {
+            "data": {
+                "issueSearch": {
+                    "nodes": [
+                        {
+                            "id": "issue-uuid-123",
+                            "identifier": "DBC-120",
+                            "title": "Fix bug",
+                            "description": "Bug description",
+                            "state": {"id": "state-1", "name": "Todo"},
+                            "team": {"id": "team-1", "name": "DBC"},
+                        }
+                    ]
+                }
             }
         }
-    })
+    )
 
     with patch.dict(os.environ, {"LINEAR_API_KEY": "test-key"}):
         with patch("urllib.request.urlopen", return_value=mock_response):
@@ -108,13 +106,7 @@ def test_get_issue_found():
 
 def test_get_issue_not_found():
     """Test getting an issue that doesn't exist."""
-    mock_response = MockResponse({
-        "data": {
-            "issueSearch": {
-                "nodes": []
-            }
-        }
-    })
+    mock_response = MockResponse({"data": {"issueSearch": {"nodes": []}}})
 
     with patch.dict(os.environ, {"LINEAR_API_KEY": "test-key"}):
         with patch("urllib.request.urlopen", return_value=mock_response):
@@ -124,17 +116,19 @@ def test_get_issue_not_found():
 
 def test_get_issue_multiple_results():
     """Test getting issue when search returns multiple results."""
-    mock_response = MockResponse({
-        "data": {
-            "issueSearch": {
-                "nodes": [
-                    {"identifier": "DBC-119", "title": "Other issue"},
-                    {"identifier": "DBC-120", "title": "Target issue"},
-                    {"identifier": "DBC-121", "title": "Another issue"},
-                ]
+    mock_response = MockResponse(
+        {
+            "data": {
+                "issueSearch": {
+                    "nodes": [
+                        {"identifier": "DBC-119", "title": "Other issue"},
+                        {"identifier": "DBC-120", "title": "Target issue"},
+                        {"identifier": "DBC-121", "title": "Another issue"},
+                    ]
+                }
             }
         }
-    })
+    )
 
     with patch.dict(os.environ, {"LINEAR_API_KEY": "test-key"}):
         with patch("urllib.request.urlopen", return_value=mock_response):
@@ -154,18 +148,20 @@ def test_get_issue_api_error():
 
 def test_update_issue_state_success():
     """Test successfully updating issue state."""
-    mock_response = MockResponse({
-        "data": {
-            "issueUpdate": {
-                "success": True,
-                "issue": {
-                    "id": "issue-uuid-123",
-                    "identifier": "DBC-120",
-                    "state": {"id": "new-state-id", "name": "In Progress"}
+    mock_response = MockResponse(
+        {
+            "data": {
+                "issueUpdate": {
+                    "success": True,
+                    "issue": {
+                        "id": "issue-uuid-123",
+                        "identifier": "DBC-120",
+                        "state": {"id": "new-state-id", "name": "In Progress"},
+                    },
                 }
             }
         }
-    })
+    )
 
     with patch.dict(os.environ, {"LINEAR_API_KEY": "test-key"}):
         with patch("urllib.request.urlopen", return_value=mock_response):
@@ -176,13 +172,7 @@ def test_update_issue_state_success():
 
 def test_update_issue_state_failure():
     """Test update issue state when mutation returns failure."""
-    mock_response = MockResponse({
-        "data": {
-            "issueUpdate": {
-                "success": False
-            }
-        }
-    })
+    mock_response = MockResponse({"data": {"issueUpdate": {"success": False}}})
 
     with patch.dict(os.environ, {"LINEAR_API_KEY": "test-key"}):
         with patch("urllib.request.urlopen", return_value=mock_response):
@@ -192,19 +182,21 @@ def test_update_issue_state_failure():
 
 def test_create_issue_minimal():
     """Test creating issue with minimal fields."""
-    mock_response = MockResponse({
-        "data": {
-            "issueCreate": {
-                "success": True,
-                "issue": {
-                    "id": "new-issue-uuid",
-                    "identifier": "DBC-125",
-                    "title": "New issue",
-                    "state": {"id": "state-1", "name": "Todo"}
+    mock_response = MockResponse(
+        {
+            "data": {
+                "issueCreate": {
+                    "success": True,
+                    "issue": {
+                        "id": "new-issue-uuid",
+                        "identifier": "DBC-125",
+                        "title": "New issue",
+                        "state": {"id": "state-1", "name": "Todo"},
+                    },
                 }
             }
         }
-    })
+    )
 
     with patch.dict(os.environ, {"LINEAR_API_KEY": "test-key"}):
         with patch("urllib.request.urlopen", return_value=mock_response):
@@ -215,18 +207,20 @@ def test_create_issue_minimal():
 
 def test_create_issue_full():
     """Test creating issue with all optional fields."""
-    mock_response = MockResponse({
-        "data": {
-            "issueCreate": {
-                "success": True,
-                "issue": {
-                    "id": "new-issue-uuid",
-                    "identifier": "DBC-126",
-                    "title": "Full issue",
+    mock_response = MockResponse(
+        {
+            "data": {
+                "issueCreate": {
+                    "success": True,
+                    "issue": {
+                        "id": "new-issue-uuid",
+                        "identifier": "DBC-126",
+                        "title": "Full issue",
+                    },
                 }
             }
         }
-    })
+    )
 
     with patch.dict(os.environ, {"LINEAR_API_KEY": "test-key"}):
         with patch("urllib.request.urlopen", return_value=mock_response):
@@ -244,13 +238,7 @@ def test_create_issue_full():
 
 def test_create_issue_failure():
     """Test create issue when mutation returns failure."""
-    mock_response = MockResponse({
-        "data": {
-            "issueCreate": {
-                "success": False
-            }
-        }
-    })
+    mock_response = MockResponse({"data": {"issueCreate": {"success": False}}})
 
     with patch.dict(os.environ, {"LINEAR_API_KEY": "test-key"}):
         with patch("urllib.request.urlopen", return_value=mock_response):
@@ -260,16 +248,26 @@ def test_create_issue_failure():
 
 def test_search_issues_success():
     """Test searching for issues."""
-    mock_response = MockResponse({
-        "data": {
-            "issueSearch": {
-                "nodes": [
-                    {"identifier": "DBC-120", "title": "Issue 1", "team": {"id": "team-1"}},
-                    {"identifier": "DBC-121", "title": "Issue 2", "team": {"id": "team-1"}},
-                ]
+    mock_response = MockResponse(
+        {
+            "data": {
+                "issueSearch": {
+                    "nodes": [
+                        {
+                            "identifier": "DBC-120",
+                            "title": "Issue 1",
+                            "team": {"id": "team-1"},
+                        },
+                        {
+                            "identifier": "DBC-121",
+                            "title": "Issue 2",
+                            "team": {"id": "team-1"},
+                        },
+                    ]
+                }
             }
         }
-    })
+    )
 
     with patch.dict(os.environ, {"LINEAR_API_KEY": "test-key"}):
         with patch("urllib.request.urlopen", return_value=mock_response):
@@ -280,16 +278,18 @@ def test_search_issues_success():
 
 def test_search_issues_with_team_filter():
     """Test searching issues with team filter."""
-    mock_response = MockResponse({
-        "data": {
-            "issueSearch": {
-                "nodes": [
-                    {"identifier": "DBC-120", "team": {"id": "team-1"}},
-                    {"identifier": "ENG-50", "team": {"id": "team-2"}},
-                ]
+    mock_response = MockResponse(
+        {
+            "data": {
+                "issueSearch": {
+                    "nodes": [
+                        {"identifier": "DBC-120", "team": {"id": "team-1"}},
+                        {"identifier": "ENG-50", "team": {"id": "team-2"}},
+                    ]
+                }
             }
         }
-    })
+    )
 
     with patch.dict(os.environ, {"LINEAR_API_KEY": "test-key"}):
         with patch("urllib.request.urlopen", return_value=mock_response):

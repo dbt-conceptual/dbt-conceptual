@@ -56,7 +56,9 @@ class VaultRefreshManager:
         self._profiles_dir = ".herd/dbt"
         logger.info("VaultRefreshManager initialized")
 
-    async def trigger_refresh(self, milestone: str, context: dict | None = None) -> dict:
+    async def trigger_refresh(
+        self, milestone: str, context: dict | None = None
+    ) -> dict:
         """Trigger a vault refresh for a milestone event.
 
         This method implements the async mutex pattern:
@@ -81,7 +83,7 @@ class VaultRefreshManager:
                 self._pending_context = context  # A1: Preserve queued context
                 logger.info(
                     f"Vault refresh in progress, queued refresh for milestone: {milestone}",
-                    extra={"milestone": milestone, "context": context}
+                    extra={"milestone": milestone, "context": context},
                 )
                 return {
                     "status": "queued",
@@ -93,7 +95,7 @@ class VaultRefreshManager:
                 self._pending_context = context
                 logger.info(
                     f"Vault refresh already queued, collapsed trigger for milestone: {milestone}",
-                    extra={"milestone": milestone, "context": context}
+                    extra={"milestone": milestone, "context": context},
                 )
                 return {
                     "status": "collapsed",
@@ -113,7 +115,9 @@ class VaultRefreshManager:
                     queued_context = self._pending_context
                     self._pending_context = None
                     logger.info("Executing queued vault refresh")
-                    queued_result = await self._execute_refresh("queued_refresh", queued_context or {})
+                    queued_result = await self._execute_refresh(
+                        "queued_refresh", queued_context or {}
+                    )
                     result = {
                         "status": "completed_with_queued",
                         "milestone": milestone,
@@ -137,15 +141,17 @@ class VaultRefreshManager:
         """
         logger.info(
             f"Starting vault refresh for milestone: {milestone}",
-            extra={"milestone": milestone, "context": context}
+            extra={"milestone": milestone, "context": context},
         )
 
         # Build dbt run command
         cmd = [
             "dbt",
             "run",
-            "--project-dir", self._project_dir,
-            "--profiles-dir", self._profiles_dir,
+            "--project-dir",
+            self._project_dir,
+            "--profiles-dir",
+            self._profiles_dir,
         ]
 
         try:
@@ -164,7 +170,7 @@ class VaultRefreshManager:
             if proc.returncode == 0:
                 logger.info(
                     f"Vault refresh completed successfully for milestone: {milestone}",
-                    extra={"milestone": milestone, "returncode": proc.returncode}
+                    extra={"milestone": milestone, "returncode": proc.returncode},
                 )
                 return {
                     "status": "success",
@@ -180,7 +186,7 @@ class VaultRefreshManager:
                         "milestone": milestone,
                         "returncode": proc.returncode,
                         "stderr": stderr_str,
-                    }
+                    },
                 )
                 return {
                     "status": "error",
@@ -203,7 +209,7 @@ class VaultRefreshManager:
         except Exception as e:
             logger.error(
                 f"Unexpected error during vault refresh: {e}",
-                extra={"milestone": milestone, "error": str(e)}
+                extra={"milestone": milestone, "error": str(e)},
             )
             return {
                 "status": "error",

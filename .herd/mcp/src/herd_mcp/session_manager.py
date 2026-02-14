@@ -61,7 +61,9 @@ class SessionManager:
         try:
             self._system_prompt = role_file_path.read_text()
         except FileNotFoundError:
-            self._system_prompt = "You are Mini-Mao, the Scum Master and Team Lead of The Herd."
+            self._system_prompt = (
+                "You are Mini-Mao, the Scum Master and Team Lead of The Herd."
+            )
 
         self._system_prompt += "\n\n## Slack Output Formatting\nYou are responding via Slack. Use Slack mrkdwn formatting:\n- *bold* (single asterisks, NOT double)\n- _italic_ (underscores)\n- `code` and ```code blocks```\n- Bullet points with • or -\n- Do NOT use markdown headers (###), markdown tables, or **double asterisks**\n- For emphasis on section titles, use *bold* on its own line\n- Keep responses concise — Slack messages should be scannable"
 
@@ -80,9 +82,7 @@ class SessionManager:
 
         await self.close_all()
 
-    async def send_message(
-        self, thread_ts: str, text: str, user_name: str
-    ) -> str:
+    async def send_message(self, thread_ts: str, text: str, user_name: str) -> str:
         """Send a message to a session (create if needed).
 
         Args:
@@ -227,7 +227,9 @@ class SessionManager:
 
         # Handle empty response
         if not response_text:
-            response_text = "No response from Mini-Mao. Check if claude CLI is available."
+            response_text = (
+                "No response from Mini-Mao. Check if claude CLI is available."
+            )
 
         # Create session object
         session = Session(
@@ -241,9 +243,7 @@ class SessionManager:
 
         return session
 
-    async def _send_to_claude(
-        self, session: Session, text: str, user_name: str
-    ) -> str:
+    async def _send_to_claude(self, session: Session, text: str, user_name: str) -> str:
         """Send a follow-up message to an existing session.
 
         Args:
@@ -300,7 +300,9 @@ class SessionManager:
 
         # Handle empty response
         if not response_text:
-            response_text = "No response from Mini-Mao. Check if claude CLI is available."
+            response_text = (
+                "No response from Mini-Mao. Check if claude CLI is available."
+            )
 
         # Update session process reference (though we don't keep it running)
         session.process = process

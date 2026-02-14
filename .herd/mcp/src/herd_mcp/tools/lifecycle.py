@@ -113,7 +113,7 @@ async def decommission(agent_name: str, current_agent: str | None) -> dict:
     )
     logger.info(
         f"Vault refresh triggered after decommission: {refresh_result.get('status')}",
-        extra={"refresh_result": refresh_result}
+        extra={"refresh_result": refresh_result},
     )
 
     return result

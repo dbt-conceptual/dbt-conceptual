@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -19,15 +18,12 @@ async def test_daemon_starts_rest_and_slack() -> None:
             "HERD_PROJECT_PATH": "/tmp/test",
         },
     ):
-        with patch(
-            "herd_mcp.daemon.create_app"
-        ) as mock_create_app, patch(
-            "herd_mcp.daemon.SessionManager"
-        ) as mock_session_mgr_class, patch(
-            "herd_mcp.daemon.SlackListener"
-        ) as mock_slack_class, patch(
-            "herd_mcp.daemon.web.AppRunner"
-        ) as mock_runner_class:
+        with (
+            patch("herd_mcp.daemon.create_app") as mock_create_app,
+            patch("herd_mcp.daemon.SessionManager") as mock_session_mgr_class,
+            patch("herd_mcp.daemon.SlackListener") as mock_slack_class,
+            patch("herd_mcp.daemon.web.AppRunner") as mock_runner_class,
+        ):
 
             # Mock REST app and runner
             mock_app = MagicMock()
@@ -57,14 +53,13 @@ async def test_daemon_starts_rest_and_slack() -> None:
             from herd_mcp.daemon import start_daemon
 
             # Patch TCPSite and Event to avoid blocking
-            with patch(
-                "herd_mcp.daemon.web.TCPSite", return_value=mock_site
-            ), patch("herd_mcp.daemon.asyncio.Event") as mock_event_class:
+            with (
+                patch("herd_mcp.daemon.web.TCPSite", return_value=mock_site),
+                patch("herd_mcp.daemon.asyncio.Event") as mock_event_class,
+            ):
                 # Make Event().wait() raise KeyboardInterrupt to exit loop
                 mock_event = MagicMock()
-                mock_event.wait = AsyncMock(
-                    side_effect=KeyboardInterrupt()
-                )
+                mock_event.wait = AsyncMock(side_effect=KeyboardInterrupt())
                 mock_event_class.return_value = mock_event
 
                 # Run daemon (will exit via KeyboardInterrupt)
@@ -101,9 +96,7 @@ async def test_daemon_requires_slack_tokens() -> None:
         with pytest.raises(SystemExit):
             await start_daemon()
 
-    with patch.dict(
-        "os.environ", {"HERD_SLACK_TOKEN": "xoxb-test"}, clear=True
-    ):
+    with patch.dict("os.environ", {"HERD_SLACK_TOKEN": "xoxb-test"}, clear=True):
         # Missing SLACK_APP_TOKEN should exit
         with pytest.raises(SystemExit):
             await start_daemon()
@@ -123,17 +116,13 @@ async def test_daemon_uses_env_configuration() -> None:
             "HERD_IDLE_TIMEOUT": "300",
         },
     ):
-        with patch(
-            "herd_mcp.daemon.create_app"
-        ) as mock_create_app, patch(
-            "herd_mcp.daemon.SessionManager"
-        ) as mock_session_mgr_class, patch(
-            "herd_mcp.daemon.SlackListener"
-        ) as mock_slack_class, patch(
-            "herd_mcp.daemon.web.AppRunner"
-        ) as mock_runner_class, patch(
-            "herd_mcp.daemon.web.TCPSite"
-        ) as mock_site_class:
+        with (
+            patch("herd_mcp.daemon.create_app") as mock_create_app,
+            patch("herd_mcp.daemon.SessionManager") as mock_session_mgr_class,
+            patch("herd_mcp.daemon.SlackListener") as mock_slack_class,
+            patch("herd_mcp.daemon.web.AppRunner") as mock_runner_class,
+            patch("herd_mcp.daemon.web.TCPSite") as mock_site_class,
+        ):
 
             # Mock all dependencies
             mock_app = MagicMock()
@@ -164,17 +153,11 @@ async def test_daemon_uses_env_configuration() -> None:
             # Make Event().wait() raise KeyboardInterrupt
             with patch("herd_mcp.daemon.asyncio.Event") as mock_event_class:
                 mock_event = MagicMock()
-                mock_event.wait = AsyncMock(
-                    side_effect=KeyboardInterrupt()
-                )
+                mock_event.wait = AsyncMock(side_effect=KeyboardInterrupt())
                 mock_event_class.return_value = mock_event
 
                 await start_daemon()
 
             # Verify configuration was used
-            mock_site_class.assert_called_once_with(
-                mock_runner, "127.0.0.1", 9999
-            )
-            mock_session_mgr_class.assert_called_once_with(
-                "/custom/path", 300
-            )
+            mock_site_class.assert_called_once_with(mock_runner, "127.0.0.1", 9999)
+            mock_session_mgr_class.assert_called_once_with("/custom/path", 300)

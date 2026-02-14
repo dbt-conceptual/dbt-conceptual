@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import duckdb
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import duckdb
+import pytest
 from herd_mcp import db
 
 
