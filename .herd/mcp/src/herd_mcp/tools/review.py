@@ -7,10 +7,13 @@ import logging
 import os
 import subprocess
 import uuid
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from herd_mcp.db import connection
 from herd_mcp.vault_refresh import get_manager
+
+if TYPE_CHECKING:
+    from herd_mcp.adapters import AdapterRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -149,6 +152,7 @@ async def execute(
     verdict: str,
     findings: list[dict],
     agent_name: str | None,
+    registry: AdapterRegistry | None = None,
 ) -> dict:
     """Submit a code review for a PR.
 
@@ -158,6 +162,7 @@ async def execute(
         verdict: Review verdict (pass, fail, pass_with_advisory).
         findings: List of finding dicts with severity, category, description.
         agent_name: Current agent identity (reviewer).
+        registry: Optional adapter registry for dependency injection.
 
     Returns:
         Dict with review_id, posted status, and findings_count.
@@ -254,7 +259,7 @@ async def execute(
         review_body = _format_review_body(verdict, findings, review_code)
         github_posted = _post_review_to_github(pr_number, review_body)
 
-        # Post summary to Slack
+        # Post summary to Slack - use adapter if available
         verdict_emoji = {
             "pass": "✅",
             "fail": "❌",
@@ -267,7 +272,19 @@ async def execute(
             f"Findings: {len(findings)} ({sum(1 for f in findings if f.get('severity') == 'blocking')} blocking)\n"
             f"Review ID: `{review_code}`"
         )
-        slack_result = _post_to_slack(slack_message)
+
+        if registry and registry.notify:
+            try:
+                await registry.notify.post(
+                    message=slack_message,
+                    channel="#herd-feed",
+                    username="Herd Review Bot",
+                )
+                slack_result = {"success": True}
+            except Exception as e:
+                slack_result = {"success": False, "error": str(e)}
+        else:
+            slack_result = _post_to_slack(slack_message)
 
         result = {
             "review_id": review_code,

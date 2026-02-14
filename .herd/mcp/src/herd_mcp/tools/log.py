@@ -7,9 +7,12 @@ import json
 import os
 import re
 import uuid
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from herd_mcp.db import connection
+
+if TYPE_CHECKING:
+    from herd_mcp.adapters import AdapterRegistry
 
 
 def _classify_event_type(message: str) -> str:
@@ -126,6 +129,7 @@ async def execute(
     channel: str | None,
     await_response: bool,
     agent_name: str | None,
+    registry: AdapterRegistry | None = None,
 ) -> dict:
     """Post a message to Slack and log the activity.
 
@@ -134,6 +138,7 @@ async def execute(
         channel: Optional Slack channel.
         await_response: If True, wait for thread responses.
         agent_name: Current agent identity.
+        registry: Optional adapter registry for dependency injection.
 
     Returns:
         Dict with posted timestamp, event_id, and optional responses.
@@ -177,9 +182,24 @@ async def execute(
                 [agent_instance_code, event_type, message],
             )
 
-    # Post to Slack
-    slack_result = _post_to_slack(message, channel, agent_name)
-    posted = slack_result.get("success", False)
+    # Post to Slack - use adapter if available, otherwise fall back to inline
+    if registry and registry.notify:
+        # Use adapter protocol
+        try:
+            post_result = await registry.notify.post(
+                message=message,
+                channel=channel,
+                username=agent_name,
+            )
+            posted = True
+            slack_result = {"success": True, "response": post_result}
+        except Exception as e:
+            posted = False
+            slack_result = {"success": False, "error": str(e)}
+    else:
+        # Fall back to inline implementation
+        slack_result = _post_to_slack(message, channel, agent_name)
+        posted = slack_result.get("success", False)
 
     responses = []
     if posted and await_response:
@@ -193,7 +213,19 @@ async def execute(
             # Poll for replies (24 iterations * 5 seconds = 120 seconds)
             for _ in range(24):
                 await asyncio.sleep(5)
-                replies = _get_thread_replies(channel_id, thread_ts, token)
+
+                # Use adapter if available
+                if registry and registry.notify:
+                    try:
+                        replies = await registry.notify.get_thread_replies(
+                            channel=channel_id,
+                            thread_ts=thread_ts,
+                        )
+                    except Exception:
+                        replies = []
+                else:
+                    replies = _get_thread_replies(channel_id, thread_ts, token)
+
                 if replies:
                     responses = [
                         {

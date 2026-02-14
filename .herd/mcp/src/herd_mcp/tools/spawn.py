@@ -7,9 +7,13 @@ import os
 import subprocess
 import uuid
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from herd_mcp import linear_client
 from herd_mcp.db import connection
+
+if TYPE_CHECKING:
+    from herd_mcp.adapters import AdapterRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -128,6 +132,8 @@ def _assemble_context_payload(
     model_code: str,
     repo_root: Path,
     worktree_path: Path,
+    ticket_title: str = "",
+    ticket_description: str = "",
 ) -> str:
     """Assemble the full context payload for spawning the agent.
 
@@ -137,6 +143,8 @@ def _assemble_context_payload(
         model_code: Model to use.
         repo_root: Repository root path.
         worktree_path: Path to agent's worktree.
+        ticket_title: Ticket title (pre-fetched).
+        ticket_description: Ticket description (pre-fetched).
 
     Returns:
         Full context payload as a string.
@@ -157,18 +165,6 @@ def _assemble_context_payload(
 
     # Get Slack token from environment
     slack_token = os.getenv("HERD_SLACK_TOKEN", "")
-
-    # Get ticket details from Linear
-    ticket_title = ""
-    ticket_description = ""
-    if linear_client.is_linear_identifier(ticket_id):
-        try:
-            linear_issue = linear_client.get_issue(ticket_id)
-            if linear_issue:
-                ticket_title = linear_issue.get("title", "")
-                ticket_description = linear_issue.get("description", "")
-        except Exception as e:
-            logger.warning(f"Failed to fetch Linear ticket {ticket_id}: {e}")
 
     # Branch name
     branch_name = f"herd/{agent_code}/{ticket_id.lower()}-herd-spawn"
@@ -214,6 +210,7 @@ async def execute(
     model: str | None,
     agent_name: str | None,
     ticket_id: str | None = None,
+    registry: AdapterRegistry | None = None,
 ) -> dict:
     """Spawn new agent instances with full context assembly.
 
@@ -223,6 +220,7 @@ async def execute(
         model: Optional model override.
         agent_name: Current agent identity (spawner).
         ticket_id: Optional Linear ticket ID for single spawn with full context.
+        registry: Optional adapter registry for dependency injection.
 
     Returns:
         Dict with spawned instance codes and context payload if ticket_id provided.
@@ -283,7 +281,10 @@ async def execute(
                 logger.info(
                     f"Ticket {ticket_id} not found in DB, attempting Linear fetch"
                 )
-                linear_issue = linear_client.get_issue(ticket_id)
+                if registry and registry.tickets:
+                    linear_issue = await registry.tickets.get(ticket_id)
+                else:
+                    linear_issue = linear_client.get_issue(ticket_id)
 
                 if linear_issue:
                     project_code = None
@@ -397,26 +398,39 @@ async def execute(
                 [ticket_id],
             )
 
-            # Sync to Linear
+            # Sync to Linear - use adapter if available
             linear_synced = False
             if linear_client.is_linear_identifier(ticket_id):
                 try:
-                    linear_issue = linear_client.get_issue(ticket_id)
-                    if linear_issue:
-                        # In Progress state UUID
-                        linear_client.update_issue_state(
-                            linear_issue["id"], "77631f63-b27b-45a5-8b04-f9f82b4facde"
-                        )
+                    if registry and registry.tickets:
+                        await registry.tickets.transition(ticket_id, "in_progress")
                         linear_synced = True
                         logger.info(
-                            f"Synced ticket {ticket_id} to In Progress in Linear"
+                            f"Synced ticket {ticket_id} to In Progress in Linear (via adapter)"
                         )
+                    else:
+                        linear_issue = linear_client.get_issue(ticket_id)
+                        if linear_issue:
+                            # In Progress state UUID
+                            linear_client.update_issue_state(
+                                linear_issue["id"], "77631f63-b27b-45a5-8b04-f9f82b4facde"
+                            )
+                            linear_synced = True
+                            logger.info(
+                                f"Synced ticket {ticket_id} to In Progress in Linear"
+                            )
                 except Exception as e:
                     logger.warning(f"Failed to sync ticket {ticket_id} to Linear: {e}")
 
             # Assemble context payload
             context_payload = _assemble_context_payload(
-                ticket_id, agent_code, model_code, repo_root, worktree_path
+                ticket_id,
+                agent_code,
+                model_code,
+                repo_root,
+                worktree_path,
+                ticket_title=ticket[1] if ticket else "",
+                ticket_description=ticket[2] if ticket else "",
             )
 
             return {

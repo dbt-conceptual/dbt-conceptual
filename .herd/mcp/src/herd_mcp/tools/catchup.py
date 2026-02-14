@@ -8,10 +8,13 @@ import re
 import subprocess
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from herd_mcp.db import connection
 from herd_mcp.linear_client import search_issues
+
+if TYPE_CHECKING:
+    from herd_mcp.adapters import AdapterRegistry
 
 
 def _read_status_md(repo_root: Path) -> dict[str, Any]:
@@ -79,18 +82,24 @@ def _get_git_log(repo_root: Path, since: datetime) -> list[dict[str, str]]:
         return []
 
 
-def _get_linear_tickets(agent_name: str) -> list[dict[str, Any]]:
+async def _get_linear_tickets(
+    agent_name: str, registry: AdapterRegistry | None = None
+) -> list[dict[str, Any]]:
     """Get Linear tickets for the agent.
 
     Args:
         agent_name: Agent name to search for.
+        registry: Optional adapter registry.
 
     Returns:
         List of Linear ticket dicts.
     """
     try:
         # Search for tickets assigned to this agent or mentioning them
-        tickets = search_issues(f"assignee:{agent_name}")
+        if registry and registry.tickets:
+            tickets = await registry.tickets.search(f"assignee:{agent_name}")
+        else:
+            tickets = search_issues(f"assignee:{agent_name}")
         return tickets
     except Exception:
         # Linear API may not be available
@@ -282,7 +291,9 @@ def _get_decision_records(agent_name: str, since: datetime) -> list[dict[str, An
         ]
 
 
-async def execute(agent_name: str | None) -> dict:
+async def execute(
+    agent_name: str | None, registry: AdapterRegistry | None = None
+) -> dict:
     """Get a summary of what happened since agent was last active.
 
     Aggregates:
@@ -297,6 +308,7 @@ async def execute(agent_name: str | None) -> dict:
 
     Args:
         agent_name: Current agent identity.
+        registry: Optional adapter registry for dependency injection.
 
     Returns:
         Dict with comprehensive catchup summary.
@@ -333,7 +345,7 @@ async def execute(agent_name: str | None) -> dict:
         if not previous_instance:
             # First session - provide minimal context
             status_md = _read_status_md(repo_root)
-            linear_tickets = _get_linear_tickets(agent_name)
+            linear_tickets = await _get_linear_tickets(agent_name, registry)
 
             return {
                 "since": None,
@@ -398,7 +410,7 @@ async def execute(agent_name: str | None) -> dict:
     # Gather all data sources
     status_md = _read_status_md(repo_root)
     git_log = _get_git_log(repo_root, cutoff)
-    linear_tickets = _get_linear_tickets(agent_name)
+    linear_tickets = await _get_linear_tickets(agent_name, registry)
     handoffs = _get_handoffs(repo_root, cutoff)
     hdrs = _get_recent_hdrs(repo_root, cutoff)
     slack_threads = _get_slack_decisions_threads(agent_name, cutoff)
