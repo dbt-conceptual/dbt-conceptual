@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+import logging
+
 from herd_mcp.db import connection
+from herd_mcp import linear_client
+
+logger = logging.getLogger(__name__)
 
 
 async def execute(
@@ -40,10 +45,48 @@ async def execute(
             [ticket_id],
         ).fetchone()
 
+        # Auto-register from Linear if not found and looks like Linear ID
+        if not ticket and linear_client.is_linear_identifier(ticket_id):
+            logger.info(f"Ticket {ticket_id} not found in DB, attempting Linear fetch")
+            linear_issue = linear_client.get_issue(ticket_id)
+
+            if linear_issue:
+                # Extract project code from Linear if available
+                project_code = None
+                if linear_issue.get("project"):
+                    project_code = linear_issue["project"].get("name")
+
+                # Insert into ticket_def
+                conn.execute(
+                    """
+                    INSERT INTO herd.ticket_def
+                      (ticket_code, ticket_title, ticket_description, ticket_current_status,
+                       project_code, created_at, modified_at)
+                    VALUES (?, ?, ?, 'backlog', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    """,
+                    [
+                        linear_issue["identifier"],
+                        linear_issue.get("title", ""),
+                        linear_issue.get("description", ""),
+                        project_code,
+                    ],
+                )
+                logger.info(f"Auto-registered ticket {ticket_id} from Linear")
+
+                # Re-fetch the ticket
+                ticket = conn.execute(
+                    """
+                    SELECT ticket_code, ticket_title, ticket_description, ticket_current_status
+                    FROM herd.ticket_def
+                    WHERE ticket_code = ?
+                    """,
+                    [ticket_id],
+                ).fetchone()
+
         if not ticket:
             return {
                 "assigned": False,
-                "error": f"Ticket {ticket_id} not found",
+                "error": f"Ticket {ticket_id} not found in DB or Linear",
                 "agent": agent_name,
                 "ticket": ticket_id,
                 "priority": priority,
@@ -125,7 +168,7 @@ async def execute(
             [ticket_id],
         )
 
-        return {
+        result = {
             "assigned": True,
             "agent": agent_name,
             "ticket": {
@@ -137,4 +180,26 @@ async def execute(
             "priority": priority,
             "agent_instance_code": agent_instance_code,
             "note": None if agent_instance_code else "No active agent instance found",
+            "linear_synced": False,
         }
+
+    # Sync to Linear if ticket looks like a Linear identifier
+    if linear_client.is_linear_identifier(ticket_id):
+        try:
+            linear_issue = linear_client.get_issue(ticket_id)
+            if linear_issue:
+                # Update to "Assigned" state in Linear
+                # State UUID for "Assigned": 408b4cda-4d6e-403a-8030-78e8b0a6ffee
+                linear_client.update_issue_state(
+                    linear_issue["id"],
+                    "408b4cda-4d6e-403a-8030-78e8b0a6ffee"
+                )
+                result["linear_synced"] = True
+                logger.info(f"Synced ticket {ticket_id} assignment to Linear")
+            else:
+                logger.warning(f"Could not find Linear issue {ticket_id} for sync")
+        except Exception as e:
+            logger.warning(f"Failed to sync ticket {ticket_id} to Linear: {e}")
+            result["linear_sync_error"] = str(e)
+
+    return result

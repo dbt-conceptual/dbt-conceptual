@@ -218,3 +218,121 @@ async def test_assign_updates_modified_at(seeded_db):
             "SELECT modified_at FROM herd.ticket_def WHERE ticket_code = 'DBC-100'"
         ).fetchone()[0]
         assert modified_at is not None
+
+
+@pytest.mark.asyncio
+async def test_assign_auto_register_from_linear(seeded_db):
+    """Test auto-registration of ticket from Linear when not in DB."""
+    linear_issue = {
+        "id": "linear-uuid-123",
+        "identifier": "DBC-125",
+        "title": "New ticket from Linear",
+        "description": "Fetched from Linear API",
+        "project": {"id": "proj-1", "name": "MCP Server"},
+    }
+
+    with patch("herd_mcp.tools.assign.connection") as mock_context:
+        mock_context.return_value.__enter__ = MagicMock(return_value=seeded_db)
+        mock_context.return_value.__exit__ = MagicMock(return_value=None)
+
+        with patch("herd_mcp.linear_client.is_linear_identifier", return_value=True):
+            with patch("herd_mcp.linear_client.get_issue", return_value=linear_issue):
+                with patch("herd_mcp.linear_client.update_issue_state"):
+                    result = await assign.execute(
+                        ticket_id="DBC-125",
+                        agent_name="grunt",
+                        priority="high",
+                    )
+
+                    assert result["assigned"] is True
+                    assert result["ticket"]["id"] == "DBC-125"
+                    assert result["ticket"]["title"] == "New ticket from Linear"
+
+                    # Verify ticket was inserted into DB
+                    ticket = seeded_db.execute(
+                        "SELECT ticket_code, ticket_title, project_code FROM herd.ticket_def WHERE ticket_code = 'DBC-125'"
+                    ).fetchone()
+                    assert ticket is not None
+                    assert ticket[0] == "DBC-125"
+                    assert ticket[1] == "New ticket from Linear"
+                    assert ticket[2] == "MCP Server"
+
+
+@pytest.mark.asyncio
+async def test_assign_linear_sync_success(seeded_db):
+    """Test successful Linear sync on assignment."""
+    linear_issue = {
+        "id": "linear-uuid-100",
+        "identifier": "DBC-100",
+    }
+
+    with patch("herd_mcp.tools.assign.connection") as mock_context:
+        mock_context.return_value.__enter__ = MagicMock(return_value=seeded_db)
+        mock_context.return_value.__exit__ = MagicMock(return_value=None)
+
+        with patch("herd_mcp.linear_client.is_linear_identifier", return_value=True):
+            with patch("herd_mcp.linear_client.get_issue", return_value=linear_issue):
+                with patch("herd_mcp.linear_client.update_issue_state") as mock_update:
+                    result = await assign.execute(
+                        ticket_id="DBC-100",
+                        agent_name="grunt",
+                        priority="high",
+                    )
+
+                    assert result["assigned"] is True
+                    assert result["linear_synced"] is True
+
+                    # Verify Linear API was called with correct state
+                    mock_update.assert_called_once_with(
+                        "linear-uuid-100",
+                        "408b4cda-4d6e-403a-8030-78e8b0a6ffee"  # Assigned state
+                    )
+
+
+@pytest.mark.asyncio
+async def test_assign_linear_sync_failure(seeded_db):
+    """Test graceful handling of Linear sync failure."""
+    with patch("herd_mcp.tools.assign.connection") as mock_context:
+        mock_context.return_value.__enter__ = MagicMock(return_value=seeded_db)
+        mock_context.return_value.__exit__ = MagicMock(return_value=None)
+
+        with patch("herd_mcp.linear_client.is_linear_identifier", return_value=True):
+            with patch("herd_mcp.linear_client.get_issue", side_effect=Exception("API error")):
+                result = await assign.execute(
+                    ticket_id="DBC-100",
+                    agent_name="grunt",
+                    priority="high",
+                )
+
+                # Assignment should still succeed
+                assert result["assigned"] is True
+                assert result["linear_synced"] is False
+                assert "linear_sync_error" in result
+
+
+@pytest.mark.asyncio
+async def test_assign_non_linear_ticket_no_sync(seeded_db):
+    """Test that non-Linear tickets don't attempt sync."""
+    # Insert a non-Linear style ticket
+    seeded_db.execute("""
+        INSERT INTO herd.ticket_def
+          (ticket_code, ticket_title, ticket_current_status, created_at)
+        VALUES ('INTERNAL-001', 'Internal ticket', 'backlog', CURRENT_TIMESTAMP)
+    """)
+
+    with patch("herd_mcp.tools.assign.connection") as mock_context:
+        mock_context.return_value.__enter__ = MagicMock(return_value=seeded_db)
+        mock_context.return_value.__exit__ = MagicMock(return_value=None)
+
+        with patch("herd_mcp.linear_client.is_linear_identifier", return_value=False):
+            with patch("herd_mcp.linear_client.get_issue") as mock_get:
+                result = await assign.execute(
+                    ticket_id="INTERNAL-001",
+                    agent_name="grunt",
+                    priority="normal",
+                )
+
+                assert result["assigned"] is True
+                assert result["linear_synced"] is False
+                # Linear API should not have been called
+                mock_get.assert_not_called()

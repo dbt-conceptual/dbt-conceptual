@@ -2,7 +2,7 @@
 
 __version__ = "0.1.0"
 
-# Export identity module for integration tests
-from herd_mcp import identity
+# Export identity and linear_client modules for integration tests
+from herd_mcp import identity, linear_client
 
-__all__ = ["identity"]
+__all__ = ["identity", "linear_client"]

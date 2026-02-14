@@ -33,7 +33,7 @@ def seed_agent_def(conn) -> None:
             "agent_status": "active",
             "agent_branch_prefix": "herd/mini-mao",
             "agent_email": "mini-mao@herd.local",
-            "default_model_code": "claude-sonnet-4-5",
+            "default_model_code": "claude-opus-4-6",
         },
         {
             "agent_code": "grunt",
@@ -57,7 +57,7 @@ def seed_agent_def(conn) -> None:
             "agent_status": "active",
             "agent_branch_prefix": "herd/wardenstein",
             "agent_email": "wardenstein@herd.local",
-            "default_model_code": "claude-sonnet-4-5",
+            "default_model_code": "claude-opus-4-6",
         },
         {
             "agent_code": "shakesquill",
@@ -65,6 +65,14 @@ def seed_agent_def(conn) -> None:
             "agent_status": "active",
             "agent_branch_prefix": "herd/shakesquill",
             "agent_email": "shakesquill@herd.local",
+            "default_model_code": "claude-opus-4-6",
+        },
+        {
+            "agent_code": "gauss",
+            "agent_role": "data-viz",
+            "agent_status": "active",
+            "agent_branch_prefix": "herd/gauss",
+            "agent_email": "gauss@herd.local",
             "default_model_code": "claude-sonnet-4-5",
         },
     ]
@@ -230,7 +238,7 @@ def seed_model_def(conn) -> None:
 def main() -> None:
     """Main entry point for database seeding."""
     # Use environment variable if set, otherwise use default
-    db_path = os.getenv("HERD_DB_PATH", ".herd/herd.duckdb")
+    db_path = os.getenv("HERD_DB_PATH", ".herd/herddb.duckdb")
 
     print(f"Seeding Herd database: {db_path}")
     print("-" * 60)
