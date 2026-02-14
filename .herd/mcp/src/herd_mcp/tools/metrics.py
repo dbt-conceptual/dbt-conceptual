@@ -78,8 +78,8 @@ async def execute(
     """Query operational metrics from the Herd database.
 
     Args:
-        query: Metric query type (cost_per_ticket, agent_performance, model_efficiency,
-               review_effectiveness, sprint_velocity, pipeline_efficiency, headline).
+        query: Metric query type (cost_per_ticket/token_costs, agent_performance, model_efficiency,
+               review_effectiveness/review_stats, sprint_velocity/velocity, pipeline_efficiency, headline).
         period: Optional time period (today, this_week, this_sprint, last_30d, or ISO range).
         group_by: Optional grouping (agent, model, ticket, category).
         agent_name: Current agent identity.
@@ -88,6 +88,14 @@ async def execute(
     Returns:
         Dict with data rows and summary string.
     """
+    # Support documented aliases
+    alias_map = {
+        "token_costs": "cost_per_ticket",
+        "review_stats": "review_effectiveness",
+        "velocity": "sprint_velocity",
+    }
+    query = alias_map.get(query, query)
+
     # NOTE: Complex aggregate queries (JOINs, GROUP BY, COALESCE, subqueries) in
     # metrics.py are kept as raw SQL. StoreAdapter's generic CRUD interface doesn't
     # cover analytics. Future: ReportingAdapter or store.raw_query().

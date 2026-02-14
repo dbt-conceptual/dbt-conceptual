@@ -365,3 +365,64 @@ def test_build_period_filter():
     # Test with None
     filter_clause = metrics._build_period_filter(None, None)
     assert filter_clause == ""
+
+
+@pytest.mark.asyncio
+async def test_query_alias_token_costs(seeded_db):
+    """Test that token_costs alias works for cost_per_ticket."""
+    with patch("herd_mcp.tools.metrics.connection") as mock_context:
+        mock_context.return_value.__enter__ = MagicMock(return_value=seeded_db)
+        mock_context.return_value.__exit__ = MagicMock(return_value=None)
+
+        result = await metrics.execute(
+            query="token_costs",
+            period=None,
+            group_by=None,
+            agent_name="grunt",
+        )
+
+        assert "data" in result
+        assert "summary" in result
+        # Just verify it returns data (same structure as cost_per_ticket)
+        # The actual data content depends on the DB state
+        assert isinstance(result["data"], list)
+
+
+@pytest.mark.asyncio
+async def test_query_alias_review_stats(seeded_db):
+    """Test that review_stats alias works for review_effectiveness."""
+    with patch("herd_mcp.tools.metrics.connection") as mock_context:
+        mock_context.return_value.__enter__ = MagicMock(return_value=seeded_db)
+        mock_context.return_value.__exit__ = MagicMock(return_value=None)
+
+        result = await metrics.execute(
+            query="review_stats",
+            period=None,
+            group_by=None,
+            agent_name="grunt",
+        )
+
+        assert "data" in result
+        assert "summary" in result
+        # Just verify it returns review data structure
+        assert isinstance(result["data"], list)
+
+
+@pytest.mark.asyncio
+async def test_query_alias_velocity(seeded_db):
+    """Test that velocity alias works for sprint_velocity."""
+    with patch("herd_mcp.tools.metrics.connection") as mock_context:
+        mock_context.return_value.__enter__ = MagicMock(return_value=seeded_db)
+        mock_context.return_value.__exit__ = MagicMock(return_value=None)
+
+        result = await metrics.execute(
+            query="velocity",
+            period=None,
+            group_by=None,
+            agent_name="grunt",
+        )
+
+        assert "data" in result
+        assert "summary" in result
+        # Just verify it returns sprint velocity data structure
+        assert isinstance(result["data"], list)

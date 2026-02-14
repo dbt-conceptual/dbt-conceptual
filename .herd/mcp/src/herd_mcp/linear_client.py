@@ -58,7 +58,7 @@ def _graphql_request(
         LINEAR_API_URL,
         data=data,
         headers={
-            "Authorization": f"Bearer {api_key}",
+            "Authorization": api_key,
             "Content-Type": "application/json",
         },
     )

@@ -525,3 +525,5 @@ Wardenstein content.
     # Test unknown agent
     unknown_section = spawn._extract_craft_section(craft_content, "unknown")
     assert unknown_section == ""
+
+

@@ -170,7 +170,7 @@ async def herd_spawn(
 
     Args:
         count: Number of agents to spawn.
-        role: Agent role (grunt, pikasso, wardenstein, shakesquill).
+        role: Agent role or code (accepts both "grunt" and "backend", "pikasso" and "frontend", etc.).
         model: Optional model override (uses role default if not specified).
 
     Returns:
@@ -257,9 +257,13 @@ async def herd_metrics(
     """Query operational metrics from the Herd database.
 
     Args:
-        query: Metric query - "token_costs", "review_stats", "velocity", etc.
-        period: Optional time period - "sprint", "week", "day".
-        group_by: Optional grouping - "agent", "ticket", "project".
+        query: Metric query - "cost_per_ticket" (alias: "token_costs"),
+               "review_effectiveness" (alias: "review_stats"),
+               "sprint_velocity" (alias: "velocity"),
+               "agent_performance", "model_efficiency", "pipeline_efficiency", "headline".
+        period: Optional time period - "today", "this_week", "this_sprint", "last_30d",
+                or ISO date range (e.g., "2026-01-01..2026-02-01").
+        group_by: Optional grouping - "agent", "model", "ticket", "category".
 
     Returns:
         Dict with data rows and summary statistics.

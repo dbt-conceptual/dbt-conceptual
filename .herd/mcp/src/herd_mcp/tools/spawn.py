@@ -265,16 +265,16 @@ async def execute(
             # NOTE: StoreAdapter wiring for CRUD operations kept as raw SQL for now.
             # Future: migrate to store.get() and store.save() once entity mappings are stable.
 
-            # Verify agent_def exists for the role
+            # Verify agent_def exists for the role (search by agent_code OR agent_role)
             agent_def = conn.execute(
                 """
                 SELECT agent_code, default_model_code, agent_status
                 FROM herd.agent_def
-                WHERE agent_role = ?
+                WHERE (agent_code = ? OR agent_role = ?)
                   AND deleted_at IS NULL
                 LIMIT 1
                 """,
-                [role],
+                [role, role],
             ).fetchone()
 
             if not agent_def:
@@ -484,16 +484,16 @@ async def execute(
         }
 
     with connection() as conn:
-        # Verify agent_def exists for the role
+        # Verify agent_def exists for the role (search by agent_code OR agent_role)
         agent_def = conn.execute(
             """
             SELECT agent_code, default_model_code, agent_status
             FROM herd.agent_def
-            WHERE agent_role = ?
+            WHERE (agent_code = ? OR agent_role = ?)
               AND deleted_at IS NULL
             LIMIT 1
             """,
-            [role],
+            [role, role],
         ).fetchone()
 
         if not agent_def:

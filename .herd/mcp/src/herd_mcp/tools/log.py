@@ -213,7 +213,7 @@ async def execute(
     if registry and registry.notify:
         # Use adapter protocol
         try:
-            post_result = await registry.notify.post(
+            post_result = registry.notify.post(
                 message=message,
                 channel=channel,
                 username=agent_name,
@@ -244,7 +244,7 @@ async def execute(
                 # Use adapter if available
                 if registry and registry.notify:
                     try:
-                        replies = await registry.notify.get_thread_replies(
+                        replies = registry.notify.get_thread_replies(
                             channel=channel_id,
                             thread_ts=thread_ts,
                         )

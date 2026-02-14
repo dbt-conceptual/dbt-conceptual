@@ -56,6 +56,23 @@ def test_graphql_request_success():
             assert result == {"data": {"test": "value"}}
 
 
+def test_graphql_request_auth_header():
+    """Test that auth header uses raw API key without Bearer prefix."""
+    mock_response = MockResponse({"data": {"test": "value"}})
+
+    with patch.dict(os.environ, {"LINEAR_API_KEY": "test-api-key-123"}):
+        with patch("urllib.request.urlopen", return_value=mock_response) as mock_urlopen:
+            _graphql_request("query { test }")
+
+            # Check that the Request object was created with correct auth header
+            call_args = mock_urlopen.call_args
+            request = call_args[0][0]
+            # Linear API uses raw API key, not Bearer token
+            assert request.headers.get("Authorization") == "test-api-key-123"
+            # Should NOT have Bearer prefix
+            assert not request.headers.get("Authorization", "").startswith("Bearer ")
+
+
 def test_graphql_request_missing_api_key():
     """Test GraphQL request without API key."""
     with patch.dict(os.environ, {}, clear=True):
