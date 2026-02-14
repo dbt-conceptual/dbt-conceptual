@@ -29,7 +29,9 @@ def _get_api_key() -> str | None:
     return os.getenv("LINEAR_API_KEY")
 
 
-def _graphql_request(query: str, variables: dict[str, Any] | None = None) -> dict[str, Any]:
+def _graphql_request(
+    query: str, variables: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """Execute a GraphQL request against Linear API using urllib.
 
     Args:
@@ -66,15 +68,17 @@ def _graphql_request(query: str, variables: dict[str, Any] | None = None) -> dic
             result = json.loads(resp.read())
 
             if "errors" in result:
-                error_msg = "; ".join(e.get("message", str(e)) for e in result["errors"])
+                error_msg = "; ".join(
+                    e.get("message", str(e)) for e in result["errors"]
+                )
                 raise Exception(f"Linear GraphQL error: {error_msg}")
 
             return result
     except urllib.error.HTTPError as e:
         error_body = e.read().decode("utf-8") if e.fp else "No error body"
-        raise Exception(f"Linear API HTTP error {e.code}: {error_body}")
+        raise Exception(f"Linear API HTTP error {e.code}: {error_body}") from e
     except urllib.error.URLError as e:
-        raise Exception(f"Linear API network error: {e.reason}")
+        raise Exception(f"Linear API network error: {e.reason}") from e
 
 
 def get_issue(identifier: str) -> dict[str, Any] | None:

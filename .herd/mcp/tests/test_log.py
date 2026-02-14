@@ -291,14 +291,20 @@ def test_get_thread_replies_success():
     """Test get_thread_replies helper returns filtered replies."""
     with patch("urllib.request.urlopen") as mock_urlopen:
         mock_response = MagicMock()
-        mock_response.read.return_value = json.dumps({
-            "ok": True,
-            "messages": [
-                {"user": "U00000", "text": "Parent message", "ts": "1234567890.123"},
-                {"user": "U12345", "text": "Reply 1", "ts": "1234567891.123"},
-                {"user": "U67890", "text": "Reply 2", "ts": "1234567892.123"},
-            ],
-        }).encode()
+        mock_response.read.return_value = json.dumps(
+            {
+                "ok": True,
+                "messages": [
+                    {
+                        "user": "U00000",
+                        "text": "Parent message",
+                        "ts": "1234567890.123",
+                    },
+                    {"user": "U12345", "text": "Reply 1", "ts": "1234567891.123"},
+                    {"user": "U67890", "text": "Reply 2", "ts": "1234567892.123"},
+                ],
+            }
+        ).encode()
         mock_response.__enter__ = MagicMock(return_value=mock_response)
         mock_response.__exit__ = MagicMock(return_value=None)
         mock_urlopen.return_value = mock_response
@@ -314,12 +320,18 @@ def test_get_thread_replies_no_replies():
     """Test get_thread_replies helper with empty thread."""
     with patch("urllib.request.urlopen") as mock_urlopen:
         mock_response = MagicMock()
-        mock_response.read.return_value = json.dumps({
-            "ok": True,
-            "messages": [
-                {"user": "U00000", "text": "Parent message", "ts": "1234567890.123"},
-            ],
-        }).encode()
+        mock_response.read.return_value = json.dumps(
+            {
+                "ok": True,
+                "messages": [
+                    {
+                        "user": "U00000",
+                        "text": "Parent message",
+                        "ts": "1234567890.123",
+                    },
+                ],
+            }
+        ).encode()
         mock_response.__enter__ = MagicMock(return_value=mock_response)
         mock_response.__exit__ = MagicMock(return_value=None)
         mock_urlopen.return_value = mock_response
@@ -460,10 +472,12 @@ def test_get_thread_replies_api_returns_not_ok():
     """Test get_thread_replies when API returns ok:false."""
     with patch("urllib.request.urlopen") as mock_urlopen:
         mock_response = MagicMock()
-        mock_response.read.return_value = json.dumps({
-            "ok": False,
-            "error": "channel_not_found",
-        }).encode()
+        mock_response.read.return_value = json.dumps(
+            {
+                "ok": False,
+                "error": "channel_not_found",
+            }
+        ).encode()
         mock_response.__enter__ = MagicMock(return_value=mock_response)
         mock_response.__exit__ = MagicMock(return_value=None)
         mock_urlopen.return_value = mock_response

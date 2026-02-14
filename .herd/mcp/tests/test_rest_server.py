@@ -5,10 +5,8 @@ from __future__ import annotations
 import os
 from unittest.mock import AsyncMock, patch
 
-import pytest
 from aiohttp import web
 from aiohttp.test_utils import AioHTTPTestCase
-
 from herd_mcp.rest_server import create_app
 
 
@@ -35,7 +33,9 @@ class TestRestAPI(AioHTTPTestCase):
     @patch.dict(os.environ, {}, clear=True)
     async def test_no_auth_mode(self) -> None:
         """Test endpoints work without auth when HERD_API_TOKEN not set."""
-        with patch("herd_mcp.rest_server.status.execute", new_callable=AsyncMock) as mock:
+        with patch(
+            "herd_mcp.rest_server.status.execute", new_callable=AsyncMock
+        ) as mock:
             mock.return_value = {"agents": []}
 
             resp = await self.client.get("/api/status")
@@ -44,7 +44,9 @@ class TestRestAPI(AioHTTPTestCase):
     @patch.dict(os.environ, {"HERD_API_TOKEN": "test-token-123"})
     async def test_valid_auth(self) -> None:
         """Test endpoint with valid bearer token."""
-        with patch("herd_mcp.rest_server.status.execute", new_callable=AsyncMock) as mock:
+        with patch(
+            "herd_mcp.rest_server.status.execute", new_callable=AsyncMock
+        ) as mock:
             mock.return_value = {"agents": []}
 
             resp = await self.client.get(
@@ -107,7 +109,9 @@ class TestRestAPI(AioHTTPTestCase):
 
     async def test_status_endpoint(self) -> None:
         """Test GET /api/status endpoint."""
-        with patch("herd_mcp.rest_server.status.execute", new_callable=AsyncMock) as mock:
+        with patch(
+            "herd_mcp.rest_server.status.execute", new_callable=AsyncMock
+        ) as mock:
             mock.return_value = {"agents": [], "sprint": {}, "blockers": []}
 
             resp = await self.client.get("/api/status?scope=all")
@@ -123,7 +127,9 @@ class TestRestAPI(AioHTTPTestCase):
 
     async def test_spawn_endpoint(self) -> None:
         """Test POST /api/spawn endpoint."""
-        with patch("herd_mcp.rest_server.spawn.execute", new_callable=AsyncMock) as mock:
+        with patch(
+            "herd_mcp.rest_server.spawn.execute", new_callable=AsyncMock
+        ) as mock:
             mock.return_value = {"spawned": ["grunt-001"]}
 
             resp = await self.client.post(
@@ -152,12 +158,18 @@ class TestRestAPI(AioHTTPTestCase):
 
     async def test_assign_endpoint(self) -> None:
         """Test POST /api/assign endpoint."""
-        with patch("herd_mcp.rest_server.assign.execute", new_callable=AsyncMock) as mock:
+        with patch(
+            "herd_mcp.rest_server.assign.execute", new_callable=AsyncMock
+        ) as mock:
             mock.return_value = {"assigned": True, "ticket_id": "DBC-130"}
 
             resp = await self.client.post(
                 "/api/assign",
-                json={"ticket_id": "DBC-130", "agent_name": "grunt", "priority": "high"},
+                json={
+                    "ticket_id": "DBC-130",
+                    "agent_name": "grunt",
+                    "priority": "high",
+                },
             )
             assert resp.status == 200
 
@@ -200,7 +212,9 @@ class TestRestAPI(AioHTTPTestCase):
 
     async def test_review_endpoint(self) -> None:
         """Test POST /api/review endpoint."""
-        with patch("herd_mcp.rest_server.review.execute", new_callable=AsyncMock) as mock:
+        with patch(
+            "herd_mcp.rest_server.review.execute", new_callable=AsyncMock
+        ) as mock:
             mock.return_value = {"review_id": "rev-123", "posted": True}
 
             resp = await self.client.post(
@@ -226,7 +240,9 @@ class TestRestAPI(AioHTTPTestCase):
 
     async def test_metrics_endpoint(self) -> None:
         """Test GET /api/metrics endpoint."""
-        with patch("herd_mcp.rest_server.metrics.execute", new_callable=AsyncMock) as mock:
+        with patch(
+            "herd_mcp.rest_server.metrics.execute", new_callable=AsyncMock
+        ) as mock:
             mock.return_value = {"data": [], "summary": {}}
 
             resp = await self.client.get(
@@ -254,7 +270,9 @@ class TestRestAPI(AioHTTPTestCase):
 
     async def test_catchup_endpoint(self) -> None:
         """Test GET /api/catchup endpoint."""
-        with patch("herd_mcp.rest_server.catchup.execute", new_callable=AsyncMock) as mock:
+        with patch(
+            "herd_mcp.rest_server.catchup.execute", new_callable=AsyncMock
+        ) as mock:
             mock.return_value = {"updates": [], "summary": "No updates"}
 
             resp = await self.client.get("/api/catchup")
@@ -333,7 +351,9 @@ class TestRestAPI(AioHTTPTestCase):
 
     async def test_agent_identity_from_header(self) -> None:
         """Test agent identity resolution from X-Agent-Name header."""
-        with patch("herd_mcp.rest_server.status.execute", new_callable=AsyncMock) as mock:
+        with patch(
+            "herd_mcp.rest_server.status.execute", new_callable=AsyncMock
+        ) as mock:
             mock.return_value = {"agents": []}
 
             resp = await self.client.get(
@@ -349,7 +369,9 @@ class TestRestAPI(AioHTTPTestCase):
     @patch.dict(os.environ, {"HERD_AGENT_NAME": "shakesquill"})
     async def test_agent_identity_from_env(self) -> None:
         """Test agent identity resolution from HERD_AGENT_NAME env var."""
-        with patch("herd_mcp.rest_server.status.execute", new_callable=AsyncMock) as mock:
+        with patch(
+            "herd_mcp.rest_server.status.execute", new_callable=AsyncMock
+        ) as mock:
             mock.return_value = {"agents": []}
 
             resp = await self.client.get("/api/status")
@@ -362,7 +384,9 @@ class TestRestAPI(AioHTTPTestCase):
 
     async def test_tool_exception_returns_500(self) -> None:
         """Test that tool exceptions return 500 status."""
-        with patch("herd_mcp.rest_server.status.execute", new_callable=AsyncMock) as mock:
+        with patch(
+            "herd_mcp.rest_server.status.execute", new_callable=AsyncMock
+        ) as mock:
             mock.side_effect = Exception("Database error")
 
             resp = await self.client.get("/api/status")

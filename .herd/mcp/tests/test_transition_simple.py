@@ -166,11 +166,19 @@ async def test_transition_linear_sync_success(seeded_db):
         mock_context.return_value.__exit__ = MagicMock(return_value=None)
 
         with patch("herd_mcp.tools.transition.get_manager") as mock_manager:
-            mock_manager.return_value.trigger_refresh = AsyncMock(return_value={"status": "success"})
+            mock_manager.return_value.trigger_refresh = AsyncMock(
+                return_value={"status": "success"}
+            )
 
-            with patch("herd_mcp.linear_client.is_linear_identifier", return_value=True):
-                with patch("herd_mcp.linear_client.get_issue", return_value=linear_issue):
-                    with patch("herd_mcp.linear_client.update_issue_state") as mock_update:
+            with patch(
+                "herd_mcp.linear_client.is_linear_identifier", return_value=True
+            ):
+                with patch(
+                    "herd_mcp.linear_client.get_issue", return_value=linear_issue
+                ):
+                    with patch(
+                        "herd_mcp.linear_client.update_issue_state"
+                    ) as mock_update:
                         result = await transition.execute(
                             ticket_id="DBC-100",
                             to_status="done",
@@ -186,7 +194,7 @@ async def test_transition_linear_sync_success(seeded_db):
                         # Verify Linear API was called with correct state
                         mock_update.assert_called_once_with(
                             "linear-uuid-100",
-                            "42bad6cf-cfb7-4dd2-9dc4-c0c3014bfc5f"  # Done state
+                            "42bad6cf-cfb7-4dd2-9dc4-c0c3014bfc5f",  # Done state
                         )
 
 
@@ -203,11 +211,20 @@ async def test_transition_linear_sync_failure(seeded_db):
         mock_context.return_value.__exit__ = MagicMock(return_value=None)
 
         with patch("herd_mcp.tools.transition.get_manager") as mock_manager:
-            mock_manager.return_value.trigger_refresh = AsyncMock(return_value={"status": "success"})
+            mock_manager.return_value.trigger_refresh = AsyncMock(
+                return_value={"status": "success"}
+            )
 
-            with patch("herd_mcp.linear_client.is_linear_identifier", return_value=True):
-                with patch("herd_mcp.linear_client.get_issue", return_value=linear_issue):
-                    with patch("herd_mcp.linear_client.update_issue_state", side_effect=Exception("API error")):
+            with patch(
+                "herd_mcp.linear_client.is_linear_identifier", return_value=True
+            ):
+                with patch(
+                    "herd_mcp.linear_client.get_issue", return_value=linear_issue
+                ):
+                    with patch(
+                        "herd_mcp.linear_client.update_issue_state",
+                        side_effect=Exception("API error"),
+                    ):
                         result = await transition.execute(
                             ticket_id="DBC-100",
                             to_status="done",

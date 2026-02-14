@@ -285,7 +285,7 @@ async def test_assign_linear_sync_success(seeded_db):
                     # Verify Linear API was called with correct state
                     mock_update.assert_called_once_with(
                         "linear-uuid-100",
-                        "408b4cda-4d6e-403a-8030-78e8b0a6ffee"  # Assigned state
+                        "408b4cda-4d6e-403a-8030-78e8b0a6ffee",  # Assigned state
                     )
 
 
@@ -297,7 +297,9 @@ async def test_assign_linear_sync_failure(seeded_db):
         mock_context.return_value.__exit__ = MagicMock(return_value=None)
 
         with patch("herd_mcp.linear_client.is_linear_identifier", return_value=True):
-            with patch("herd_mcp.linear_client.get_issue", side_effect=Exception("API error")):
+            with patch(
+                "herd_mcp.linear_client.get_issue", side_effect=Exception("API error")
+            ):
                 result = await assign.execute(
                     ticket_id="DBC-100",
                     agent_name="grunt",
