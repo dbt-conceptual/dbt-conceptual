@@ -43,7 +43,7 @@ async def test_session_creation() -> None:
 
         async def mock_stdout_lines() -> list[bytes]:
             yield b'{"session_id": "test-session-123"}\n'
-            yield b'{"text": "Hello from Mini-Mao"}\n'
+            yield b'{"type": "result", "result": "Hello from Mini-Mao", "session_id": "test-session-123"}\n'
 
         mock_process.stdout = mock_stdout_lines()
         mock_exec.return_value = mock_process
@@ -105,7 +105,7 @@ async def test_message_routing_to_existing_session() -> None:
         followup_process.wait = AsyncMock()
 
         async def mock_stdout_lines() -> list[bytes]:
-            yield b'{"text": "Follow-up response"}\n'
+            yield b'{"type": "result", "result": "Follow-up response", "session_id": "existing-session-id"}\n'
 
         followup_process.stdout = mock_stdout_lines()
         mock_exec.return_value = followup_process
@@ -290,8 +290,7 @@ async def test_session_id_capture_from_claude_output() -> None:
         async def mock_stdout_lines() -> list[bytes]:
             yield b'{"type": "start"}\n'
             yield b'{"session_id": "captured-session-id"}\n'
-            yield b'{"text": "Response "}\n'
-            yield b'{"text": "text"}\n'
+            yield b'{"type": "result", "result": "Response text", "session_id": "captured-session-id"}\n'
 
         mock_process.stdout = mock_stdout_lines()
         mock_exec.return_value = mock_process
@@ -437,7 +436,7 @@ async def test_json_decode_error_handling_in_spawn() -> None:
         async def mock_stdout_lines() -> list[bytes]:
             yield b'{"session_id": "test-123"}\n'
             yield b'invalid json line\n'  # Should be skipped
-            yield b'{"text": "Hello"}\n'
+            yield b'{"type": "result", "result": "Hello", "session_id": "test-123"}\n'
 
         mock_process.stdout = mock_stdout_lines()
         mock_exec.return_value = mock_process
@@ -480,7 +479,7 @@ async def test_json_decode_error_handling_in_send() -> None:
 
         async def mock_stdout_lines() -> list[bytes]:
             yield b'malformed line\n'  # Should be skipped
-            yield b'{"text": "Response"}\n'
+            yield b'{"type": "result", "result": "Response", "session_id": "existing-session-id"}\n'
 
         followup_process.stdout = mock_stdout_lines()
         mock_exec.return_value = followup_process
@@ -579,7 +578,7 @@ async def test_race_condition_prevention() -> None:
             # Add a small delay to simulate spawn taking time
             await asyncio.sleep(0.1)
             yield b'{"session_id": "test-123"}\n'
-            yield b'{"text": "Hello"}\n'
+            yield b'{"type": "result", "result": "Hello", "session_id": "test-123"}\n'
 
         mock_process.stdout = mock_stdout_lines()
         mock_exec.return_value = mock_process
