@@ -7,6 +7,7 @@ import uuid
 
 from herd_mcp.db import connection
 from herd_mcp.vault_refresh import get_manager
+from herd_mcp import linear_client
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +152,41 @@ async def execute(
             "note": (
                 "No active agent instance found" if not agent_instance_code else None
             ),
+            "linear_synced": False,
         }
+
+    # Sync to Linear if ticket looks like a Linear identifier
+    if linear_client.is_linear_identifier(ticket_id):
+        # Map internal status to Linear state UUID
+        status_to_state_map = {
+            "backlog": "f98ff170-87bd-4a1c-badc-4b67cd37edec",
+            "assigned": "408b4cda-4d6e-403a-8030-78e8b0a6ffee",
+            "in_progress": "77631f63-b27b-45a5-8b04-f9f82b4facde",
+            "pr_submitted": "20590520-1bfc-4861-9cb8-e9f2a374d65b",
+            "review": "20590520-1bfc-4861-9cb8-e9f2a374d65b",
+            "qa_review": "dcbf4d63-b06e-4c1d-ba23-764d95b74193",
+            "architect_review": "7a749bd4-bdbc-4924-aee7-9f9f6f8cdd8c",
+            "done": "42bad6cf-cfb7-4dd2-9dc4-c0c3014bfc5f",
+            "cancelled": "5034b57d-4204-4917-8f18-85e367f0d867",
+        }
+
+        linear_state_id = status_to_state_map.get(to_status)
+
+        if linear_state_id:
+            try:
+                linear_issue = linear_client.get_issue(ticket_id)
+                if linear_issue:
+                    linear_client.update_issue_state(linear_issue["id"], linear_state_id)
+                    result["linear_synced"] = True
+                    logger.info(f"Synced ticket {ticket_id} transition to {to_status} in Linear")
+                else:
+                    logger.warning(f"Could not find Linear issue {ticket_id} for sync")
+            except Exception as e:
+                logger.warning(f"Failed to sync ticket {ticket_id} to Linear: {e}")
+                result["linear_sync_error"] = str(e)
+        else:
+            # Status like "blocked" has no Linear mapping - just log
+            logger.info(f"Status {to_status} has no Linear mapping, skipping sync")
 
     # Trigger vault refresh if ticket transitioned to done
     if to_status == "done":

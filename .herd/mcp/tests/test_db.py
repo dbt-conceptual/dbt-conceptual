@@ -14,7 +14,7 @@ def test_get_connection_memory():
 
 
 def test_init_schema_creates_all_tables(empty_db):
-    """Test that init_schema creates all 23 tables in herd schema."""
+    """Test that init_schema creates all 28 tables in herd schema."""
     db.init_schema(empty_db)
 
     # Query for all tables in herd schema
@@ -24,8 +24,8 @@ def test_init_schema_creates_all_tables(empty_db):
 
     table_names = [row[0] for row in result]
 
-    # Verify we have exactly 23 tables
-    assert len(table_names) == 23
+    # Verify we have exactly 28 tables
+    assert len(table_names) == 28
 
     # Verify specific expected tables
     expected_tables = [
@@ -37,9 +37,11 @@ def test_init_schema_creates_all_tables(empty_db):
         "agent_instance_skillset",
         "agent_instance_ticket_activity",
         "agent_instance_token_activity",
+        "agent_observation",
         "agent_skillset",
         "craft_def",
         "craft_version",
+        "decision_record",
         "initiative_def",
         "model_def",
         "personality_def",
@@ -48,6 +50,9 @@ def test_init_schema_creates_all_tables(empty_db):
         "project_def",
         "review_def",
         "review_finding",
+        "skill_def",
+        "skill_version",
+        "skill_skillset",
         "skillset_def",
         "skillset_version",
         "sprint_def",

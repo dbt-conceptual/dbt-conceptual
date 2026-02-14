@@ -1,5 +1,5 @@
 -- Herd MCP Schema
--- DuckDB DDL for all 26 operational tables
+-- DuckDB DDL for all 28 operational tables
 
 CREATE SCHEMA IF NOT EXISTS herd;
 

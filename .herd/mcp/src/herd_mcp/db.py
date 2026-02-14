@@ -20,7 +20,7 @@ def get_db_path() -> str:
     Returns:
         Database file path, or ":memory:" for in-memory database.
     """
-    return os.getenv("HERD_DB_PATH", ".herd/herd.duckdb")
+    return os.getenv("HERD_DB_PATH", ".herd/herddb.duckdb")
 
 
 def get_connection(db_path: str | None = None) -> duckdb.DuckDBPyConnection:
@@ -55,11 +55,12 @@ def _schema_exists(conn: duckdb.DuckDBPyConnection) -> bool:
         True if schema exists with expected tables.
     """
     try:
-        result = conn.execute(
-            "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'herd'"
-        ).fetchone()
-        # We expect 23 tables in the herd schema
-        return result is not None and result[0] == 23
+        # Use sentinel table check instead of counting all tables
+        # Just checking if the query executes (table exists) is sufficient
+        # We don't care if the table has data
+        conn.execute("SELECT 1 FROM information_schema.tables WHERE table_schema = 'herd' AND table_name = 'agent_def'").fetchone()
+        result = conn.execute("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'herd' AND table_name = 'agent_def'").fetchone()
+        return result is not None and result[0] > 0
     except Exception:
         return False
 
