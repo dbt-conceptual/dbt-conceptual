@@ -58,10 +58,11 @@ async def test_session_creation() -> None:
         assert args[0] == "claude"
         assert args[1] == "-p"
         assert "Message from Architect: Hello Mini-Mao" in args[2]
-        assert args[3] == "--system-prompt"
-        # args[4] is the system prompt content (Mini-Mao role)
-        assert args[5] == "--output-format"
-        assert args[6] == "stream-json"
+        assert args[3] == "--verbose"
+        assert args[4] == "--system-prompt"
+        # args[5] is the system prompt content (Mini-Mao role)
+        assert args[6] == "--output-format"
+        assert args[7] == "stream-json"
 
         # Verify env was cleaned
         kwargs = mock_exec.call_args[1]
