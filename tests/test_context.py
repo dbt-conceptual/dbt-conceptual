@@ -290,7 +290,7 @@ class TestContextResolver:
         order_model = order_context.models[0]
 
         assert len(order_model.upstream) == 1
-        assert "dim_customer" in order_model.upstream
+        assert "model.test_project.dim_customer" in order_model.upstream
 
     def test_model_inferences(self, temp_project):
         """Should run inference engine on models."""
@@ -377,7 +377,11 @@ class TestContextResolver:
         context = resolver.resolve_full_context("customer")
 
         # Should still resolve, but models will be minimal
-        assert len(context.models) == 0  # No models without manifest
+        model = context.models[0]
+        assert model.name == "dim_customer"
+        assert model.description is None
+        assert model.materialization is None
+        assert len(model.columns) == 0
         assert context.metadata.manifest_file is None
 
 

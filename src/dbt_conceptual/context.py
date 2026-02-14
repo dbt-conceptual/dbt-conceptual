@@ -19,7 +19,7 @@ from typing import Any
 from dbt_conceptual.config import Config
 from dbt_conceptual.constraint_translator import ConstraintTranslator
 from dbt_conceptual.inference import Inference, InferenceEngine
-from dbt_conceptual.parser import ConceptualModelParser
+from dbt_conceptual.parser import StateBuilder
 from dbt_conceptual.state import ConceptState, Guidance, RelationshipState
 
 logger = logging.getLogger(__name__)
@@ -88,7 +88,7 @@ class ContextResolver:
             config: Configuration object
         """
         self.config = config
-        self.parser = ConceptualModelParser(config)
+        self.state_builder = StateBuilder(config)
         self.constraint_translator = ConstraintTranslator()
         self.inference_engine = InferenceEngine()
 
@@ -108,8 +108,8 @@ class ContextResolver:
         Raises:
             ValueError: If concept is not found in conceptual model
         """
-        # Layer 1: Parse conceptual model
-        state = self.parser.parse()
+        # Layer 1: Parse conceptual model and build state (scans models)
+        state = self.state_builder.build()
 
         if concept_key not in state.concepts:
             raise ValueError(f"Concept '{concept_key}' not found in conceptual model")
