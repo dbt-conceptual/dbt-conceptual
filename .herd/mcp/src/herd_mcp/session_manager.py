@@ -56,6 +56,13 @@ class SessionManager:
         self._pending_sessions: set[str] = set()  # Track in-progress session creation
         self._idle_check_task: asyncio.Task[None] | None = None
 
+        # Load Mini-Mao role file for system prompt
+        role_file_path = self.project_path / ".herd" / "roles" / "mini-mao.md"
+        try:
+            self._system_prompt = role_file_path.read_text()
+        except FileNotFoundError:
+            self._system_prompt = "You are Mini-Mao, the Scum Master and Team Lead of The Herd."
+
     async def start(self) -> None:
         """Start the session manager and idle check loop."""
         self._idle_check_task = asyncio.create_task(self._idle_check_loop())
@@ -176,17 +183,23 @@ class SessionManager:
         # Format the message with user context
         message = f"Message from {user_name}: {initial_message}"
 
+        # Create clean environment without CLAUDECODE to avoid nested session errors
+        clean_env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}
+
         # Spawn Claude CLI process
         # Use stream-json output to capture session_id
         process = await asyncio.create_subprocess_exec(
             "claude",
             "-p",
             message,
+            "--system-prompt",
+            self._system_prompt,
             "--output-format",
             "stream-json",
             cwd=str(self.project_path),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
+            env=clean_env,
         )
 
         # Read streaming JSON output to capture session_id and response
@@ -245,17 +258,23 @@ class SessionManager:
             # Can't resume without session_id
             return "Error: Session lost (no session_id). Please start a new thread."
 
+        # Create clean environment without CLAUDECODE to avoid nested session errors
+        clean_env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}
+
         process = await asyncio.create_subprocess_exec(
             "claude",
             "-p",
             message,
             "--resume",
             session.session_id,
+            "--system-prompt",
+            self._system_prompt,
             "--output-format",
             "stream-json",
             cwd=str(self.project_path),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
+            env=clean_env,
         )
 
         # Read streaming JSON output

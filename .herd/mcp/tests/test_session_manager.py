@@ -58,8 +58,15 @@ async def test_session_creation() -> None:
         assert args[0] == "claude"
         assert args[1] == "-p"
         assert "Message from Architect: Hello Mini-Mao" in args[2]
-        assert args[3] == "--output-format"
-        assert args[4] == "stream-json"
+        assert args[3] == "--system-prompt"
+        # args[4] is the system prompt content (Mini-Mao role)
+        assert args[5] == "--output-format"
+        assert args[6] == "stream-json"
+
+        # Verify env was cleaned
+        kwargs = mock_exec.call_args[1]
+        assert "env" in kwargs
+        assert "CLAUDECODE" not in kwargs["env"]
 
         # Verify session was created
         assert "1234.5678" in manager.sessions
@@ -112,6 +119,12 @@ async def test_message_routing_to_existing_session() -> None:
         assert args[0] == "claude"
         assert "--resume" in args
         assert "existing-session-id" in args
+        assert "--system-prompt" in args
+
+        # Verify env was cleaned
+        kwargs = mock_exec.call_args[1]
+        assert "env" in kwargs
+        assert "CLAUDECODE" not in kwargs["env"]
 
         # Verify message count incremented
         assert manager.sessions["1234.5678"].message_count == 2
