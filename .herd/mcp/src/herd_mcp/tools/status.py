@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from herd_mcp.db import connection
+
+if TYPE_CHECKING:
+    from herd_mcp.adapters import AdapterRegistry
 
 
 def _get_active_agents(conn: Any) -> list[dict]:
@@ -329,17 +332,23 @@ def _get_available_agents(conn: Any) -> list[dict]:
     return available
 
 
-async def execute(scope: str, agent_name: str | None) -> dict:
+async def execute(
+    scope: str, agent_name: str | None, registry: AdapterRegistry | None = None
+) -> dict:
     """Get current status of Herd agents, sprint, and blockers.
 
     Args:
         scope: Status scope - "all", "sprint", "agent:<name>", "ticket:<id>",
                "available", or "blocked".
         agent_name: Current agent identity.
+        registry: Optional adapter registry for dependency injection.
 
     Returns:
         Dict with agents status, sprint info, and blocker list based on scope.
     """
+    # NOTE: Complex aggregate queries (JOINs, GROUP BY, subqueries) in status.py
+    # are kept as raw SQL. StoreAdapter's generic CRUD interface doesn't cover
+    # these analytics queries. Future: ReportingAdapter or store.raw_query().
     with connection() as conn:
         if scope == "all":
             return {
