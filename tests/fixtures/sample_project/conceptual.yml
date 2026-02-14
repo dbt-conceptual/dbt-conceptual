@@ -1,0 +1,101 @@
+metadata:
+  version: 1.0.0
+  project: sample_project
+
+domains:
+  party:
+    name: Party
+    display_name: Party Domain
+    owner: party-team
+    color: "#FF5733"
+
+  product:
+    name: Product
+    display_name: Product Domain
+    owner: product-team
+    color: "#33FF57"
+
+  transaction:
+    name: Transaction
+    display_name: Transaction Domain
+    owner: transaction-team
+    color: "#3357FF"
+
+concepts:
+  customer:
+    name: Customer
+    domain: party
+    definition: |
+      A person or organization that purchases products from the company.
+      Customers are the core entity in our business model.
+    guidance:
+      context: |
+        Customer data is critical for analytics and must maintain high quality.
+        Every customer must have a unique identifier that persists across systems.
+      rules:
+        - name: unique_customer_id
+          description: customer_id must be unique across all records
+        - name: no_pii_in_analytics
+          description: Remove PII (email, phone) from analytics layers
+
+  order:
+    name: Order
+    domain: transaction
+    owner: analytics-team
+    definition: |
+      A purchase transaction where a customer buys one or more products.
+      Orders represent completed transactions with payment confirmation.
+    guidance:
+      context: |
+        Order data drives revenue reporting. Cancelled orders should be flagged
+        but retained for analysis.
+      rules:
+        - name: unique_order_id
+          description: order_id must be unique
+        - name: immutable_orders
+          description: Order records should not be updated after creation
+
+  product:
+    name: Product
+    domain: product
+    definition: |
+      An item available for purchase in the company catalog.
+      Products may have variants (size, color, etc).
+
+  # Draft concept - has domain but no models yet
+  supplier:
+    name: Supplier
+    domain: party
+    definition: |
+      An organization or individual that provides products to the company.
+
+  # Stub concept - no domain assigned
+  warehouse:
+    name: Warehouse
+    definition: |
+      A physical location where products are stored and from which orders are fulfilled.
+
+relationships:
+  - from: customer
+    to: order
+    verb: places
+    cardinality: "1:N"
+    definition: A customer can place multiple orders over time
+
+  - from: order
+    to: product
+    verb: contains
+    cardinality: "1:N"
+    definition: An order can contain multiple product line items
+
+  - from: supplier
+    to: product
+    verb: supplies
+    cardinality: "1:N"
+    definition: A supplier can provide multiple products
+
+  - from: product
+    to: warehouse
+    verb: stored_in
+    cardinality: "1:N"
+    definition: A product can be stored in multiple warehouse locations

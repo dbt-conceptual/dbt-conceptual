@@ -1,0 +1,16 @@
+name: sample_project
+version: 1.0.0
+config-version: 2
+
+profile: sample_profile
+
+model-paths: ["models"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+
+target-path: "target"
+
+models:
+  sample_project:
+    materialized: table

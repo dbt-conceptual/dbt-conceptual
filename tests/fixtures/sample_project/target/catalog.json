@@ -1,0 +1,192 @@
+{
+  "metadata": {
+    "project_name": "sample_project",
+    "generated_at": "2024-01-01T00:00:00.000000Z"
+  },
+  "nodes": {
+    "model.sample_project.stg_customers": {
+      "stats": {
+        "row_count": {
+          "value": 5000,
+          "label": "Row Count"
+        }
+      },
+      "columns": {
+        "customer_id": {
+          "name": "customer_id",
+          "type": "INTEGER"
+        },
+        "customer_name": {
+          "name": "customer_name",
+          "type": "VARCHAR"
+        },
+        "email": {
+          "name": "email",
+          "type": "VARCHAR"
+        }
+      }
+    },
+    "model.sample_project.stg_orders": {
+      "stats": {
+        "row_count": {
+          "value": 25000,
+          "label": "Row Count"
+        }
+      },
+      "columns": {
+        "order_id": {
+          "name": "order_id",
+          "type": "INTEGER"
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "type": "INTEGER"
+        },
+        "order_date": {
+          "name": "order_date",
+          "type": "DATE"
+        }
+      }
+    },
+    "model.sample_project.stg_products": {
+      "stats": {
+        "row_count": {
+          "value": 500,
+          "label": "Row Count"
+        }
+      },
+      "columns": {
+        "product_id": {
+          "name": "product_id",
+          "type": "INTEGER"
+        },
+        "product_name": {
+          "name": "product_name",
+          "type": "VARCHAR"
+        },
+        "price": {
+          "name": "price",
+          "type": "DECIMAL"
+        }
+      }
+    },
+    "model.sample_project.dim_customer": {
+      "stats": {
+        "row_count": {
+          "value": 5000,
+          "label": "Row Count"
+        }
+      },
+      "columns": {
+        "customer_id": {
+          "name": "customer_id",
+          "type": "INTEGER"
+        },
+        "customer_name": {
+          "name": "customer_name",
+          "type": "VARCHAR"
+        },
+        "customer_type": {
+          "name": "customer_type",
+          "type": "VARCHAR"
+        }
+      }
+    },
+    "model.sample_project.dim_product": {
+      "stats": {
+        "row_count": {
+          "value": 500,
+          "label": "Row Count"
+        }
+      },
+      "columns": {
+        "product_id": {
+          "name": "product_id",
+          "type": "INTEGER"
+        },
+        "product_name": {
+          "name": "product_name",
+          "type": "VARCHAR"
+        },
+        "category": {
+          "name": "category",
+          "type": "VARCHAR"
+        }
+      }
+    },
+    "model.sample_project.dim_warehouse": {
+      "stats": {
+        "row_count": {
+          "value": 10,
+          "label": "Row Count"
+        }
+      },
+      "columns": {
+        "warehouse_id": {
+          "name": "warehouse_id",
+          "type": "INTEGER"
+        },
+        "warehouse_name": {
+          "name": "warehouse_name",
+          "type": "VARCHAR"
+        },
+        "location": {
+          "name": "location",
+          "type": "VARCHAR"
+        }
+      }
+    },
+    "model.sample_project.fct_orders": {
+      "stats": {
+        "row_count": {
+          "value": 25000,
+          "label": "Row Count"
+        }
+      },
+      "columns": {
+        "order_id": {
+          "name": "order_id",
+          "type": "INTEGER"
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "type": "INTEGER"
+        },
+        "order_date": {
+          "name": "order_date",
+          "type": "DATE"
+        },
+        "order_total": {
+          "name": "order_total",
+          "type": "DECIMAL"
+        }
+      }
+    },
+    "model.sample_project.fct_order_items": {
+      "stats": {
+        "row_count": {
+          "value": 75000,
+          "label": "Row Count"
+        }
+      },
+      "columns": {
+        "order_id": {
+          "name": "order_id",
+          "type": "INTEGER"
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "INTEGER"
+        },
+        "quantity": {
+          "name": "quantity",
+          "type": "INTEGER"
+        },
+        "line_total": {
+          "name": "line_total",
+          "type": "DECIMAL"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: Staging layer for customer data from source systems
+    meta:
+      concept: customer
+    columns:
+      - name: customer_id
+        description: Unique identifier for the customer
+      - name: customer_name
+        description: Full name of the customer
+      - name: email
+        description: Customer email address
+
+  - name: stg_orders
+    description: Staging layer for order transactions
+    meta:
+      concept: order
+    columns:
+      - name: order_id
+        description: Unique identifier for the order
+      - name: customer_id
+        description: Foreign key to customer
+      - name: order_date
+        description: Date the order was placed
+
+  - name: stg_products
+    description: Staging layer for product catalog
+    meta:
+      concept: product
+    columns:
+      - name: product_id
+        description: Unique identifier for the product
+      - name: product_name
+        description: Name of the product
+      - name: price
+        description: Product price
