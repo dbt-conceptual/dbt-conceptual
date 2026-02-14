@@ -25,19 +25,19 @@ Organize around how the business operates:
 ```yaml
 domains:
   sales:
-    name: "Sales"
+    display_name: "Sales"
     owner: sales-analytics
     
   marketing:
-    name: "Marketing"
+    display_name: "Marketing"
     owner: marketing-analytics
     
   finance:
-    name: "Finance"
+    display_name: "Finance"
     owner: finance-team
     
   operations:
-    name: "Operations"
+    display_name: "Operations"
     owner: ops-team
 ```
 
@@ -50,15 +50,15 @@ Organize around data products or domains in a data mesh sense:
 ```yaml
 domains:
   customer-360:
-    name: "Customer 360"
+    display_name: "Customer 360"
     owner: customer-domain-team
     
   order-management:
-    name: "Order Management"
+    display_name: "Order Management"
     owner: orders-domain-team
     
   inventory:
-    name: "Inventory"
+    display_name: "Inventory"
     owner: supply-chain-team
 ```
 
@@ -71,19 +71,19 @@ Organize around conceptual entity types:
 ```yaml
 domains:
   party:
-    name: "Party"           # People and organizations
+    display_name: "Party"           # People and organizations
     owner: mdm-team
     
   transaction:
-    name: "Transaction"     # Business events
+    display_name: "Transaction"     # Business events
     owner: core-data-team
     
   reference:
-    name: "Reference"       # Lookup/configuration data
+    display_name: "Reference"       # Lookup/configuration data
     owner: core-data-team
     
   metric:
-    name: "Metric"          # Calculated measures
+    display_name: "Metric"          # Calculated measures
     owner: analytics-team
 ```
 
@@ -102,7 +102,7 @@ One domain owns the concept, others reference it:
 ```yaml
 domains:
   party:
-    name: "Party"
+    display_name: "Party"
     owner: mdm-team     # Master data team owns shared concepts
 
 concepts:
@@ -122,16 +122,12 @@ concepts:
   customer:
     domain: party
     owner: mdm-team
-    description: |
+    definition: |
       Core customer entity.
-      
+
       Owned by MDM team for core attributes.
       Marketing owns segmentation attributes.
       Finance owns credit attributes.
-    meta:
-      co-owners:
-        - marketing-team    # Owns segmentation
-        - finance-team      # Owns credit
 ```
 
 This requires coordination but reflects reality in large organizations.
@@ -145,9 +141,9 @@ Relationships can span domains:
 ```yaml
 domains:
   party:
-    name: "Party"
+    display_name: "Party"
   transaction:
-    name: "Transaction"
+    display_name: "Transaction"
 
 concepts:
   customer:
@@ -156,7 +152,7 @@ concepts:
     domain: transaction
 
 relationships:
-  - name: places
+  - verb: places
     from: customer        # party domain
     to: order             # transaction domain
     cardinality: "1:N"
@@ -180,19 +176,10 @@ reporting (depends on transaction for orders, payments)
 
 Consider documenting these dependencies:
 
-```yaml
-domains:
-  transaction:
-    name: "Transaction"
-    owner: orders-team
-    meta:
-      depends_on: [party]
-      
-  reporting:
-    name: "Reporting"
-    owner: analytics-team
-    meta:
-      depends_on: [transaction, party]
+Cross-domain relationships in your `conceptual.yml` make these dependencies visible. Use the diagram export to visualize them:
+
+```bash
+dbc export --type diagram --format svg -o model.svg
 ```
 
 ---
@@ -202,16 +189,11 @@ domains:
 For large models, consider splitting across files:
 
 ```
-models/conceptual/
-├── conceptual.yml          # Main file, imports others
-├── domains/
-│   ├── party.yml
-│   ├── transaction.yml
-│   └── catalog.yml
-└── relationships.yml
+my_project/
+├── conceptual.yml          # Single file for now
 ```
 
-> **Note:** Multi-file support is a planned feature. Currently, everything lives in a single `conceptual.yml`.
+> **Note:** Multi-file support is a planned feature. Currently, everything lives in a single `conceptual.yml` in your project root.
 
 ---
 
@@ -219,22 +201,20 @@ models/conceptual/
 
 Different domains might have different governance requirements:
 
+Different domains may need different levels of care. Use domain ownership to assign responsibility:
+
 ```yaml
 domains:
   party:
-    name: "Party"
-    governance:
-      confidentiality: confidential    # PII lives here
-      steward: privacy-team
-      
+    display_name: "Party"
+    owner: privacy-team              # PII lives here, needs careful ownership
+
   reference:
-    name: "Reference"
-    governance:
-      confidentiality: internal        # Less sensitive
-      steward: data-governance
+    display_name: "Reference"
+    owner: data-governance           # Less sensitive
 ```
 
-See [Governance Features](governance.md) for details.
+See [Governance Features](governance.md) for the future direction of governance features.
 
 ---
 

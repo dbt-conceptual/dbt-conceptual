@@ -7,7 +7,7 @@
 > *If you've ever taken a photo of the whiteboard after a meeting to capture the model — this is for you.*
 
 [![PyPI version](https://img.shields.io/pypi/v/dbt-conceptual.svg)](https://pypi.org/project/dbt-conceptual/)
-[![Python](https://img.shields.io/badge/python-≥3.11-blue.svg)](https://pypi.org/project/dbt-conceptual/)
+[![Python](https://img.shields.io/badge/python-≥3.9-blue.svg)](https://pypi.org/project/dbt-conceptual/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/dbt-conceptual/dbt-conceptual/actions/workflows/ci.yml/badge.svg)](https://github.com/dbt-conceptual/dbt-conceptual/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/dbt-conceptual/dbt-conceptual/branch/main/graph/badge.svg)](https://codecov.io/gh/dbt-conceptual/dbt-conceptual)
@@ -128,9 +128,9 @@ pip install dbt-conceptual
 ```bash
 # Initialize conceptual model
 dbc init
-# Creates models/conceptual/conceptual.yml
+# Creates conceptual.yml and adds vars.dbt_conceptual to dbt_project.yml
 
-# Define your business concepts (edit the file)
+# Define your business concepts (edit conceptual.yml)
 
 # View coverage
 dbc status
@@ -151,18 +151,16 @@ dbc export --type coverage --format html -o coverage.html
 
 ### 1. Define Concepts
 
-Create `models/conceptual/conceptual.yml`:
+Create `conceptual.yml` in your project root (or run `dbc init`):
 
 ```yaml
-version: 1
-
 domains:
   party:
-    name: "Party"
+    display_name: "Party"
   transaction:
-    name: "Transaction"
+    display_name: "Transaction"
   catalog:
-    name: "Catalog"
+    display_name: "Catalog"
 
 concepts:
   customer:
@@ -190,17 +188,17 @@ concepts:
     definition: "A line item linking an order to a product"
 
 relationships:
-  - name: places
+  - verb: places
     from: customer
     to: order
     cardinality: "1:N"
 
-  - name: contains
+  - verb: contains
     from: order
     to: order_line
     cardinality: "1:N"
 
-  - name: includes
+  - verb: includes
     from: order_line
     to: product
     cardinality: "1:1"
@@ -253,8 +251,8 @@ See which concepts are implemented at each layer:
 | Status | Meaning |
 | ------ | ------- |
 | `complete` | Has domain AND has implementing models |
-| `draft` | Missing domain OR zero implementing models |
-| `stub` | Created from sync — needs enrichment |
+| `draft` | Has domain but no implementing models |
+| `stub` | No domain assigned — needs enrichment |
 
 ### 🎨 Interactive Web UI
 
@@ -349,9 +347,9 @@ See [Validation Guide](docs/validation.md) for resolution steps.
 dbc sync
 
 # Output:
-# Created 12 concept stubs
-# Created 8 relationship stubs
-# Run 'dbc status' to see what needs enrichment
+# Found 12 orphan model(s):
+# ...
+# Created 12 stub concept(s)
 ```
 
 ### 📤 Export Formats
@@ -414,32 +412,20 @@ dbc export --type diagram --format svg -o model.svg
 
 ---
 
-## Layer Model
+## Scan Configuration
 
-| Layer | Tagged How | Editable |
-| ----- | ---------- | -------- |
-| **Gold** | `meta.concept` in model.yml within gold_paths | Yes |
-| **Silver** | `meta.concept` in model.yml within silver_paths | Yes |
-| **Bronze** | Inferred from manifest.json lineage | No (read-only) |
-
-Bronze requires no tagging. It surfaces automatically — showing which sources feed your concepts.
-
----
-
-## Configuration
-
-Works out of the box. Override in `dbt_project.yml` if needed:
+Models are scanned from configurable gold layer paths. Override in `dbt_project.yml` if needed:
 
 ```yaml
 vars:
   dbt_conceptual:
-    conceptual_path: models/conceptual    # default
-    silver_paths:
-      - models/silver
-      - models/staging
-    gold_paths:
-      - models/gold
-      - models/marts
+    scan:
+      gold:
+        - models/marts/**/*.yml     # default
+    validation:
+      orphan_models: warn
+      unimplemented_concepts: warn
+      missing_definitions: ignore
 ```
 
 ---
@@ -448,15 +434,14 @@ vars:
 
 | Command | Description |
 | ------- | ----------- |
-| `dbc init` | Initialize conceptual.yml |
+| `dbc init` | Initialize conceptual.yml and dbt_project.yml config |
 | `dbc status` | Show coverage by domain |
 | `dbc orphans` | List untagged models (no meta.concept) |
 | `dbc validate` | Validate model integrity |
 | `dbc validate --no-drafts` | Fail CI if drafts/stubs exist |
-| `dbc sync` | Sync from dbt project and create stubs for orphans |
+| `dbc sync` | Discover orphan models and create stub concepts |
 | `dbc serve` | Launch web UI |
 | `dbc export --type <type> --format <fmt>` | Export reports (see matrix above) |
-| `dbc diff` | Show changes vs HEAD |
 | `dbc diff --base main` | Show changes vs specified base |
 
 ---
@@ -466,10 +451,10 @@ vars:
 **[📚 Full Documentation](https://dbt-conceptual.gitbook.io/dbt-conceptual-docs/)** — comprehensive guides, tutorials, and reference
 
 Quick links:
-- [Validation & Messages Guide](docs/validation.md) — resolving errors, warnings, ghost concepts
-- [Configuration Reference](docs/configuration.md)
-- [Export Formats](docs/exports.md)
-- [CLI Reference](docs/cli.md)
+- [CLI Reference](docs/reference/cli.md)
+- [Configuration Reference](docs/reference/configuration.md)
+- [Export Formats](docs/reference/exports.md)
+- [Validation Codes](docs/reference/validation-codes.md)
 
 ---
 

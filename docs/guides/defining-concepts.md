@@ -14,22 +14,22 @@ concepts:
     name: "Customer"
     domain: party
     owner: commercial-analytics
-    description: |
+    definition: |
       A person or company that purchases products.
       
       Includes both B2C and B2B customers.
       Internal test accounts are excluded.
 ```
 
-That's the structure. The art is in writing descriptions that actually help.
+That's the structure. The art is in writing definitions that actually help.
 
 ---
 
-## Writing Good Descriptions
+## Writing Good Definitions
 
 ### Answer "What Is This?"
 
-A description should answer: "If a business stakeholder asked what this is, what would I say?"
+A definition should answer: "If a business stakeholder asked what this is, what would I say?"
 
 | Weak | Strong |
 |------|--------|
@@ -43,13 +43,13 @@ What's included? What's excluded? This prevents confusion later.
 
 ```yaml
 customer:
-  description: |
+  definition: |
     A person or company that purchases products.
-    
+
     Includes:
     - B2C customers (individuals)
     - B2B customers (companies)
-    
+
     Excludes:
     - Internal test accounts
     - Leads that never converted
@@ -101,7 +101,7 @@ Every concept should belong to a domain:
 ```yaml
 domains:
   party:
-    name: "Party"
+    display_name: "Party"
     owner: commercial-analytics
 
 concepts:
@@ -112,27 +112,6 @@ concepts:
 If you're not sure which domain, ask: "What business area owns this concept?"
 
 Without a domain, a concept is considered a **stub** — incomplete and needing attention.
-
----
-
-## Using Meta
-
-The `meta` block is for your own properties — integrations, references, custom fields:
-
-```yaml
-concepts:
-  customer:
-    name: "Customer"
-    domain: party
-    description: |
-      A person or company that purchases products.
-    meta:
-      source_system: "salesforce"
-      jira_epic: "DATA-1234"
-      last_reviewed: "2025-01-15"
-```
-
-Use `meta` for anything that's useful to your team but not part of the core schema.
 
 ---
 
@@ -152,7 +131,7 @@ These are starting points. Enrich them:
 
 1. Set the `domain`
 2. Set the `owner` (or let it inherit from domain)
-3. Write a `description`
+3. Write a `definition`
 4. Give it a proper `name`
 
 Until a concept has a domain, it stays a stub.
@@ -163,28 +142,9 @@ Until a concept has a domain, it stays a stub.
 
 | Status | What to Do |
 |--------|------------|
-| **Stub** | Assign a domain, add description |
+| **Stub** | Assign a domain, add definition |
 | **Draft** | Tag models with `meta.concept` to implement it |
-| **Complete** | Maintain, update description if meaning changes |
-| **Deprecated** | Set `replaced_by`, update relationships |
-
-### Deprecating Concepts
-
-When a concept is replaced:
-
-```yaml
-concepts:
-  legacy_customer:
-    name: "Customer (Legacy)"
-    domain: party
-    replaced_by: customer
-    description: |
-      Deprecated. Use 'customer' instead.
-      
-      This concept was used in the old CRM system.
-```
-
-The `replaced_by` field marks it deprecated and points to the replacement.
+| **Complete** | Maintain, update definition if meaning changes |
 
 ---
 
@@ -194,11 +154,11 @@ After defining concepts, connect them with relationships:
 
 ```yaml
 relationships:
-  - name: places
+  - verb: places
     from: customer
     to: order
     cardinality: "1:N"
-    description: "A customer places one or more orders"
+    definition: "A customer places one or more orders"
 ```
 
 See [Concepts & Relationships](../core-concepts/concepts-and-relationships.md) for details.
@@ -211,8 +171,8 @@ When defining a concept, verify:
 
 - [ ] Name is a singular noun in business language
 - [ ] Domain is assigned
-- [ ] Description answers "what is this?"
-- [ ] Description states what's included/excluded
+- [ ] Definition answers "what is this?"
+- [ ] Definition states what's included/excluded
 - [ ] Owner is set (or inherited from domain)
 - [ ] Relationships to other concepts are defined
 
@@ -228,7 +188,7 @@ concepts:
     name: "Order"
     domain: transaction
     owner: orders-team
-    description: |
+    definition: |
       A confirmed purchase by a customer.
       
       Created when payment is authorized. Contains one or more 
@@ -238,8 +198,6 @@ concepts:
       - Abandoned carts (see: cart)
       - Draft orders pending payment
       - Cancelled orders (status = cancelled, still an Order)
-    meta:
-      source_system: "shopify"
 ```
 
 ### Minimal But Sufficient
@@ -249,7 +207,7 @@ concepts:
   payment:
     name: "Payment"
     domain: transaction
-    description: |
+    definition: |
       A payment transaction against an order.
       An order may have multiple payments (split tender).
 ```
@@ -261,5 +219,5 @@ concepts:
   payment:
     name: "Payment"
     domain: transaction
-    # No description — what's a payment? What's included/excluded?
+    # No definition — what's a payment? What's included/excluded?
 ```

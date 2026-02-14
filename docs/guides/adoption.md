@@ -80,7 +80,6 @@ dbc status
 Coverage Summary
 ────────────────────────────────────
 Gold layer:    3/50 models   (6%)
-Silver layer:  0/80 models   (0%)
 
 Concepts: 3 total
   - 0 complete (need domain assignment)
@@ -112,7 +111,7 @@ Not all models are equally important. Consider starting with:
 
 ## Step 5: Enrich the Stubs
 
-Open `models/conceptual/conceptual.yml`. You'll see stubs like:
+Open `conceptual.yml` in your project root. You'll see stubs like:
 
 ```yaml
 concepts:
@@ -127,7 +126,7 @@ Enrich them with real information:
 ```yaml
 domains:
   party:
-    name: "Party"
+    display_name: "Party"
     owner: commercial-analytics
 
 concepts:
@@ -135,9 +134,9 @@ concepts:
     name: "Customer"
     domain: party
     owner: commercial-analytics
-    description: |
+    definition: |
       A person or company that purchases products.
-      
+
       Includes both B2C and B2B customers.
       Internal test accounts are excluded.
 ```
@@ -222,13 +221,13 @@ vars:
       orphan_models: error
 ```
 
-**Month 3: Require descriptions too**
+**Month 3: Require definitions too**
 ```yaml
 vars:
   dbt_conceptual:
     validation:
       orphan_models: error
-      missing_descriptions: warn
+      missing_definitions: warn
 ```
 
 This way, the team has time to adapt rather than facing a wall of failures on day one.
@@ -244,7 +243,7 @@ concepts:
   mystery_table:
     domain: party
     owner: UNKNOWN
-    description: "TODO: needs documentation"
+    definition: "TODO: needs documentation"
 ```
 
 Why this helps:

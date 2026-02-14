@@ -106,7 +106,7 @@ concepts:
     domain: party
 ```
 
-If you tag a model with a concept that doesn't exist, it becomes a **ghost concept** — a validation error.
+If you tag a model with a concept that doesn't exist, run `dbc sync` to create a stub for it automatically.
 
 ### Creating Stubs Automatically
 
@@ -129,9 +129,9 @@ dbc validate
 ```
 
 This catches:
-- Tags referencing undefined concepts (ghosts)
-- Models without tags (orphans, if configured to error)
-- Typos in concept names
+- Relationships referencing undefined concepts
+- Models without tags (orphans, if configured to warn or error)
+- Unknown domain references
 
 ---
 
@@ -145,13 +145,8 @@ dbc orphans
 
 ```
 Orphan models (no meta.concept tag):
-
-Gold layer:
   - mart_revenue_summary
   - dim_date
-
-Silver layer:
-  - int_order_enriched
 ```
 
 Not every orphan is a problem — utility models don't need tags. But orphans in your gold layer often indicate gaps.

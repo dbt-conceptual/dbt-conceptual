@@ -10,29 +10,20 @@ dbt-conceptual can feed enterprise data catalogs. The conceptual model stays in 
 
 ### Unity Catalog (Databricks)
 
-Export tags to Unity Catalog:
+Export coverage data and use it to tag assets:
 
 ```bash
-dbc apply --propagate-tags
+dbc export --type coverage --format json -o coverage.json
 ```
 
-This writes domain and owner to dbt model tags, which flow to Unity Catalog via dbt's integration.
-
-```yaml
-# Result in Unity Catalog
-table: analytics.marts.dim_customer
-tags:
-  domain: party
-  owner: commercial-analytics
-  concept: customer
-```
+Build a sync script to write domain and owner to Unity Catalog tags.
 
 ### Alation / Collibra / Purview
 
 Export as JSON for catalog ingestion:
 
 ```bash
-dbc export --type concepts --format json -o concepts.json
+dbc export --type coverage --format json -o coverage.json
 ```
 
 Build a sync script or use the catalog's API to import.
@@ -61,14 +52,7 @@ One conceptual model shared across projects:
   models/
 ```
 
-Configure each project to reference the shared model:
-
-```yaml
-# project-a/dbt_project.yml
-vars:
-  dbt_conceptual:
-    conceptual_path: ../shared/conceptual
-```
+Each project points to the shared `conceptual.yml` via symlink or by copying it in CI.
 
 ### Federated Models
 
@@ -142,7 +126,7 @@ Use PR reviews for concept changes:
 
 ```yaml
 # .github/CODEOWNERS
-/models/conceptual/ @data-governance-team
+/conceptual.yml @data-governance-team
 ```
 
 Changes to `conceptual.yml` require governance approval.
@@ -164,7 +148,7 @@ Notify governance on concept changes:
 Git history provides an audit trail:
 
 ```bash
-git log --oneline -- models/conceptual/conceptual.yml
+git log --oneline -- conceptual.yml
 ```
 
 For formal auditing, export to a compliance system.
@@ -245,11 +229,11 @@ for _, row in df.iterrows():
     concepts[row['name']] = {
         'name': row['display_name'],
         'domain': row['domain'],
-        'description': row['description']
+        'definition': row['description']
     }
 
 with open('conceptual.yml', 'w') as f:
-    yaml.dump({'version': 1, 'concepts': concepts}, f)
+    yaml.dump({'concepts': concepts}, f)
 ```
 
 ### From ERwin / ER/Studio

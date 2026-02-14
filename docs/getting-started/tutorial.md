@@ -39,11 +39,9 @@ In your dbt project root, run:
 dbc init
 ```
 
-This creates `models/conceptual/conceptual.yml` with a starter template:
+This creates `conceptual.yml` in your project root with a starter template:
 
 ```yaml
-version: 1
-
 domains: {}
 
 concepts: {}
@@ -60,15 +58,13 @@ Think of this file as your shared vocabulary — it will grow as you add concept
 Domains help organize related concepts. Let's add two:
 
 ```yaml
-version: 1
-
 domains:
   party:
-    name: "Party"
+    display_name: "Party"
     owner: commercial-analytics
-    
+
   transaction:
-    name: "Transaction"
+    display_name: "Transaction"
     owner: orders-team
 
 concepts: {}
@@ -93,7 +89,7 @@ concepts:
     name: "Customer"
     domain: party
     owner: commercial-analytics
-    description: |
+    definition: |
       A person or company that purchases products.
       
       Includes both B2C and B2B customers. 
@@ -130,14 +126,14 @@ concepts:
     name: "Customer"
     domain: party
     owner: commercial-analytics
-    description: |
+    definition: |
       A person or company that purchases products.
 
   order:
     name: "Order"
     domain: transaction
     owner: orders-team
-    description: |
+    definition: |
       A confirmed purchase by a customer.
       
       Created when payment is authorized. Draft carts 
@@ -147,7 +143,7 @@ concepts:
     name: "Order Line"
     domain: transaction
     owner: orders-team
-    description: |
+    definition: |
       A line item within an order, linking to a specific product.
       
       Captures quantity, unit price, and discounts applied.
@@ -156,7 +152,7 @@ concepts:
     name: "Product"
     domain: transaction
     owner: catalog-team
-    description: |
+    definition: |
       An item available for purchase.
       
       Products have SKUs. Variants (size, color) are 
@@ -166,13 +162,13 @@ concepts:
     name: "Payment"
     domain: transaction
     owner: finance-team
-    description: |
+    definition: |
       A payment transaction against an order.
       
       An order may have multiple payments (split tender).
 ```
 
-Notice how each description answers "what is this?" in business terms, not technical terms. That's intentional — these descriptions should make sense to someone who doesn't know SQL.
+Notice how each definition answers "what is this?" in business terms, not technical terms. That's intentional -- these definitions should make sense to someone who doesn't know SQL.
 
 ---
 
@@ -182,29 +178,29 @@ Now let's connect the concepts:
 
 ```yaml
 relationships:
-  - name: places
+  - verb: places
     from: customer
     to: order
     cardinality: "1:N"
-    description: "A customer places one or more orders"
+    definition: "A customer places one or more orders"
 
-  - name: contains
+  - verb: contains
     from: order
     to: order_line
     cardinality: "1:N"
-    description: "An order contains one or more line items"
+    definition: "An order contains one or more line items"
 
-  - name: references
+  - verb: references
     from: order_line
     to: product
-    cardinality: "N:1"
-    description: "Each line item references a product"
+    cardinality: "1:1"
+    definition: "Each line item references a product"
 
-  - name: paid_by
+  - verb: paid_by
     from: order
     to: payment
     cardinality: "1:N"
-    description: "An order is paid by one or more payments"
+    definition: "An order is paid by one or more payments"
 ```
 
 A tip on naming: use verbs that read naturally. "customer places order" flows better than "customer order relationship."
@@ -355,15 +351,13 @@ Now every PR shows conceptual model coverage. If someone adds a model without ta
 Here's the full `conceptual.yml` for reference:
 
 ```yaml
-version: 1
-
 domains:
   party:
-    name: "Party"
+    display_name: "Party"
     owner: commercial-analytics
-    
+
   transaction:
-    name: "Transaction"
+    display_name: "Transaction"
     owner: orders-team
 
 concepts:
@@ -371,61 +365,61 @@ concepts:
     name: "Customer"
     domain: party
     owner: commercial-analytics
-    description: |
+    definition: |
       A person or company that purchases products.
 
   order:
     name: "Order"
     domain: transaction
     owner: orders-team
-    description: |
+    definition: |
       A confirmed purchase by a customer.
 
   order_line:
     name: "Order Line"
     domain: transaction
     owner: orders-team
-    description: |
+    definition: |
       A line item within an order, linking to a specific product.
 
   product:
     name: "Product"
     domain: transaction
     owner: catalog-team
-    description: |
+    definition: |
       An item available for purchase.
 
   payment:
     name: "Payment"
     domain: transaction
     owner: finance-team
-    description: |
+    definition: |
       A payment transaction against an order.
 
 relationships:
-  - name: places
+  - verb: places
     from: customer
     to: order
     cardinality: "1:N"
-    description: "A customer places one or more orders"
+    definition: "A customer places one or more orders"
 
-  - name: contains
+  - verb: contains
     from: order
     to: order_line
     cardinality: "1:N"
-    description: "An order contains one or more line items"
+    definition: "An order contains one or more line items"
 
-  - name: references
+  - verb: references
     from: order_line
     to: product
-    cardinality: "N:1"
-    description: "Each line item references a product"
+    cardinality: "1:1"
+    definition: "Each line item references a product"
 
-  - name: paid_by
+  - verb: paid_by
     from: order
     to: payment
     cardinality: "1:N"
-    description: "An order is paid by one or more payments"
+    definition: "An order is paid by one or more payments"
 ```
 
 ---

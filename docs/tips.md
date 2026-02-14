@@ -17,7 +17,7 @@ concepts:
   mystery_table:
     domain: UNKNOWN
     owner: UNKNOWN
-    description: "TODO: needs documentation"
+    definition: "TODO: needs documentation"
 ```
 
 **Don't wait for 100% coverage.**
@@ -61,8 +61,8 @@ dbc serve --demo
 
 ## Common Pitfalls
 
-**Don't skip descriptions.**
-A concept without a description is just a name. The description is where the shared understanding lives. Even a one-sentence description is better than none.
+**Don't skip definitions.**
+A concept without a definition is just a name. The definition is where the shared understanding lives. Even a one-sentence definition is better than none.
 
 ```yaml
 # Not useful
@@ -74,7 +74,7 @@ concepts:
 concepts:
   customer:
     domain: party
-    description: |
+    definition: |
       A person or company that purchases products.
       Internal test accounts are excluded.
 ```

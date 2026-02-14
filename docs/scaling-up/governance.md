@@ -32,7 +32,7 @@ dbt-conceptual provides foundational governance metadata out of the box:
 |---------|-------------|
 | Domains | Group concepts by business area |
 | Ownership | Assign owners to domains and concepts |
-| Descriptions | Document what concepts mean |
+| Definitions | Document what concepts mean |
 | Coverage tracking | See what's implemented vs. what's missing |
 | CI validation | Catch drift in pull requests |
 
@@ -47,7 +47,7 @@ dbt-conceptual is not a governance platform. It won't replace Collibra, Purview,
 | Capability | dbt-conceptual | Full Governance Platform |
 |------------|----------------|--------------------------|
 | Domain ownership | ✓ | ✓ |
-| Concept descriptions | ✓ | ✓ |
+| Concept definitions | ✓ | ✓ |
 | Lineage (concept → model) | ✓ | ✓ |
 | Approval workflows | — | ✓ |
 | Policy enforcement | — | ✓ |
@@ -110,7 +110,7 @@ When a PR modifies these concepts, the CI output can include:
 
 | Concept | Change | Steward |
 |---------|--------|---------|
-| customer | description updated | @sarah.chen@corp.com |
+| customer | definition updated | @sarah.chen@corp.com |
 | order | new relationship | @james.wu@corp.com |
 
 cc: @sarah.chen@corp.com @james.wu@corp.com
@@ -263,7 +263,7 @@ One way to think about how dbt-conceptual and your governance platform work toge
 </figure>
 
 **dbt-conceptual provides:**
-- Business context (domains, descriptions)
+- Business context (domains, definitions)
 - Ownership and stewardship
 - Coverage and drift detection
 - Change visibility via CI
@@ -287,7 +287,7 @@ They're complementary. dbt-conceptual makes the governance platform's job easier
 You don't need extended governance features to get value. Start with what's available today:
 
 1. Define domains and assign ownership
-2. Write descriptions for your key concepts
+2. Write definitions for your key concepts
 3. Enable CI validation
 
 That's governance for most teams — in a form that stays current because it's part of your development workflow.

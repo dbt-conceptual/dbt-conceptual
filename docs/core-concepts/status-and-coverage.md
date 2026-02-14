@@ -8,27 +8,21 @@ Understanding what's complete, what's missing, and where to focus.
 
 Every concept has a status based on its completeness:
 
-<figure>
-  <img src="../assets/concept-states.svg" alt="Concept states: complete, draft, stub, ghost" />
-</figure>
-
 | Status | Meaning | Visual |
 |--------|---------|--------|
 | **Complete** | Has domain and implementing models | Solid border, green badge |
 | **Draft** | Has domain, but no implementing models | Dashed border, gray badge |
 | **Stub** | No domain assigned | Dashed orange border, warning badge |
-| **Ghost** | Referenced but not defined | Gray fill, error badge |
-| **Deprecated** | Has `replaced_by` set | Strikethrough, faded |
 
 ### How Status Is Calculated
 
 ```
-Has replaced_by?           → deprecated
-No domain?                 → stub
-Has domain, no models?     → draft
-Has domain and models?     → complete
-Referenced but undefined?  → ghost
+No domain?                 -> stub
+Has domain, no models?     -> draft
+Has domain and models?     -> complete
 ```
+
+Status is derived -- you never set it manually. A concept progresses from stub to draft to complete as you enrich it and tag models.
 
 ---
 
@@ -42,10 +36,7 @@ dbc status
 
 ```
 Coverage Summary
-────────────────────────────────────
-Gold layer:    18/20 models   (90%)
-Silver layer:  12/35 models   (34%)
-
+------------------------------------
 Concepts: 25 total
   - 20 complete
   - 3 draft
@@ -60,8 +51,6 @@ Domains:
 
 ### What Gets Counted
 
-**Model coverage:** Percentage of models with `meta.concept` tags.
-
 **Concept coverage:** Percentage of concepts with at least one implementing model.
 
 **Domain coverage:** Breakdown by domain.
@@ -70,7 +59,7 @@ Domains:
 
 ## Orphan Models
 
-An orphan model is a dbt model without a `meta.concept` tag.
+An orphan model is a dbt model in the gold layer without a `meta.concept` tag.
 
 ```bash
 dbc orphans
@@ -78,38 +67,11 @@ dbc orphans
 
 ```
 Orphan models (no meta.concept tag):
-
-Gold layer:
   - mart_revenue_summary
   - dim_date
-
-Silver layer:
-  - int_customer_dedupe
-  - int_order_enriched
 ```
 
-Orphans aren't necessarily bad — not every model needs a concept. But orphans in the gold layer often indicate gaps in your conceptual model.
-
----
-
-## Ghost Concepts
-
-A ghost concept appears when a relationship references a concept that doesn't exist:
-
-```yaml
-relationships:
-  - name: contains
-    from: order
-    to: order_line  # ← If order_line isn't defined, it's a ghost
-```
-
-<figure>
-  <img src="../assets/ghost-concept.svg" alt="Ghost concept with error indicator" />
-</figure>
-
-Ghosts are validation errors — they indicate something is referenced but not defined. Fix by either:
-- Defining the missing concept
-- Removing the relationship
+Orphans aren't necessarily bad -- not every model needs a concept. But orphans in the gold layer often indicate gaps in your conceptual model.
 
 ---
 
@@ -121,27 +83,22 @@ The validate command checks for issues:
 dbc validate
 ```
 
-```
-Validation Results
-────────────────────────────────────
-✓ All concepts have domains
-✓ All relationships reference valid concepts
-✗ 2 orphan models in gold layer
-✗ 1 concept missing description
+See [Validation Codes](../reference/validation-codes.md) for the full list of codes and what they mean.
 
-Errors: 0
-Warnings: 2
-```
-
-### Validation Rules
+### Configurable Validation Rules
 
 | Rule | Checks For |
 |------|------------|
 | `orphan_models` | Models without concept tags |
 | `unimplemented_concepts` | Concepts without implementing models |
-| `missing_descriptions` | Concepts without descriptions |
-| `invalid_references` | Relationships referencing undefined concepts |
-| `invalid_domains` | Concepts referencing undefined domains |
+| `missing_definitions` | Concepts without definitions |
+
+### Non-Configurable Rules
+
+| Rule | Severity | Checks For |
+|------|----------|------------|
+| Unknown concept references (E002) | error | Relationships referencing undefined concepts |
+| Unknown domain references (W001) | warning | Concepts referencing undefined domains |
 
 ### Configuring Severity
 
@@ -151,7 +108,7 @@ vars:
     validation:
       orphan_models: error           # Fail CI
       unimplemented_concepts: warn   # Show warning
-      missing_descriptions: ignore   # Don't check
+      missing_definitions: ignore    # Don't check
 ```
 
 ---

@@ -1,15 +1,13 @@
-# dbt-conceptual (DCM) - AI Assistant Guide
+# dbt-conceptual - AI Assistant Guide
 
-<!-- DCM CLAUDE.md v1.0 -->
+<!-- dbt-conceptual CLAUDE.md v2.0 -->
 
-dbt-conceptual (DCM) keeps conceptual data models synchronized with dbt implementations - not as drifting documentation, but as operational artifacts that validate against your actual code. Define business entities and relationships in YAML, then DCM ensures your dbt models implement them correctly. The conceptual model becomes a living contract, not a forgotten diagram.
+dbt-conceptual keeps conceptual data models synchronized with dbt implementations -- not as drifting documentation, but as operational artifacts that validate against your actual code. Define business entities and relationships in YAML, then the tool ensures your dbt models implement them correctly. The conceptual model becomes a living contract, not a forgotten diagram.
 
 ## Quick Reference
 
 ### File Locations
-- **Conceptual model**: `models/conceptual/conceptual.yml`
-- **Canvas layout**: `models/conceptual/conceptual.layout.json`
-- **Taxonomy** (optional): `models/conceptual/taxonomy.yml`
+- **Conceptual model**: `conceptual.yml` (project root, alongside `dbt_project.yml`)
 - **Configuration**: `dbt_project.yml` under `vars.dbt_conceptual`
 
 ### Key Commands
@@ -18,28 +16,30 @@ dbc status              # Show coverage and validation summary
 dbc validate            # Run validation, exit 1 on errors
 dbc orphans             # List models not linked to concepts
 dbc sync                # Sync models and generate concept stubs for orphans
-dbc serve               # Start web UI at http://localhost:5050
+dbc serve               # Start web UI at http://localhost:8050
+dbc diff --base main    # Show changes vs a git reference
+dbc export --type TYPE --format FORMAT  # Export reports
 ```
 
 ---
 
-## Working with DCM (for AI Assistants)
+## Working with dbt-conceptual (for AI Assistants)
 
-When helping users with DCM:
+When helping users:
 
-1. **Conceptual model is source of truth** - Changes start in `conceptual.yml`, then flow to model tags
-2. **Validate after every change** - Run `dbc validate` after any modification to conceptual.yml or model tags
-3. **Status is derived, not set** - Don't manually set status fields; they reflect actual state (has domain? has models?)
-4. **One tag links everything** - `meta.concept` is the only bridge between dbt models and concepts
-5. **Respect the layer model** - Bronze is ignored, Silver/Gold are where coverage matters
-6. **Keys are identifiers** - Concept keys must be valid YAML keys (lowercase, underscores, no spaces)
-7. **No N:M relationships** - Many-to-many requires a bridge concept (see Common Patterns)
+1. **Conceptual model is source of truth** -- Changes start in `conceptual.yml`, then flow to model tags
+2. **Validate after every change** -- Run `dbc validate` after any modification to conceptual.yml or model tags
+3. **Status is derived, not set** -- Don't manually set status fields; they reflect actual state (has domain? has models?)
+4. **One tag links everything** -- `meta.concept` is the only bridge between dbt models and concepts
+5. **Gold layer focus** -- Only gold layer models are scanned for orphan detection
+6. **Keys are identifiers** -- Concept keys must be valid YAML keys (lowercase, underscores, no spaces)
+7. **No N:M relationships** -- Many-to-many requires a bridge concept (see Common Patterns)
 
 ### Workflow Direction
 
-**Greenfield (new project)**: Define concepts first → tag models → validate
+**Greenfield (new project)**: Define concepts first -> tag models -> validate
 
-**Brownfield (existing project)**: `dbc sync` → enrich stubs with domain/owner/definition → validate
+**Brownfield (existing project)**: `dbc sync` -> enrich stubs with domain/owner/definition -> validate
 
 ---
 
@@ -47,50 +47,45 @@ When helping users with DCM:
 
 ### conceptual.yml Structure
 ```yaml
-version: 1
-
-metadata:
-  name: "Project Name"           # Optional project title
-
 domains:
   <domain_key>:
-    name: "Display Name"         # Required
-    color: "#2196F3"             # Optional, hex color
-    owner: team-name             # Optional
+    display_name: "Display Name"   # Optional (falls back to key)
+    color: "#2196F3"               # Optional, hex color
+    owner: team-name               # Optional
 
 concepts:
   <concept_key>:
-    name: "Display Name"         # Required
-    domain: <domain_key>         # Required for non-stub status
-    owner: team-name             # Optional but recommended
-    definition: |                # Optional markdown
+    name: "Display Name"           # Required
+    domain: <domain_key>           # Required for non-stub status
+    owner: team-name               # Optional (inherits from domain)
+    definition: |                  # Optional
       Detailed business definition
-    status: complete             # stub | draft | complete | deprecated
-    replaced_by: <concept_key>   # Only for deprecated concepts
+    color: "#hex"                  # Optional, overrides domain color
 
 relationships:
-  - name: verb                   # Required, e.g., "places", "contains"
-    from: <concept_key>          # Required
-    to: <concept_key>            # Required
-    cardinality: "1:N"           # Optional: 1:1, 1:N (no N:M - use bridge concepts)
+  - verb: places                   # Optional (defaults to "relates_to")
+    from: <concept_key>            # Required
+    to: <concept_key>              # Required
+    cardinality: "1:N"             # Optional: 1:1 or 1:N (defaults to 1:N)
+    definition: "Description"      # Optional
+    owner: team-name               # Optional
 ```
 
 ### Concept Status (Derived Automatically)
 
-Status is derived from state unless explicitly set to `deprecated`:
+Status is always derived from state -- it cannot be set manually:
 
 | Status | Condition |
 |--------|-----------|
 | stub | No domain assigned |
 | draft | Has domain, no implementing models |
 | complete | Has domain AND implementing models |
-| deprecated | Has `replaced_by` set (manual) |
 
 ### Tagging dbt Models
 
 Link models to concepts using `meta.concept`:
 ```yaml
-# models/gold/schema.yml
+# models/marts/schema.yml
 version: 2
 
 models:
@@ -109,26 +104,21 @@ name: your_project
 
 vars:
   dbt_conceptual:
-    # Path configuration
-    conceptual_path: models/conceptual  # Default
-    silver_paths:
-      - models/silver
-      - models/intermediate
-    gold_paths:
-      - models/gold
-      - models/marts
+    # Scan paths for gold layer models
+    scan:
+      gold:
+        - models/marts/**/*.yml    # Default
 
     # Validation rules (error | warn | ignore)
     validation:
       orphan_models: warn              # Models without concept tag
       unimplemented_concepts: warn     # Concepts with no models
-      unrealized_relationships: warn   # Relationships not traced
       missing_definitions: ignore      # Concepts without definition
 
-      # Tag validation (opt-in)
-      tag_validation:
-        enabled: false                 # Validate domain/owner tags
-        domains_format: standard       # standard | databricks
+    # Layer-specific overrides
+    validation_overrides:
+      gold:
+        orphan_models: error           # Stricter for gold layer
 ```
 
 ---
@@ -141,60 +131,62 @@ vars:
 | `dbc status` | Show coverage summary | 0=success |
 | `dbc validate` | Run validation checks | 0=pass, 1=errors |
 | `dbc orphans` | List untagged models | 0=success |
-| `dbc sync` | Sync manifest to state | 0=success |
-| `dbc apply` | Apply tags to Unity Catalog | 0=success |
+| `dbc sync` | Sync project and create stubs for orphans | 0=success |
 | `dbc export` | Export to various formats | 0=success |
 | `dbc serve` | Start web UI | 0=success |
-| `dbc diff` | Show changes since last sync | 0=no changes, 1=changes |
-| `dbc coverage` | Generate coverage report | 0=success |
+| `dbc diff` | Show changes vs a git ref | depends on format |
 
 ### Common Flags
 - `-v, --verbose`: Increase verbosity (-vv for debug)
 - `-q, --quiet`: Suppress non-error output
-- `--format human|github`: Output format (github for CI annotations)
+- `--format human|github|markdown`: Output format
 - `--project-dir PATH`: Override project directory
 
 ---
 
 ## Validation Rules
 
-### Errors (Always Fail)
+### Errors (Always Active)
 
 | Code | Description |
 |------|-------------|
-| E001 | Concept '{name}' is missing required field '{field}' for status '{status}' |
 | E002 | Relationship references unknown concept '{concept}' |
-| E003 | Concept '{name}' references unknown domain '{domain}' |
-| E004 | Domain/group name collision: '{name}' used as both |
 
-### Warnings (Configurable via `vars.dbt_conceptual.validation`)
+### Warnings (Always Active)
 
-| Code | Rule Key | Description |
-|------|----------|-------------|
-| W101 | orphan_models | Model '{name}' is not linked to any concept |
-| W102 | unimplemented_concepts | Concept '{name}' has no implementing models |
-| W103 | unrealized_relationships | Relationship is not realized by any model |
-| W104 | missing_definitions | Concept '{name}' is missing a definition |
+| Code | Description |
+|------|-------------|
+| W001 | Concept references unknown domain '{domain}' |
+
+### Configurable Rules
+
+| Code | Rule Key | Default | Description |
+|------|----------|---------|-------------|
+| W101 | orphan_models | warn | Model is not linked to any concept |
+| W102 | unimplemented_concepts | warn | Concept has no implementing models |
+| W104 | missing_definitions | ignore | Concept/relationship missing definition |
 
 ### Informational
 
 | Code | Description |
 |------|-------------|
-| I001 | Concept '{name}' only appears in gold layer |
-| I002 | Concept '{name}' is a stub (needs enrichment) |
+| I001 | Stub concept needs enrichment (missing domain, owner, definition) |
+| I002 | Stub relationship needs enrichment |
+
+### Strict Mode (--no-drafts)
+
+| Code | Description |
+|------|-------------|
+| E201 | Incomplete concept (promoted from I001) |
+| E202 | Incomplete relationship (promoted from I002) |
 
 ---
 
-## Layers and Coverage
+## Coverage
 
-DCM uses configurable paths to determine which models count toward coverage:
+The tool scans gold layer paths (configurable via `scan.gold`) for models with `meta.concept` tags.
 
-- **silver_paths**: Models in these paths can have `meta.concept` tags (default: `models/silver`, `models/intermediate`)
-- **gold_paths**: Models in these paths should have `meta.concept` tags (default: `models/gold`, `models/marts`)
-
-Models without `meta.concept` are inferred from manifest.json - visible for lineage but not part of the conceptual model.
-
-**Coverage** = (tagged models) / (total models in configured paths)
+**Coverage** = concepts with implementing models / total concepts
 
 ---
 
@@ -228,7 +220,7 @@ dbc validate
 
 ### Many-to-Many Relationships (Bridge Concepts)
 
-DCM does not support N:M cardinality directly. Instead, model the bridge/junction/fact table as its own concept with 1:N relationships on each side:
+Only 1:1 and 1:N cardinality are supported. Model many-to-many with a bridge concept:
 
 ```yaml
 concepts:
@@ -243,23 +235,17 @@ concepts:
     domain: transaction
     definition: |
       Line items linking orders to products.
-      Each line represents one product in one order.
 
 relationships:
-  - name: contains
+  - verb: contains
     from: order
     to: order_line
     cardinality: "1:N"
-  - name: includes
+  - verb: includes
     from: order_line
     to: product
     cardinality: "1:1"
 ```
-
-This pattern:
-- Makes the bridge table a first-class concept (it gets tagged, validated, documented)
-- Uses only 1:1 and 1:N cardinalities
-- Reflects how the data actually exists in your warehouse
 
 ### Brownfield Adoption (Existing Project)
 ```bash
@@ -283,51 +269,29 @@ dbc status
 
 ---
 
-## Taxonomy (Optional)
+## Export Types
 
-Define controlled vocabularies:
-```yaml
-# models/conceptual/taxonomy.yml
-version: 1
-
-confidentiality:
-  - key: public
-    brief: "No restrictions"
-  - key: internal
-    brief: "Employees only"
-  - key: confidential
-    brief: "Need-to-know basis"
-
-maturity:
-  - key: experimental
-  - key: stable
-  - key: deprecated
-```
-
-Use in concepts:
-```yaml
-concepts:
-  customer:
-    confidentiality: internal
-    maturity: stable
-```
+| Type | Formats | Description |
+|------|---------|-------------|
+| diagram | svg | Visual conceptual model diagram |
+| coverage | html, markdown, json | Implementation coverage report |
+| bus-matrix | html, markdown, json | Dimensional bus matrix |
+| status | markdown, json | Current status summary |
+| orphans | markdown, json | Untagged models list |
+| validation | markdown, json | Validation results |
+| diff | markdown, json | Changes vs git ref |
 
 ---
 
 ## Web UI
 
-Start with `dbc serve`:
+Start with `dbc serve` (default: `http://localhost:8050`):
 
-| View | URL | Purpose |
-|------|-----|---------|
-| Canvas | `/` | Visual entity-relationship diagram |
-| Coverage | `/coverage` | Implementation progress by domain |
-| Bus Matrix | `/bus-matrix` | Concept × Model grid view |
-
-**Keyboard shortcuts:**
-- `Cmd/Ctrl+S` — Save changes
-- `Cmd/Ctrl+K` — Focus search
-- `Escape` — Close panel
+| View | Purpose |
+|------|---------|
+| Canvas | Visual entity-relationship diagram |
+| Coverage | Implementation progress by domain |
+| Bus Matrix | Concept x Model grid view |
 
 ---
 
@@ -336,9 +300,9 @@ Start with `dbc serve`:
 1. **One tag**: Models link to concepts via `meta.concept` only
 2. **Concept keys**: Must be valid YAML keys (lowercase, underscores, no spaces)
 3. **Domain required**: Concepts need a domain to be "draft" or "complete"
-4. **Unknown refs are errors**: Relationships referencing undefined concepts always fail
-5. **Status is derived**: Don't manually set status unless deprecating
-6. **No N:M cardinality**: Use bridge concepts with 1:N relationships instead
+4. **Unknown refs are errors**: Relationships referencing undefined concepts always fail (E002)
+5. **Status is derived**: Never set status manually
+6. **Only 1:1 and 1:N**: Use bridge concepts for many-to-many
 
 ---
 
@@ -347,23 +311,20 @@ Start with `dbc serve`:
 | Issue | Solution |
 |-------|----------|
 | "Model not linked to any concept" | Add `meta.concept: <key>` to model's schema.yml |
-| "Concept has no implementing models" | Either tag a model or set status to stub/draft |
+| "Concept has no implementing models" | Tag a model or accept as draft for now |
 | "References unknown concept" | Check spelling of concept key in relationship |
-| "Missing required field" | Add required fields based on concept status |
-| Coverage seems wrong | Check `silver_paths` and `gold_paths` in config |
+| Coverage seems wrong | Check `scan.gold` paths in dbt_project.yml config |
 
 ---
 
 ## File Structure Example
 ```
-models/
-├── conceptual/
-│   ├── conceptual.yml          # Main conceptual model
-│   ├── conceptual.layout.json  # Canvas positions (auto-generated)
-│   ├── taxonomy.yml            # Optional controlled vocabularies
-│   └── CLAUDE.md               # This file
-├── silver/
-│   └── schema.yml              # Models with meta.concept tags
-└── gold/
-    └── schema.yml              # Models with meta.concept tags
+my_project/
+├── dbt_project.yml               # Configuration under vars.dbt_conceptual
+├── conceptual.yml                 # Main conceptual model
+├── models/
+│   ├── staging/
+│   │   └── schema.yml
+│   └── marts/
+│       └── schema.yml             # Models with meta.concept tags
 ```

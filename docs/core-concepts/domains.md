@@ -11,15 +11,15 @@ A domain is a business area. Party. Transaction. Catalog. Marketing. Logistics.
 ```yaml
 domains:
   party:
-    name: "Party"
+    display_name: "Party"
     owner: commercial-analytics
     
   transaction:
-    name: "Transaction"
+    display_name: "Transaction"
     owner: orders-team
     
   catalog:
-    name: "Catalog"
+    display_name: "Catalog"
     owner: catalog-team
 ```
 
@@ -79,8 +79,6 @@ This reduces repetition. Define the owner once at the domain level, override onl
 
 **What inherits from domain:**
 - `owner` (if not specified on concept)
-- `governance.steward` (coming soon)
-- `governance.confidentiality` (coming soon)
 
 ---
 
@@ -88,10 +86,9 @@ This reduces repetition. Define the owner once at the domain level, override onl
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `name` | Yes | Display name |
+| `display_name` | No | Human-readable name (falls back to domain key) |
 | `owner` | No | Default owner for concepts in this domain |
 | `color` | No | Hex color for UI visualization (e.g., `#4a9eff`) |
-| `meta` | No | User-defined properties |
 
 ---
 
@@ -104,13 +101,13 @@ There's no single right way to structure domains. Here are common patterns:
 ```yaml
 domains:
   sales:
-    name: "Sales"
+    display_name: "Sales"
   marketing:
-    name: "Marketing"
+    display_name: "Marketing"
   finance:
-    name: "Finance"
+    display_name: "Finance"
   operations:
-    name: "Operations"
+    display_name: "Operations"
 ```
 
 ### By Data Mesh Domain
@@ -118,11 +115,11 @@ domains:
 ```yaml
 domains:
   customer-360:
-    name: "Customer 360"
+    display_name: "Customer 360"
   order-management:
-    name: "Order Management"
+    display_name: "Order Management"
   product-catalog:
-    name: "Product Catalog"
+    display_name: "Product Catalog"
 ```
 
 ### By Entity Type (Kimball-ish)
@@ -130,11 +127,11 @@ domains:
 ```yaml
 domains:
   party:
-    name: "Party"       # People and organizations
+    display_name: "Party"       # People and organizations
   transaction:
-    name: "Transaction" # Business events
+    display_name: "Transaction" # Business events
   reference:
-    name: "Reference"   # Lookup data
+    display_name: "Reference"   # Lookup data
 ```
 
 ### Practical Advice

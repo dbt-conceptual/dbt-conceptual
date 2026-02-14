@@ -9,7 +9,7 @@ A dashboard showing how much of your conceptual model is implemented.
 The Coverage view shows at a glance:
 - How many concepts have implementing models
 - Coverage by domain
-- Coverage by layer (bronze, silver, gold)
+- Coverage in the gold layer
 - Gaps that need attention
 
 Access it by clicking **Coverage** in the tab bar, or run:
@@ -45,18 +45,6 @@ A table showing coverage per domain:
 
 Click a domain row to see its concepts.
 
-### Layer Breakdown
-
-Shows coverage across the medallion architecture:
-
-| Layer | Tagged | Total | Coverage |
-|-------|--------|-------|----------|
-| Gold | 18 | 20 | 90% |
-| Silver | 12 | 35 | 34% |
-| Bronze | 0 | 50 | 0% |
-
-Gold layer coverage is usually what matters most.
-
 ---
 
 ## Concept List
@@ -79,12 +67,9 @@ Click a concept to see which models implement it.
 The Orphans section lists models without `meta.concept` tags:
 
 ```
-Gold layer orphans:
+Orphan models (no meta.concept tag):
   • mart_revenue_summary
   • dim_date
-
-Silver layer orphans:
-  • int_customer_dedupe
 ```
 
 These might indicate:
@@ -106,10 +91,6 @@ Show only:
 ### By Domain
 
 Filter to a specific domain to focus your work.
-
-### By Layer
-
-Show coverage for just gold, silver, or bronze layer.
 
 ---
 
@@ -148,8 +129,6 @@ Include coverage in your GitHub Actions summary:
 | Layer | Target | Notes |
 |-------|--------|-------|
 | Gold | 80%+ | This is where business vocabulary lives |
-| Silver | 50%+ | Nice to have, not critical |
-| Bronze | 0% | Usually not worth tagging |
 
 ### Red Flags
 
