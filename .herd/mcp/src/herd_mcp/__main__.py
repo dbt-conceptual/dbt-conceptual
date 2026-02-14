@@ -3,6 +3,7 @@
 Run with:
   python -m herd_mcp       # MCP stdio server
   python -m herd_mcp serve # REST API server
+  python -m herd_mcp slack # Daemon with REST API + Slack Socket Mode
 """
 
 from __future__ import annotations
@@ -21,6 +22,10 @@ def main() -> None:
         host = os.getenv("HERD_API_HOST", "0.0.0.0")
         port = int(os.getenv("HERD_API_PORT", "8420"))
         run_server(host=host, port=port)
+    elif len(sys.argv) > 1 and sys.argv[1] == "slack":
+        from .daemon import run_daemon
+
+        run_daemon()
     else:
         mcp.run()
 
