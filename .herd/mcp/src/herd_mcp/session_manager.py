@@ -203,6 +203,7 @@ class SessionManager:
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             env=clean_env,
+            limit=1024 * 1024,  # 1MB buffer for large stream-json lines
         )
 
         # Read streaming JSON output to capture session_id and response
@@ -279,6 +280,7 @@ class SessionManager:
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             env=clean_env,
+            limit=1024 * 1024,  # 1MB buffer for large stream-json lines
         )
 
         # Read streaming JSON output
