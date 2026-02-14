@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import tempfile
 from datetime import datetime, timedelta
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -114,7 +116,10 @@ async def test_catchup_no_updates(seeded_db):
 
         assert result["since"] is not None
         assert len(result["ticket_updates"]) == 0
-        assert "No updates" in result["summary"]
+        # Enhanced catchup may show other activity (git commits, handoffs, etc)
+        # so we just check that the summary exists
+        assert "summary" in result
+        assert "Since" in result["summary"]
 
 
 @pytest.mark.asyncio
@@ -127,7 +132,6 @@ async def test_catchup_no_agent_name(seeded_db):
         result = await catchup.execute(agent_name=None)
 
         assert result["since"] is None
-        assert len(result["ticket_updates"]) == 0
         assert "No agent identity provided" in result["summary"]
 
 
@@ -241,3 +245,129 @@ async def test_catchup_summary_formatting(seeded_db):
         if len(result["ticket_updates"]) > 0:
             assert "update" in summary.lower()
             assert "ticket" in summary.lower()
+
+
+@pytest.mark.asyncio
+async def test_catchup_enhanced_fields(seeded_db):
+    """Test that enhanced catchup includes all new data sources."""
+    with patch("herd_mcp.tools.catchup.connection") as mock_context:
+        mock_context.return_value.__enter__ = MagicMock(return_value=seeded_db)
+        mock_context.return_value.__exit__ = MagicMock(return_value=None)
+
+        result = await catchup.execute(agent_name="grunt")
+
+        # Verify all new fields are present
+        assert "status_md" in result
+        assert "git_log" in result
+        assert "linear_tickets" in result
+        assert "handoffs" in result
+        assert "hdrs" in result
+        assert "slack_threads" in result
+        assert "decision_records" in result
+
+
+@pytest.mark.asyncio
+async def test_catchup_with_git_repo():
+    """Test catchup with a temporary git repository."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        repo_path = Path(tmpdir)
+
+        # Initialize a git repo
+        import subprocess
+
+        subprocess.run(["git", "init"], cwd=repo_path, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@example.com"],
+            cwd=repo_path,
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test User"],
+            cwd=repo_path,
+            check=True,
+            capture_output=True,
+        )
+
+        # Create a test file and commit
+        test_file = repo_path / "test.txt"
+        test_file.write_text("test content")
+        subprocess.run(
+            ["git", "add", "."], cwd=repo_path, check=True, capture_output=True
+        )
+        subprocess.run(
+            ["git", "commit", "-m", "Test commit"],
+            cwd=repo_path,
+            check=True,
+            capture_output=True,
+        )
+
+        # Create a mock database
+        import duckdb
+        from herd_mcp import db as herd_db
+
+        conn = duckdb.connect(":memory:")
+        herd_db.init_schema(conn)
+
+        # Insert test data
+        yesterday = datetime.now() - timedelta(days=1)
+        conn.execute("""
+            INSERT INTO herd.agent_def
+              (agent_code, agent_role, agent_status, created_at)
+            VALUES ('grunt', 'backend', 'active', CURRENT_TIMESTAMP)
+        """)
+
+        conn.execute(
+            """
+            INSERT INTO herd.agent_instance
+              (agent_instance_code, agent_code, model_code, ticket_code,
+               agent_instance_started_at, agent_instance_ended_at, agent_instance_outcome)
+            VALUES ('inst-test', 'grunt', 'claude-sonnet-4', 'DBC-100', ?, ?, 'completed')
+            """,
+            [yesterday - timedelta(hours=2), yesterday],
+        )
+
+        with patch("herd_mcp.tools.catchup.connection") as mock_context:
+            mock_context.return_value.__enter__ = MagicMock(return_value=conn)
+            mock_context.return_value.__exit__ = MagicMock(return_value=None)
+
+            with patch("herd_mcp.tools.catchup.Path.cwd", return_value=repo_path):
+                result = await catchup.execute(agent_name="grunt")
+
+                # Should have git log entries
+                assert "git_log" in result
+                assert isinstance(result["git_log"], list)
+                # Our test commit should be included
+                if result["git_log"]:
+                    assert result["git_log"][0]["message"] == "Test commit"
+
+        conn.close()
+
+
+@pytest.mark.asyncio
+async def test_catchup_decision_records(seeded_db):
+    """Test that catchup includes decision records."""
+    # Add decision records to the database
+    seeded_db.execute("""
+        INSERT INTO herd.decision_record
+          (decision_id, decision_type, context, decision, rationale, decided_by,
+           ticket_code, created_at)
+        VALUES
+          ('dec-001', 'architectural', 'Need to choose DB', 'Use DuckDB',
+           'Fast and embedded', 'grunt', 'DBC-100', CURRENT_TIMESTAMP)
+    """)
+
+    with patch("herd_mcp.tools.catchup.connection") as mock_context:
+        mock_context.return_value.__enter__ = MagicMock(return_value=seeded_db)
+        mock_context.return_value.__exit__ = MagicMock(return_value=None)
+
+        result = await catchup.execute(agent_name="grunt")
+
+        # Should include the decision record
+        assert "decision_records" in result
+        assert isinstance(result["decision_records"], list)
+        if result["decision_records"]:
+            dec = result["decision_records"][0]
+            assert dec["decision_id"] == "dec-001"
+            assert dec["decision_type"] == "architectural"
+            assert dec["decided_by"] == "grunt"

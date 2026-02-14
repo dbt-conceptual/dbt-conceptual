@@ -13,6 +13,7 @@ from .tools import (
     lifecycle,
     log,
     metrics,
+    record_decision,
     review,
     spawn,
     status,
@@ -226,3 +227,41 @@ async def herd_harvest_tokens(agent_instance_code: str, project_path: str) -> di
         Dict with harvest results including records written and total cost.
     """
     return await token_harvest.execute(agent_instance_code, project_path)
+
+
+@mcp.tool()
+async def herd_record_decision(
+    decision_type: str,
+    context: str,
+    decision: str,
+    rationale: str,
+    alternatives_considered: str | None = None,
+    ticket_code: str | None = None,
+) -> dict:
+    """Record an agent decision to DuckDB and post to #herd-decisions.
+
+    This enables cross-agent learning and Architect oversight. Use this when making
+    any implementation decisions (architectural choices, design trade-offs, pattern
+    selections, etc.).
+
+    Args:
+        decision_type: Type of decision (architectural, implementation, pattern, etc).
+        context: Context/situation requiring the decision.
+        decision: The decision made.
+        rationale: Why this decision was made.
+        alternatives_considered: Optional alternatives that were considered.
+        ticket_code: Optional associated ticket code (e.g., DBC-125).
+
+    Returns:
+        Dict with decision_id, posted status, and Slack response.
+    """
+    agent_name = get_agent_identity()
+    return await record_decision.execute(
+        decision_type,
+        context,
+        decision,
+        rationale,
+        alternatives_considered,
+        ticket_code,
+        agent_name,
+    )
