@@ -75,6 +75,41 @@ def get_adapter_registry() -> AdapterRegistry:
     except ImportError:
         logger.info("herd-ticket-linear not installed, using fallback Linear implementation")
 
+    # Try to instantiate StoreAdapter (DuckDB)
+    try:
+        from herd_store_duckdb import DuckDBStoreAdapter
+
+        db_path = os.getenv("HERD_DB_PATH", ".herd/herddb.duckdb")
+        registry.store = DuckDBStoreAdapter(path=db_path)
+        logger.info("Initialized DuckDBStoreAdapter")
+    except ImportError:
+        logger.info("herd-store-duckdb not installed, using fallback DuckDB implementation")
+    except Exception as e:
+        logger.warning(f"Failed to initialize DuckDBStoreAdapter: {e}")
+
+    # Try to instantiate RepoAdapter (GitHub)
+    try:
+        from herd_repo_github import GitHubRepoAdapter
+
+        repo_root = os.getenv("HERD_REPO_PATH", ".")
+        registry.repo = GitHubRepoAdapter(repo_root=repo_root)
+        logger.info("Initialized GitHubRepoAdapter")
+    except ImportError:
+        logger.info("herd-repo-github not installed, using fallback Git implementation")
+    except Exception as e:
+        logger.warning(f"Failed to initialize GitHubRepoAdapter: {e}")
+
+    # Try to instantiate AgentAdapter (Claude)
+    try:
+        from herd_agent_claude import ClaudeAgentAdapter
+
+        registry.agent = ClaudeAgentAdapter()
+        logger.info("Initialized ClaudeAgentAdapter")
+    except ImportError:
+        logger.info("herd-agent-claude not installed, using fallback spawn implementation")
+    except Exception as e:
+        logger.warning(f"Failed to initialize ClaudeAgentAdapter: {e}")
+
     _registry = registry
     return registry
 
@@ -121,7 +156,8 @@ async def herd_status(scope: str = "all") -> dict:
         Dict with agents status, sprint info, and blocker list.
     """
     agent_name = get_agent_identity()
-    return await status.execute(scope, agent_name)
+    registry = get_adapter_registry()
+    return await status.execute(scope, agent_name, registry)
 
 
 @mcp.tool()
@@ -134,7 +170,7 @@ async def herd_spawn(
 
     Args:
         count: Number of agents to spawn.
-        role: Agent role (grunt, pikasso, wardenstein, shakesquill).
+        role: Agent role or code (accepts both "grunt" and "backend", "pikasso" and "frontend", etc.).
         model: Optional model override (uses role default if not specified).
 
     Returns:
@@ -221,15 +257,20 @@ async def herd_metrics(
     """Query operational metrics from the Herd database.
 
     Args:
-        query: Metric query - "token_costs", "review_stats", "velocity", etc.
-        period: Optional time period - "sprint", "week", "day".
-        group_by: Optional grouping - "agent", "ticket", "project".
+        query: Metric query - "cost_per_ticket" (alias: "token_costs"),
+               "review_effectiveness" (alias: "review_stats"),
+               "sprint_velocity" (alias: "velocity"),
+               "agent_performance", "model_efficiency", "pipeline_efficiency", "headline".
+        period: Optional time period - "today", "this_week", "this_sprint", "last_30d",
+                or ISO date range (e.g., "2026-01-01..2026-02-01").
+        group_by: Optional grouping - "agent", "model", "ticket", "category".
 
     Returns:
         Dict with data rows and summary statistics.
     """
     agent_name = get_agent_identity()
-    return await metrics.execute(query, period, group_by, agent_name)
+    registry = get_adapter_registry()
+    return await metrics.execute(query, period, group_by, agent_name, registry)
 
 
 @mcp.tool()
@@ -255,7 +296,8 @@ async def herd_decommission(agent_name: str) -> dict:
         Dict with success status and message.
     """
     current_agent = get_agent_identity()
-    return await lifecycle.decommission(agent_name, current_agent)
+    registry = get_adapter_registry()
+    return await lifecycle.decommission(agent_name, current_agent, registry)
 
 
 @mcp.tool()
@@ -269,7 +311,8 @@ async def herd_standdown(agent_name: str) -> dict:
         Dict with success status and message.
     """
     current_agent = get_agent_identity()
-    return await lifecycle.standdown(agent_name, current_agent)
+    registry = get_adapter_registry()
+    return await lifecycle.standdown(agent_name, current_agent, registry)
 
 
 @mcp.tool()
@@ -286,7 +329,8 @@ async def herd_harvest_tokens(agent_instance_code: str, project_path: str) -> di
     Returns:
         Dict with harvest results including records written and total cost.
     """
-    return await token_harvest.execute(agent_instance_code, project_path)
+    registry = get_adapter_registry()
+    return await token_harvest.execute(agent_instance_code, project_path, registry)
 
 
 @mcp.tool()

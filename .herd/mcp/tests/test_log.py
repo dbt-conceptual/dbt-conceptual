@@ -485,3 +485,51 @@ def test_get_thread_replies_api_returns_not_ok():
         replies = log._get_thread_replies("C12345", "1234567890.123", "xoxb-token")
 
         assert replies == []
+
+
+@pytest.mark.asyncio
+async def test_execute_with_sync_notify_adapter(seeded_db):
+    """Test log execution with synchronous notify adapter (no await)."""
+    import inspect
+    from unittest.mock import MagicMock
+
+    # Create a mock NotifyAdapter that returns a dict-like PostResult
+    class MockPostResult(dict):
+        """Mock PostResult that behaves like a dict."""
+        def __init__(self):
+            super().__init__(ok=True, ts="1234567890.123", channel="C12345")
+
+    mock_registry = MagicMock()
+    mock_notify = MagicMock()
+
+    # Mock sync post() method
+    mock_notify.post = MagicMock(return_value=MockPostResult())
+    mock_notify.get_thread_replies = MagicMock(return_value=[])
+
+    mock_registry.notify = mock_notify
+
+    with patch("herd_mcp.tools.log.connection") as mock_context:
+        mock_context.return_value.__enter__ = MagicMock(return_value=seeded_db)
+        mock_context.return_value.__exit__ = MagicMock(return_value=None)
+
+        result = await log.execute(
+            message="Test with sync adapter",
+            channel="#herd-feed",
+            await_response=False,
+            agent_name="grunt",
+            registry=mock_registry,
+        )
+
+        assert result["posted"] is True
+        assert result["agent"] == "grunt"
+
+        # Verify sync method was called (WITHOUT await - it's a sync function)
+        mock_notify.post.assert_called_once_with(
+            message="Test with sync adapter",
+            channel="#herd-feed",
+            username="grunt",
+        )
+        # Verify it was NOT called as a coroutine
+        assert not inspect.iscoroutinefunction(mock_notify.post)
+
+

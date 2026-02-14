@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from herd_mcp.db import connection
+
+if TYPE_CHECKING:
+    from herd_mcp.adapters import AdapterRegistry
 
 
 def _parse_period(period: str | None) -> tuple[str | None, str | None]:
@@ -70,19 +73,32 @@ async def execute(
     period: str | None,
     group_by: str | None,
     agent_name: str | None,
+    registry: AdapterRegistry | None = None,
 ) -> dict:
     """Query operational metrics from the Herd database.
 
     Args:
-        query: Metric query type (cost_per_ticket, agent_performance, model_efficiency,
-               review_effectiveness, sprint_velocity, pipeline_efficiency, headline).
+        query: Metric query type (cost_per_ticket/token_costs, agent_performance, model_efficiency,
+               review_effectiveness/review_stats, sprint_velocity/velocity, pipeline_efficiency, headline).
         period: Optional time period (today, this_week, this_sprint, last_30d, or ISO range).
         group_by: Optional grouping (agent, model, ticket, category).
         agent_name: Current agent identity.
+        registry: Optional adapter registry for dependency injection.
 
     Returns:
         Dict with data rows and summary string.
     """
+    # Support documented aliases
+    alias_map = {
+        "token_costs": "cost_per_ticket",
+        "review_stats": "review_effectiveness",
+        "velocity": "sprint_velocity",
+    }
+    query = alias_map.get(query, query)
+
+    # NOTE: Complex aggregate queries (JOINs, GROUP BY, COALESCE, subqueries) in
+    # metrics.py are kept as raw SQL. StoreAdapter's generic CRUD interface doesn't
+    # cover analytics. Future: ReportingAdapter or store.raw_query().
     start_date, end_date = _parse_period(period)
     period_filter = _build_period_filter(start_date, end_date)
 

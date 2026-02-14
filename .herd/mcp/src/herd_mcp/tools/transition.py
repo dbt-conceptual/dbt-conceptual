@@ -37,28 +37,87 @@ async def execute(
     Returns:
         Dict with transition_id and elapsed time in previous status.
     """
+    # Adapter path for ticket lookup
+    ticket = None
+    if registry and registry.store:
+        try:
+            from herd_core.entities import TicketRecord
+
+            ticket_record = registry.store.get(TicketRecord, ticket_id)
+            if ticket_record:
+                ticket = (
+                    ticket_record.ticket_code,
+                    ticket_record.title,
+                    ticket_record.current_status,
+                )
+        except Exception:
+            pass
+
+    # Use single connection context for all SQL operations
     with connection() as conn:
-        # Get current ticket status
-        ticket = conn.execute(
-            """
-            SELECT ticket_code, ticket_title, ticket_current_status
-            FROM herd.ticket_def
-            WHERE ticket_code = ?
-              AND deleted_at IS NULL
-            """,
-            [ticket_id],
-        ).fetchone()
+        # Fallback to raw SQL for ticket lookup if adapter didn't work
+        if ticket is None:
+            # Get current ticket status
+            ticket = conn.execute(
+                """
+                SELECT ticket_code, ticket_title, ticket_current_status
+                FROM herd.ticket_def
+                WHERE ticket_code = ?
+                  AND deleted_at IS NULL
+                """,
+                [ticket_id],
+            ).fetchone()
+
+        # Auto-register from Linear if not found and looks like Linear ID
+        if not ticket and linear_client.is_linear_identifier(ticket_id):
+            logger.info(f"Ticket {ticket_id} not found in DB, attempting Linear fetch")
+            if registry and registry.tickets:
+                linear_issue = await registry.tickets.get(ticket_id)
+            else:
+                linear_issue = linear_client.get_issue(ticket_id)
+
+            if linear_issue:
+                # Extract project code from Linear if available
+                project_code = None
+                if linear_issue.get("project"):
+                    project_code = linear_issue["project"].get("name")
+
+                # Insert into ticket_def
+                conn.execute(
+                    """
+                    INSERT INTO herd.ticket_def
+                      (ticket_code, ticket_title, ticket_description, ticket_current_status,
+                       project_code, created_at, modified_at)
+                    VALUES (?, ?, ?, 'backlog', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    """,
+                    [
+                        linear_issue["identifier"],
+                        linear_issue.get("title", ""),
+                        linear_issue.get("description", ""),
+                        project_code,
+                    ],
+                )
+                logger.info(f"Auto-registered ticket {ticket_id} from Linear")
+
+                # Re-fetch the ticket
+                ticket = conn.execute(
+                    """
+                    SELECT ticket_code, ticket_title, ticket_current_status
+                    FROM herd.ticket_def
+                    WHERE ticket_code = ?
+                    """,
+                    [ticket_id],
+                ).fetchone()
 
         if not ticket:
             return {
                 "transition_id": None,
                 "ticket": ticket_id,
                 "to_status": to_status,
-                "error": f"Ticket {ticket_id} not found",
+                "error": f"Ticket {ticket_id} not found in DB or Linear",
             }
 
         current_status = ticket[2]
-
         # Get agent's current instance
         agent_instance_code = None
         if agent_name:

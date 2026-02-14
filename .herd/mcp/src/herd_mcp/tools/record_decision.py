@@ -97,26 +97,49 @@ async def execute(
 
     decision_id = str(uuid.uuid4())
 
-    # Write to DuckDB
-    with connection() as conn:
-        conn.execute(
-            """
-            INSERT INTO herd.decision_record
-              (decision_id, decision_type, context, decision, rationale,
-               alternatives_considered, decided_by, ticket_code, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-            """,
-            [
-                decision_id,
-                decision_type,
-                context,
-                decision,
-                rationale,
-                alternatives_considered,
-                agent_name,
-                ticket_code,
-            ],
-        )
+    # Adapter path for decision record
+    adapter_used = False
+    if registry and registry.store:
+        try:
+            from herd_core.entities import DecisionRecord
+
+            decision_record = DecisionRecord(
+                decision_id=decision_id,
+                decision_type=decision_type,
+                context=context,
+                decision=decision,
+                rationale=rationale,
+                alternatives_considered=alternatives_considered,
+                decided_by=agent_name,
+                ticket_code=ticket_code,
+            )
+            registry.store.save(decision_record)
+            adapter_used = True
+        except Exception:
+            # Fall through to SQL fallback
+            pass
+
+    # Fallback to raw SQL if adapter not used
+    if not adapter_used:
+        with connection() as conn:
+            conn.execute(
+                """
+                INSERT INTO herd.decision_record
+                  (decision_id, decision_type, context, decision, rationale,
+                   alternatives_considered, decided_by, ticket_code, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                """,
+                [
+                    decision_id,
+                    decision_type,
+                    context,
+                    decision,
+                    rationale,
+                    alternatives_considered,
+                    agent_name,
+                    ticket_code,
+                ],
+            )
 
     # Format decision text for Slack
     decision_text = f"**Type**: {decision_type}\n**Decision**: {decision}\n**Rationale**: {rationale}"

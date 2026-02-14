@@ -15,6 +15,8 @@ from herd_mcp.linear_client import search_issues
 
 if TYPE_CHECKING:
     from herd_mcp.adapters import AdapterRegistry
+    from herd_core.adapters.repo import RepoAdapter
+    from herd_core.adapters.store import StoreAdapter
 
 
 def _read_status_md(repo_root: Path) -> dict[str, Any]:
@@ -37,47 +39,64 @@ def _read_status_md(repo_root: Path) -> dict[str, Any]:
         return {"exists": False, "error": str(e)}
 
 
-def _get_git_log(repo_root: Path, since: datetime) -> list[dict[str, str]]:
+def _get_git_log(
+    repo_root: Path, since: datetime, repo_adapter: RepoAdapter | None = None
+) -> list[dict[str, str]]:
     """Get git log since a given timestamp.
 
     Args:
         repo_root: Repository root path.
         since: Start timestamp for git log.
+        repo_adapter: Optional RepoAdapter for git operations.
 
     Returns:
         List of commit dicts with sha, author, date, and message.
     """
     try:
-        # Format: %H (hash), %an (author name), %ai (ISO date), %s (subject)
-        result = subprocess.run(
-            [
-                "git",
-                "log",
-                f"--since={since.isoformat()}",
-                "--format=%H|||%an|||%ai|||%s",
-            ],
-            cwd=str(repo_root),
-            capture_output=True,
-            text=True,
-            check=True,
-        )
+        # Adapter path
+        if repo_adapter:
+            commit_infos = repo_adapter.get_log(since=since, limit=50)
+            return [
+                {
+                    "sha": commit.sha,
+                    "author": commit.author,
+                    "date": commit.date,
+                    "message": commit.message,
+                }
+                for commit in commit_infos
+            ]
+        else:
+            # Existing inline subprocess fallback
+            # Format: %H (hash), %an (author name), %ai (ISO date), %s (subject)
+            result = subprocess.run(
+                [
+                    "git",
+                    "log",
+                    f"--since={since.isoformat()}",
+                    "--format=%H|||%an|||%ai|||%s",
+                ],
+                cwd=str(repo_root),
+                capture_output=True,
+                text=True,
+                check=True,
+            )
 
-        commits = []
-        for line in result.stdout.strip().split("\n"):
-            if not line:
-                continue
-            parts = line.split("|||")
-            if len(parts) == 4:
-                commits.append(
-                    {
-                        "sha": parts[0],
-                        "author": parts[1],
-                        "date": parts[2],
-                        "message": parts[3],
-                    }
-                )
+            commits = []
+            for line in result.stdout.strip().split("\n"):
+                if not line:
+                    continue
+                parts = line.split("|||")
+                if len(parts) == 4:
+                    commits.append(
+                        {
+                            "sha": parts[0],
+                            "author": parts[1],
+                            "date": parts[2],
+                            "message": parts[3],
+                        }
+                    )
 
-        return commits
+            return commits
     except Exception:
         return []
 
@@ -250,6 +269,8 @@ def _get_decision_records(agent_name: str, since: datetime) -> list[dict[str, An
         List of decision record dicts.
     """
     with connection() as conn:
+        # NOTE: Complex aggregate query — StoreAdapter CRUD doesn't cover this.
+        # Kept as raw SQL. Future: ReportingAdapter or store.raw_query().
         decisions = conn.execute(
             """
             SELECT
@@ -329,6 +350,9 @@ async def execute(
         repo_root = Path.cwd()
 
     with connection() as conn:
+        # NOTE: Complex aggregate query — StoreAdapter CRUD doesn't cover this.
+        # Kept as raw SQL. Future: ReportingAdapter or store.raw_query().
+
         # Find the most recent ENDED instance for this agent
         previous_instance = conn.execute(
             """
@@ -409,7 +433,8 @@ async def execute(
 
     # Gather all data sources
     status_md = _read_status_md(repo_root)
-    git_log = _get_git_log(repo_root, cutoff)
+    repo_adapter = registry.repo if registry else None
+    git_log = _get_git_log(repo_root, cutoff, repo_adapter)
     linear_tickets = await _get_linear_tickets(agent_name, registry)
     handoffs = _get_handoffs(repo_root, cutoff)
     hdrs = _get_recent_hdrs(repo_root, cutoff)
