@@ -63,6 +63,8 @@ class SessionManager:
         except FileNotFoundError:
             self._system_prompt = "You are Mini-Mao, the Scum Master and Team Lead of The Herd."
 
+        self._system_prompt += "\n\n## Slack Output Formatting\nYou are responding via Slack. Use Slack mrkdwn formatting:\n- *bold* (single asterisks, NOT double)\n- _italic_ (underscores)\n- `code` and ```code blocks```\n- Bullet points with • or -\n- Do NOT use markdown headers (###), markdown tables, or **double asterisks**\n- For emphasis on section titles, use *bold* on its own line\n- Keep responses concise — Slack messages should be scannable"
+
     async def start(self) -> None:
         """Start the session manager and idle check loop."""
         self._idle_check_task = asyncio.create_task(self._idle_check_loop())
