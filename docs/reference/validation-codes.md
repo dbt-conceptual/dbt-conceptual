@@ -13,25 +13,85 @@ dbc validate
 ```
 
 ```
-Validation Results
-────────────────────────────────────
-✗ DCM001: Orphan model 'mart_revenue' in gold layer
-✗ DCM002: Concept 'refund' has no implementing models
-⚠ DCM003: Concept 'customer' missing description
+Validation Issues
+════════════════════════════════════════════
+✗ ERRORS
+  [E002] Relationship 'order:contains:line_item' references non-existent concept 'line_item'
 
-Errors: 2
-Warnings: 1
+⚠ WARNINGS
+  [W101] Model 'mart_revenue' is not linked to any concept
+  [W102] Concept 'refund' has no implementing models
+
+ℹ INFO
+  [I001] Stub concept 'inventory' needs enrichment: missing domain, owner, definition
+
+Summary: 1 errors, 2 warnings, 1 info
 ```
 
 ---
 
 ## Error Codes
 
-### DCM001: Orphan Model
+### E002: Unknown Concept Reference
 
-**Message:** `Orphan model '{model}' in {layer} layer`
+**Message:** `Relationship '{relationship}' references non-existent concept '{concept}'`
 
-**Meaning:** A dbt model doesn't have a `meta.concept` tag.
+**Meaning:** A relationship points to a concept that doesn't exist in `conceptual.yml`.
+
+**Fix:** Either:
+- Define the missing concept
+- Fix the typo in the relationship
+- Remove the relationship
+
+**Configure:** This is always an error (cannot be disabled).
+
+---
+
+### E201: Incomplete Concept (--no-drafts)
+
+**Message:** `{Status} concept '{concept}' needs enrichment: missing {fields}`
+
+**Meaning:** When `--no-drafts` is used, stub or draft concepts with missing domain, owner, or definition are treated as errors.
+
+**Fix:** Add the missing fields to the concept in `conceptual.yml`.
+
+**Configure:** Only active when `--no-drafts` flag is used.
+
+---
+
+### E202: Incomplete Relationship (--no-drafts)
+
+**Message:** `Stub relationship '{relationship}' needs enrichment: missing {fields}`
+
+**Meaning:** When `--no-drafts` is used, stub relationships are treated as errors.
+
+**Fix:** Ensure both endpoint concepts are at least draft status.
+
+**Configure:** Only active when `--no-drafts` flag is used.
+
+---
+
+## Warning Codes
+
+### W001: Unknown Domain Reference
+
+**Message:** `Concept '{concept}' references unknown domain '{domain}'`
+
+**Meaning:** A concept belongs to a domain that doesn't exist in the `domains` section.
+
+**Fix:** Either:
+- Define the missing domain
+- Fix the typo in the concept's domain field
+
+**Configure:** This is always a warning.
+
+---
+
+### W101: Orphan Model
+
+**Message:** `Model '{model}' is not linked to any concept`
+
+**Meaning:** A dbt model in the gold layer doesn't have a `meta.concept` tag.
 
 **Fix:** Add a concept tag to the model:
 
@@ -42,21 +102,21 @@ models:
       concept: revenue
 ```
 
-**Configure:** 
+**Configure:**
 ```yaml
 vars:
   dbt_conceptual:
     validation:
-      orphan_models: warn  # or ignore
+      orphan_models: warn  # or error, or ignore
 ```
 
 ---
 
-### DCM002: Unimplemented Concept
+### W102: Unimplemented Concept
 
 **Message:** `Concept '{concept}' has no implementing models`
 
-**Meaning:** A concept is defined but no dbt models reference it.
+**Meaning:** A concept is defined but no dbt models reference it via `meta.concept`.
 
 **Fix:** Either:
 - Tag a model with `meta.concept: {concept}`
@@ -68,23 +128,23 @@ vars:
 vars:
   dbt_conceptual:
     validation:
-      unimplemented_concepts: warn  # or ignore
+      unimplemented_concepts: warn  # or error, or ignore
 ```
 
 ---
 
-### DCM003: Missing Description
+### W104: Missing Definition
 
-**Message:** `Concept '{concept}' missing description`
+**Message:** `Concept '{concept}' is missing a definition` or `Relationship '{relationship}' is missing a definition`
 
-**Meaning:** A concept doesn't have a description.
+**Meaning:** A non-stub concept or relationship doesn't have a `definition` field.
 
-**Fix:** Add a description:
+**Fix:** Add a definition:
 
 ```yaml
 concepts:
   customer:
-    description: |
+    definition: |
       A person or company that purchases products.
 ```
 
@@ -93,157 +153,34 @@ concepts:
 vars:
   dbt_conceptual:
     validation:
-      missing_descriptions: warn  # or ignore
+      missing_definitions: warn  # or error, or ignore (default: ignore)
 ```
 
 ---
 
-### DCM004: Invalid Concept Reference
+## Info Codes
 
-**Message:** `Relationship '{relationship}' references undefined concept '{concept}'`
+### I001: Stub Concept
 
-**Meaning:** A relationship points to a concept that doesn't exist.
+**Message:** `Stub concept '{concept}' needs enrichment: missing {fields}`
 
-**Fix:** Either:
-- Define the missing concept
-- Fix the typo in the relationship
-- Remove the relationship
+**Meaning:** A concept in stub or draft status is missing domain, owner, or definition.
 
-**Configure:** This is always an error (can't be disabled).
+**Fix:** Add the missing fields. A concept needs a domain to progress from stub to draft.
 
----
-
-### DCM005: Invalid Domain Reference
-
-**Message:** `Concept '{concept}' references undefined domain '{domain}'`
-
-**Meaning:** A concept belongs to a domain that doesn't exist.
-
-**Fix:** Either:
-- Define the missing domain
-- Fix the typo in the concept
-- Change to a valid domain
-
-**Configure:** This is always an error (can't be disabled).
+**Configure:** This is always informational (unless `--no-drafts` is used, which promotes it to E201).
 
 ---
 
-### DCM006: Duplicate Concept
+### I002: Stub Relationship
 
-**Message:** `Duplicate concept key '{concept}'`
+**Message:** `Stub relationship '{relationship}' needs enrichment: missing {fields}` or `Stub relationship '{relationship}' has stub/ghost endpoint concepts`
 
-**Meaning:** Two concepts have the same key in `conceptual.yml`.
+**Meaning:** A relationship has endpoint concepts that are ghosts or stubs, or it is missing a definition.
 
-**Fix:** Rename one of the concepts.
+**Fix:** Ensure both endpoint concepts exist and have domains assigned.
 
-**Configure:** This is always an error.
-
----
-
-### DCM007: Duplicate Relationship
-
-**Message:** `Duplicate relationship '{from}:{name}:{to}'`
-
-**Meaning:** The same relationship is defined twice.
-
-**Fix:** Remove the duplicate.
-
-**Configure:** This is always an error.
-
----
-
-### DCM008: Ghost Concept
-
-**Message:** `Ghost concept '{concept}' referenced by model '{model}'`
-
-**Meaning:** A model's `meta.concept` references a concept that doesn't exist.
-
-**Fix:** Either:
-- Define the concept in `conceptual.yml`
-- Run `dbc sync` to create a stub automatically
-- Fix the typo in the model
-
-**Configure:** This is always an error.
-
----
-
-### DCM009: Invalid Cardinality
-
-**Message:** `Invalid cardinality '{value}' on relationship '{relationship}'`
-
-**Meaning:** Cardinality must be `1:1`, `1:N`, or `N:1`.
-
-**Fix:** Use a valid cardinality value.
-
-**Configure:** This is always an error.
-
----
-
-### DCM010: Circular Relationship
-
-**Message:** `Circular relationship: concept '{concept}' relates to itself`
-
-**Meaning:** A relationship has the same concept as `from` and `to`.
-
-**Fix:** Self-referential relationships should use a different pattern (e.g., `employee reports_to manager` where both are different concepts).
-
-**Configure:** This is a warning by default.
-
----
-
-## Warning Codes
-
-### DCM101: Stub Concept
-
-**Message:** `Concept '{concept}' is a stub (no domain assigned)`
-
-**Meaning:** A concept doesn't have a domain.
-
-**Fix:** Assign a domain:
-
-```yaml
-concepts:
-  mystery:
-    domain: party  # Add this
-```
-
-**Configure:**
-```yaml
-vars:
-  dbt_conceptual:
-    validation:
-      stub_concepts: warn  # or ignore
-```
-
----
-
-### DCM102: Draft Concept
-
-**Message:** `Concept '{concept}' is a draft (no implementing models)`
-
-**Meaning:** A concept has a domain but no models implement it.
-
-**Fix:** Tag models or accept it as work in progress.
-
-**Configure:** This is informational by default.
-
----
-
-### DCM103: Deprecated Concept in Use
-
-**Message:** `Model '{model}' references deprecated concept '{concept}'`
-
-**Meaning:** A model references a concept marked with `replaced_by`.
-
-**Fix:** Update the model to use the replacement concept.
-
-**Configure:**
-```yaml
-vars:
-  dbt_conceptual:
-    validation:
-      deprecated_usage: warn  # or error
-```
+**Configure:** This is always informational (unless `--no-drafts` is used, which promotes it to E202).
 
 ---
 
@@ -254,7 +191,7 @@ vars:
 | 0 | Validation passed (no errors) |
 | 1 | Validation failed (has errors) |
 
-Warnings don't cause a non-zero exit code.
+Warnings and info messages don't cause a non-zero exit code.
 
 ---
 
@@ -267,7 +204,23 @@ vars:
   dbt_conceptual:
     validation:
       orphan_models: ignore
-      missing_descriptions: ignore
+      missing_definitions: ignore
+```
+
+---
+
+## Layer Overrides
+
+You can set different severities for the gold layer:
+
+```yaml
+vars:
+  dbt_conceptual:
+    validation:
+      orphan_models: warn
+    validation_overrides:
+      gold:
+        orphan_models: error    # Stricter for gold layer
 ```
 
 ---
@@ -289,9 +242,9 @@ Show warnings but don't fail:
   continue-on-error: true
 ```
 
-Strict mode (fail on warnings too):
+Strict mode (fail on drafts/stubs):
 
 ```yaml
 - name: Validate (strict)
-  run: dbc validate --strict
+  run: dbc validate --no-drafts
 ```

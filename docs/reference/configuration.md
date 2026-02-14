@@ -15,26 +15,50 @@ version: '1.0.0'
 
 vars:
   dbt_conceptual:
-    conceptual_path: models/conceptual
+    scan:
+      gold:
+        - models/marts/**/*.yml
     validation:
       orphan_models: warn
 ```
 
+The conceptual model itself lives in `conceptual.yml` in your project root.
+
 ---
 
-## Core Settings
+## Scan Configuration
 
-### conceptual_path
+### scan.gold
 
-Where the conceptual model lives.
+Which paths to scan for gold layer models. Supports glob patterns.
 
 ```yaml
 vars:
   dbt_conceptual:
-    conceptual_path: models/conceptual  # default
+    scan:
+      gold:
+        - models/marts/**/*.yml     # default
 ```
 
-The tool looks for `conceptual.yml` in this directory.
+You can specify multiple paths:
+
+```yaml
+vars:
+  dbt_conceptual:
+    scan:
+      gold:
+        - models/marts/**/*.yml
+        - models/reporting/**/*.yml
+```
+
+Or a single path as a string:
+
+```yaml
+vars:
+  dbt_conceptual:
+    scan:
+      gold: models/marts/**/*.yml
+```
 
 ---
 
@@ -48,10 +72,25 @@ vars:
     validation:
       orphan_models: warn              # Models without concept tags
       unimplemented_concepts: warn     # Concepts without implementing models
-      missing_descriptions: ignore     # Concepts without descriptions
-      invalid_references: error        # Relationships to undefined concepts
-      invalid_domains: error           # Concepts referencing undefined domains
+      missing_definitions: ignore      # Concepts without definitions
 ```
+
+### Configurable Rules
+
+| Rule | Default | What It Checks |
+|------|---------|----------------|
+| `orphan_models` | `warn` | Models in gold paths without `meta.concept` tags |
+| `unimplemented_concepts` | `warn` | Concepts with no implementing models |
+| `missing_definitions` | `ignore` | Non-stub concepts/relationships without definitions |
+
+### Non-Configurable Rules
+
+These are always active:
+
+| Rule | Severity | What It Checks |
+|------|----------|----------------|
+| Unknown concept references (E002) | error | Relationships pointing to non-existent concepts |
+| Unknown domain references (W001) | warning | Concepts referencing non-existent domains |
 
 ### Severity Levels
 
@@ -61,113 +100,23 @@ vars:
 | `warn` | Shows warning, passes validation |
 | `ignore` | Not checked |
 
-### Layer-Specific Validation
+---
 
-Different rules per layer:
+## Layer-Specific Validation Overrides
+
+Override validation severities for the gold layer specifically:
 
 ```yaml
 vars:
   dbt_conceptual:
     validation:
+      orphan_models: warn           # Default for all models
+    validation_overrides:
       gold:
-        orphan_models: error      # Strict for gold
-      silver:
-        orphan_models: warn       # Lenient for silver
-      bronze:
-        orphan_models: ignore     # Don't check bronze
+        orphan_models: error        # Stricter for gold layer
 ```
 
----
-
-## Layer Configuration
-
-### Custom Layer Definitions
-
-Override default layer detection:
-
-```yaml
-vars:
-  dbt_conceptual:
-    layers:
-      bronze:
-        paths: ["models/staging", "models/raw"]
-        prefixes: ["stg_", "raw_"]
-      silver:
-        paths: ["models/intermediate"]
-        prefixes: ["int_", "prep_"]
-      gold:
-        paths: ["models/marts", "models/reporting"]
-        prefixes: ["dim_", "fct_", "mart_", "rpt_"]
-```
-
-### Default Detection
-
-If not configured, layers are detected by:
-
-| Layer | Paths | Prefixes |
-|-------|-------|----------|
-| Gold | `marts`, `gold`, `reporting` | `dim_`, `fct_`, `mart_`, `rpt_` |
-| Silver | `intermediate`, `silver`, `transform` | `int_`, `prep_`, `clean_` |
-| Bronze | `staging`, `bronze`, `raw` | `stg_`, `raw_`, `src_` |
-
----
-
-## Bus Matrix Configuration
-
-### Explicit Fact/Dimension Lists
-
-```yaml
-vars:
-  dbt_conceptual:
-    bus_matrix:
-      facts:
-        - order
-        - payment
-        - return
-      dimensions:
-        - customer
-        - product
-        - date
-        - store
-```
-
-### Pattern-Based Detection
-
-```yaml
-vars:
-  dbt_conceptual:
-    bus_matrix:
-      fact_prefixes: ["fct_", "fact_"]
-      dimension_prefixes: ["dim_", "dimension_"]
-```
-
-### Exclusions
-
-```yaml
-vars:
-  dbt_conceptual:
-    bus_matrix:
-      exclude:
-        - audit_log
-        - system_config
-```
-
----
-
-## Governance Settings (Coming Soon)
-
-```yaml
-vars:
-  dbt_conceptual:
-    governance:
-      require_steward: false
-      require_maturity: false
-      require_confidentiality: false
-      enforce_taxonomy: false
-      mention_stewards_on_change: true
-```
-
-See [Governance Features](../scaling-up/governance.md) for details.
+This lets you enforce strict coverage on gold while being lenient elsewhere.
 
 ---
 
@@ -181,18 +130,28 @@ CLI options for `dbc serve`:
 | `--port` | `8050` | Port to bind |
 | `--demo` | false | Load sample data |
 
-These aren't in `dbt_project.yml` — they're CLI arguments.
+These are CLI arguments, not configuration file settings.
 
 ---
 
-## Environment Variables
+## Legacy Configuration
 
-| Variable | Description |
-|----------|-------------|
-| `DBT_PROJECT_DIR` | Override project directory |
-| `DCM_CONCEPTUAL_PATH` | Override conceptual path |
+Configuration was previously supported in a `config` section within `conceptual.yml`. This is deprecated. If detected, the tool will issue a deprecation warning and recommend moving configuration to `dbt_project.yml`.
 
-CLI flags take precedence over environment variables.
+```yaml
+# Deprecated format (in conceptual.yml):
+config:
+  scan:
+    gold:
+      - models/marts/**/*.yml
+  validation:
+    defaults:
+      orphan_models: warn
+    gold:
+      orphan_models: error
+```
+
+Migrate to the `dbt_project.yml` format described above.
 
 ---
 
@@ -206,41 +165,21 @@ config-version: 2
 
 vars:
   dbt_conceptual:
-    # Where the conceptual model lives
-    conceptual_path: models/conceptual
-    
+    # Scan paths
+    scan:
+      gold:
+        - models/marts/**/*.yml
+
     # Validation rules
     validation:
       orphan_models: warn
       unimplemented_concepts: warn
-      missing_descriptions: ignore
-      invalid_references: error
-      
-      # Layer-specific
+      missing_definitions: ignore
+
+    # Layer-specific overrides
+    validation_overrides:
       gold:
         orphan_models: error
-      silver:
-        orphan_models: warn
-      bronze:
-        orphan_models: ignore
-    
-    # Layer detection
-    layers:
-      gold:
-        paths: ["models/marts"]
-        prefixes: ["dim_", "fct_"]
-      silver:
-        paths: ["models/intermediate"]
-        prefixes: ["int_"]
-      bronze:
-        paths: ["models/staging"]
-        prefixes: ["stg_"]
-    
-    # Bus matrix
-    bus_matrix:
-      fact_prefixes: ["fct_"]
-      dimension_prefixes: ["dim_"]
-      exclude: ["util_date_spine"]
 ```
 
 ---
@@ -252,13 +191,13 @@ If no configuration is provided, these defaults apply:
 ```yaml
 vars:
   dbt_conceptual:
-    conceptual_path: models/conceptual
+    scan:
+      gold:
+        - models/marts/**/*.yml
     validation:
       orphan_models: warn
       unimplemented_concepts: warn
-      missing_descriptions: ignore
-      invalid_references: error
-      invalid_domains: error
+      missing_definitions: ignore
 ```
 
 The tool works out of the box with sensible defaults.

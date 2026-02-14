@@ -16,9 +16,9 @@ concepts:
     name: "Customer"
     domain: party
     owner: commercial-analytics
-    description: |
+    definition: |
       A person or company that purchases products.
-      
+
       Includes both B2C and B2B customers.
       Internal test accounts are excluded.
 ```
@@ -46,9 +46,8 @@ A concept answers: **"What is this thing, in business terms?"**
 | `name` | Yes | Display name |
 | `domain` | No | Which domain this belongs to |
 | `owner` | No | Team responsible (inherits from domain if not set) |
-| `description` | No | What this concept means in business terms |
-| `replaced_by` | No | If deprecated, which concept replaces it |
-| `meta` | No | User-defined properties |
+| `definition` | No | What this concept means in business terms |
+| `color` | No | Override the domain's color in the UI |
 
 ---
 
@@ -58,11 +57,11 @@ Relationships connect concepts. They describe how business entities relate to ea
 
 ```yaml
 relationships:
-  - name: places
+  - verb: places
     from: customer
     to: order
     cardinality: "1:N"
-    description: "A customer places one or more orders"
+    definition: "A customer places one or more orders"
 ```
 
 A relationship answers: **"How do these things connect?"**
@@ -86,7 +85,8 @@ Avoid generic names like "has" or "relates_to" — they don't convey meaning.
 |-------|---------|---------|
 | `1:1` | One-to-one | person **has** passport |
 | `1:N` | One-to-many | customer **places** orders |
-| `N:1` | Many-to-one | order_lines **reference** product |
+
+Only `1:1` and `1:N` are supported. For many-to-many, use a bridge concept (see below).
 
 ### Many-to-Many
 
@@ -105,19 +105,19 @@ concepts:
   inventory:
     name: "Inventory"
     domain: logistics
-    description: |
+    definition: |
       Stock level of a product at a specific warehouse.
 
 relationships:
-  - name: has_inventory
+  - verb: has_inventory
     from: product
     to: inventory
     cardinality: "1:N"
 
-  - name: located_at
+  - verb: located_at
     from: inventory
     to: warehouse
-    cardinality: "N:1"
+    cardinality: "1:N"
 ```
 
 The bridge concept (inventory) is visible and meaningful — it's not hidden as an implementation detail.
@@ -126,13 +126,12 @@ The bridge concept (inventory) is visible and meaningful — it's not hidden as 
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `name` | Yes | Verb describing the relationship |
+| `verb` | No | Verb describing the relationship (defaults to `relates_to`) |
 | `from` | Yes | Source concept |
 | `to` | Yes | Target concept |
-| `cardinality` | No | `1:1`, `1:N`, or `N:1` |
-| `description` | No | What this relationship means |
+| `cardinality` | No | `1:1` or `1:N` (defaults to `1:N`) |
+| `definition` | No | What this relationship means |
 | `owner` | No | Team responsible |
-| `meta` | No | User-defined properties |
 
 ---
 

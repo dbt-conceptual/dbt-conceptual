@@ -1,6 +1,6 @@
 # Layers
 
-dbt-conceptual understands the medallion architecture — bronze, silver, gold — and tracks coverage across layers.
+dbt-conceptual focuses on the gold layer -- the business-facing models in your dbt project.
 
 ---
 
@@ -14,103 +14,65 @@ Most dbt projects organize models into layers:
 | **Silver** | Cleaned, conformed, business logic applied | `int_`, `prep_` |
 | **Gold** | Business-ready, consumer-facing | `dim_`, `fct_`, `mart_` |
 
-dbt-conceptual uses this structure to focus attention where it matters most.
+dbt-conceptual scans the gold layer for models and concept coverage. Bronze and silver layers are not scanned by default.
 
 ---
 
-## Why Layers Matter for Conceptual Modeling
+## Why Gold Layer Focus
 
 Not all models need concept tags.
 
 | Layer | Tag Priority | Why |
 |-------|--------------|-----|
 | Bronze | Low | These are raw sources, not business concepts |
-| Silver | Medium | Intermediate transformations, sometimes worth tagging |
+| Silver | Medium | Intermediate transformations, rarely worth tagging |
 | Gold | High | Business-facing, should map to concepts |
 
 **The gold layer is where business vocabulary lives.** If a stakeholder asks "where's customer data?", they mean `dim_customer`, not `stg_salesforce__contacts`.
 
 ---
 
-## Configuring Layers
+## Configuring Gold Layer Paths
 
-dbt-conceptual auto-detects layers from folder paths and model prefixes, but you can configure them explicitly:
+By default, the tool scans `models/marts/**/*.yml` for gold layer models. You can customize this:
 
 ```yaml
 # dbt_project.yml
 vars:
   dbt_conceptual:
-    layers:
-      bronze:
-        paths: ["models/staging"]
-        prefixes: ["stg_", "raw_"]
-      silver:
-        paths: ["models/intermediate"]
-        prefixes: ["int_", "prep_"]
+    scan:
       gold:
-        paths: ["models/marts"]
-        prefixes: ["dim_", "fct_", "mart_"]
+        - models/marts/**/*.yml
+```
+
+You can specify multiple paths:
+
+```yaml
+vars:
+  dbt_conceptual:
+    scan:
+      gold:
+        - models/marts/**/*.yml
+        - models/reporting/**/*.yml
 ```
 
 ---
 
-## Layer-Aware Validation
+## Layer-Specific Validation
 
-You can set different validation rules per layer:
+You can set stricter validation rules for the gold layer:
 
 ```yaml
 vars:
   dbt_conceptual:
     validation:
+      orphan_models: warn           # Default for all models
+    validation_overrides:
       gold:
-        orphan_models: error    # Gold models must be tagged
-      silver:
-        orphan_models: warn     # Silver models should be tagged
-      bronze:
-        orphan_models: ignore   # Bronze models don't need tags
+        orphan_models: error        # Stricter for gold layer
 ```
 
-This lets you enforce strict coverage on gold while being lenient on bronze.
-
----
-
-## Coverage by Layer
-
-The status command breaks down coverage by layer:
-
-```bash
-dbc status
-```
-
-```
-Coverage Summary
-────────────────────────────────────
-Gold layer:    18/20 models   (90%)
-Silver layer:  12/35 models   (34%)
-Bronze layer:   0/50 models   (0%)
-
-Overall:       30/105 models  (29%)
-```
-
-A project with 90% gold coverage and 0% bronze coverage is probably in good shape — the business-facing models are documented.
-
----
-
-## Model Counts on Concept Cards
-
-In the UI, concept cards show model counts per layer:
-
-```
-┌─────────────────────────────┐
-│ Customer          complete  │
-│ party                       │
-├─────────────────────────────┤
-│  🥉 3   🥈 2   🥇 1         │
-│ bronze silver  gold         │
-└─────────────────────────────┘
-```
-
-This tells you at a glance how a concept is implemented across layers.
+This lets you enforce strict coverage on gold while being lenient elsewhere.
 
 ---
 
@@ -118,27 +80,23 @@ This tells you at a glance how a concept is implemented across layers.
 
 | Situation | Recommendation |
 |-----------|----------------|
-| New project | Tag gold first, expand to silver later |
-| Brownfield | Focus on gold, ignore bronze |
-| Data mesh | Each domain might have its own gold layer |
-| Strict governance | Enforce gold, warn on silver |
+| New project | Tag gold layer models first |
+| Brownfield | Focus on gold, ignore bronze/silver |
+| Strict governance | Enforce gold with `orphan_models: error` |
+| Growing coverage | Expand scan paths as needed |
 
 ---
 
-## Layer Detection Logic
+## Tagging Models Outside Gold
 
-If you don't configure layers explicitly, dbt-conceptual uses these defaults:
+While the tool scans gold layer paths for orphan detection, you can tag models at any layer with `meta.concept`:
 
-**Gold (highest priority):**
-- Paths containing `marts`, `gold`, `reporting`
-- Prefixes: `dim_`, `fct_`, `mart_`, `rpt_`
+```yaml
+# models/staging/schema.yml
+models:
+  - name: stg_salesforce__customers
+    meta:
+      concept: customer
+```
 
-**Silver:**
-- Paths containing `intermediate`, `silver`, `transform`
-- Prefixes: `int_`, `prep_`, `clean_`
-
-**Bronze:**
-- Paths containing `staging`, `bronze`, `raw`
-- Prefixes: `stg_`, `raw_`, `src_`
-
-Models that don't match any pattern are treated as silver by default.
+These tags are recognized for coverage tracking even if the model isn't in a gold scan path. The difference is that orphan detection only applies to models within the configured gold paths.

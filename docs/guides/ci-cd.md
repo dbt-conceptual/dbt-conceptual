@@ -32,7 +32,7 @@ jobs:
       
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.9'
       
       - name: Install dependencies
         run: pip install dbt-conceptual
@@ -46,7 +46,7 @@ jobs:
 ```yaml
 # .gitlab-ci.yml
 validate-conceptual:
-  image: python:3.11
+  image: python:3.9
   script:
     - pip install dbt-conceptual
     - dbc validate
@@ -156,7 +156,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.9'
 
       - name: Install dbt-conceptual
         run: pip install dbt-conceptual
@@ -188,7 +188,7 @@ vars:
     validation:
       orphan_models: warn           # Models without concept tags
       unimplemented_concepts: warn  # Concepts without models
-      missing_descriptions: ignore  # Concepts without descriptions
+      missing_definitions: ignore   # Concepts without definitions
 ```
 
 Severity options:
@@ -284,5 +284,5 @@ If you want to keep coverage reports:
 |---------|--------|--------|
 | `validate` | No errors | Has errors |
 | `validate --no-drafts` | All complete | Has drafts/stubs |
-| `diff` | Always | Never |
+| `diff` | No changes (human/markdown/json) | Has changes (github format) |
 | `export` | Success | Error |

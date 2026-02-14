@@ -15,6 +15,24 @@ dbc export --type TYPE --format FORMAT [OPTIONS]
 | `--type` | What to export (required) |
 | `--format` | Output format (required) |
 | `-o, --output` | Write to file instead of stdout |
+| `--no-drafts` | For validation: fail if incomplete |
+| `--base REF` | For diff: git ref to compare against |
+
+---
+
+## Export Matrix
+
+Not every format works with every type. Here's what's available:
+
+| Type | svg | html | markdown | json |
+|------|-----|------|----------|------|
+| diagram | yes | -- | -- | -- |
+| coverage | -- | yes | yes | yes |
+| bus-matrix | -- | yes | yes | yes |
+| status | -- | -- | yes | yes |
+| orphans | -- | -- | yes | yes |
+| validation | -- | -- | yes | yes |
+| diff | -- | -- | yes | yes |
 
 ---
 
@@ -35,7 +53,6 @@ dbc export --type coverage --format json
 **Contents:**
 - Overall coverage percentage
 - Coverage by domain
-- Coverage by layer
 - Concept status breakdown
 
 ### status
@@ -52,7 +69,6 @@ dbc export --type status --format json
 **Contents:**
 - Concept counts by status
 - Domain summary
-- Validation summary
 
 ### orphans
 
@@ -66,7 +82,7 @@ dbc export --type orphans --format json
 **Formats:** `markdown`, `json`
 
 **Contents:**
-- Orphan models by layer
+- Orphan models
 - Model paths
 
 ### validation
@@ -83,7 +99,6 @@ dbc export --type validation --format json
 **Contents:**
 - Errors and warnings
 - Validation rule results
-- Recommendations
 
 ### diagram
 
@@ -129,28 +144,13 @@ dbc export --type diff --format json --base HEAD~1
 **Formats:** `markdown`, `json`
 
 **Options:**
-- `--base REF` — Git reference to compare against (required)
+- `--base REF` -- Git reference to compare against (required for diff)
 
 **Contents:**
 - Added concepts
 - Removed concepts
 - Modified concepts
 - Relationship changes
-
-### concepts
-
-Raw concept data.
-
-```bash
-dbc export --type concepts --format json -o concepts.json
-dbc export --type concepts --format yaml
-```
-
-**Formats:** `json`, `yaml`
-
-**Contents:**
-- All concepts with their properties
-- Useful for catalog integrations
 
 ---
 
@@ -189,14 +189,6 @@ Machine-readable, suitable for:
 dbc export --type coverage --format json | jq '.coverage_percent'
 ```
 
-### yaml
-
-YAML format for concept data:
-
-```bash
-dbc export --type concepts --format yaml
-```
-
 ### svg
 
 Vector graphics for diagrams:
@@ -227,15 +219,6 @@ Extract coverage for a badge:
 ```bash
 COVERAGE=$(dbc export --type coverage --format json | jq -r '.coverage_percent')
 echo "Coverage: ${COVERAGE}%"
-```
-
-### Catalog Sync
-
-Export for catalog ingestion:
-
-```bash
-dbc export --type concepts --format json -o concepts.json
-# Upload to catalog API
 ```
 
 ### Documentation

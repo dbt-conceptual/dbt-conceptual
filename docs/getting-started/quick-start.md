@@ -20,11 +20,9 @@ In your dbt project root:
 dbc init
 ```
 
-This creates `models/conceptual/conceptual.yml`:
+This creates `conceptual.yml` in your project root:
 
 ```yaml
-version: 1
-
 domains: {}
 
 concepts: {}
@@ -39,18 +37,16 @@ relationships: []
 Edit `conceptual.yml`:
 
 ```yaml
-version: 1
-
 domains:
   party:
-    name: "Party"
+    display_name: "Party"
     owner: data-team
 
 concepts:
   customer:
     name: "Customer"
     domain: party
-    description: |
+    definition: |
       A person or company that purchases products.
 
 relationships: []
@@ -100,5 +96,5 @@ Open `http://localhost:8050` to see your conceptual model.
 ## What's Next?
 
 - [Tutorial](tutorial.md) — Build a complete e-commerce model step by step
-- [Defining Concepts](../guides/defining-concepts.md) — Write better concept descriptions
+- [Defining Concepts](../guides/defining-concepts.md) — Write better concept definitions
 - [CI/CD Integration](../guides/ci-cd.md) — Validate in your pipeline

@@ -31,29 +31,24 @@ dbc serve
 
 ### init
 
-Creates a starter `conceptual.yml` in your project.
+Creates a starter `conceptual.yml` and adds configuration to `dbt_project.yml`.
 
 ```bash
-dbc init [--project-dir PATH]
+dbc init [--project-dir PATH] [--force]
 ```
 
-This gives you a template to start from:
+| Option | Description |
+|--------|-------------|
+| `--project-dir PATH` | Path to dbt project |
+| `--force` | Overwrite existing conceptual.yml |
 
-```yaml
-version: 1
-
-domains: {}
-
-concepts: {}
-
-relationships: []
-```
+This creates `conceptual.yml` in your project root and adds a `vars.dbt_conceptual` block to `dbt_project.yml` with default settings.
 
 ---
 
 ### status
 
-Shows coverage — how many concepts have implementing models.
+Shows coverage -- how many concepts have implementing models.
 
 ```bash
 dbc status [OPTIONS]
@@ -62,26 +57,7 @@ dbc status [OPTIONS]
 | Option | Description |
 |--------|-------------|
 | `--project-dir PATH` | Path to dbt project |
-| `--silver-paths TEXT` | Override silver layer paths (can repeat) |
 | `--gold-paths TEXT` | Override gold layer paths (can repeat) |
-
-Example output:
-
-```
-Coverage Summary
-────────────────────────────────────
-Gold layer:    8/10 models   (80%)
-Silver layer:  5/15 models   (33%)
-
-Concepts: 12 total
-  - 8 complete
-  - 3 draft
-  - 1 stub
-
-Domains:
-  party: 3/3 complete
-  transaction: 4/5 complete (1 draft)
-```
 
 ---
 
@@ -96,20 +72,21 @@ dbc validate [OPTIONS]
 | Option | Description |
 |--------|-------------|
 | `--project-dir PATH` | Path to dbt project |
+| `--gold-paths TEXT` | Override gold layer paths |
 | `--format FORMAT` | Output format: `human`, `github`, or `markdown` |
-| `--no-drafts` | Fail if any concepts are incomplete |
+| `--no-drafts` | Fail if any concepts or relationships are incomplete |
 
 Exit codes:
-- `0` — Everything looks good
-- `1` — There are validation errors
+- `0` -- Everything looks good
+- `1` -- There are validation errors
 
-The `--no-drafts` flag is useful when you want to ensure everything is fully documented before merging.
+The `--no-drafts` flag is useful when you want to ensure everything is fully documented before merging. It treats stub and draft concepts as errors.
 
 ---
 
 ### sync
 
-Discovers dbt models and updates the conceptual model.
+Discovers dbt models and creates stub concepts for orphans.
 
 ```bash
 dbc sync [OPTIONS]
@@ -120,7 +97,7 @@ dbc sync [OPTIONS]
 | `--project-dir PATH` | Path to dbt project |
 | `--model TEXT` | Sync only a specific model |
 
-The sync command automatically creates placeholder concepts for orphan models, giving you a starting point to enrich when adopting dbt-conceptual in an existing project.
+Sync always creates placeholder concepts for orphan models (models without `meta.concept` tags), giving you a starting point to enrich.
 
 ---
 
@@ -135,27 +112,7 @@ dbc orphans [OPTIONS]
 | Option | Description |
 |--------|-------------|
 | `--project-dir PATH` | Path to dbt project |
-| `--silver-paths TEXT` | Override silver layer paths |
 | `--gold-paths TEXT` | Override gold layer paths |
-
----
-
-### apply
-
-Writes metadata from your conceptual model back to dbt model files.
-
-```bash
-dbc apply [OPTIONS]
-```
-
-| Option | Description |
-|--------|-------------|
-| `--project-dir PATH` | Path to dbt project |
-| `--propagate-tags` | Write domain/owner tags to model YAML |
-| `--dry-run` | Show what would change without writing |
-| `--models TEXT` | Only apply to specific models |
-
-This is useful if you want domain and owner information to flow from your conceptual model into your dbt models — for example, to feed Unity Catalog tags.
 
 ---
 
@@ -198,6 +155,9 @@ dbc export --type bus-matrix --format html -o matrix.html
 
 # SVG diagram
 dbc export --type diagram --format svg -o model.svg
+
+# Diff against base branch
+dbc export --type diff --format markdown --base main
 ```
 
 ---
@@ -267,7 +227,8 @@ dbc serve --port 3000
 |---------|--------|--------|
 | `validate` | No errors | Has errors |
 | `validate --no-drafts` | All complete | Has drafts/stubs |
-| `diff` | Always succeeds | — |
+| `diff --format github` | No changes | Has changes |
+| `diff` (other formats) | Always | -- |
 | Other commands | Success | Error |
 
 ---

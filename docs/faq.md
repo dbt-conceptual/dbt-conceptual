@@ -91,30 +91,23 @@ Assign to the primary domain and document the overlap:
 concepts:
   customer:
     domain: party
-    description: |
+    definition: |
       A person or company that purchases products.
-      
+
       Used by: Sales, Marketing, Finance
 ```
-
-Or use the `meta` block for co-owners.
 
 ### What if different teams define the same concept differently?
 
 That's what dbt-conceptual helps prevent. One definition in `conceptual.yml` becomes the shared truth. Disagreements get resolved in PRs, not in meetings six months later.
 
-### How do I deprecate a concept?
+### How do I retire a concept?
 
-Use `replaced_by`:
+Remove it from `conceptual.yml` and untag any models that reference it. The diff command will show the removal:
 
-```yaml
-concepts:
-  legacy_customer:
-    domain: party
-    replaced_by: customer
+```bash
+dbc diff --base main
 ```
-
-CI can warn or error when deprecated concepts are used.
 
 ---
 
@@ -133,7 +126,11 @@ Upload to your wiki manually or automate it.
 
 ### Does it work with Unity Catalog?
 
-Yes. Use `dbc apply --propagate-tags` to write domain and owner to dbt model tags, which flow to Unity Catalog.
+Yes. Export concept data as JSON and use it to tag assets in Unity Catalog:
+
+```bash
+dbc export --type coverage --format json -o coverage.json
+```
 
 ### Can I import from an existing data dictionary?
 
@@ -163,12 +160,12 @@ vars:
 
 Check file permissions on `conceptual.yml`. The UI needs write access.
 
-### Ghost concepts appearing
+### Missing concepts appearing
 
-A model references a concept that doesn't exist. Either:
+A relationship references a concept that doesn't exist. Either:
 - Define the concept in `conceptual.yml`
-- Run `dbc sync` (creates stubs automatically)
-- Fix the typo in `meta.concept`
+- Run `dbc sync` to create stubs automatically
+- Fix the typo in the relationship
 
 ---
 
