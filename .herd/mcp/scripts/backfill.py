@@ -29,8 +29,8 @@ from pathlib import Path
 # Add parent directory to path so we can import from herd_mcp
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from herd_mcp import db
-from herd_mcp.linear_client import _graphql_request
+from herd_mcp import db  # type: ignore[import-untyped]
+from herd_mcp.linear_client import _graphql_request  # type: ignore[import-untyped]
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -169,7 +169,7 @@ def fetch_all_github_prs() -> list[dict]:
     ]
 
     result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-    prs = json.loads(result.stdout)
+    prs: list[dict] = json.loads(result.stdout)
 
     logger.info(f"Fetched {len(prs)} merged GitHub PRs")
     return prs
@@ -196,8 +196,9 @@ def fetch_pr_commits(pr_number: int) -> list[dict]:
     ]
 
     result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-    data = json.loads(result.stdout)
-    return data.get("commits", [])
+    data: dict = json.loads(result.stdout)
+    commits: list[dict] = data.get("commits", [])
+    return commits
 
 
 def extract_ticket_code_from_pr(pr: dict) -> str | None:
@@ -266,7 +267,7 @@ def parse_iso_timestamp(iso_str: str | None) -> datetime | None:
         return None
 
 
-def upsert_projects(conn, projects: list[dict]) -> None:
+def upsert_projects(conn: db.duckdb.DuckDBPyConnection, projects: list[dict]) -> None:  # type: ignore[name-defined]
     """Upsert Linear projects into project_def.
 
     Args:
@@ -332,7 +333,7 @@ def upsert_projects(conn, projects: list[dict]) -> None:
     logger.info(f"Upserted {len(projects)} projects")
 
 
-def upsert_tickets(conn, tickets: list[dict]) -> None:
+def upsert_tickets(conn: db.duckdb.DuckDBPyConnection, tickets: list[dict]) -> None:  # type: ignore[name-defined]
     """Upsert Linear tickets into ticket_def.
 
     Args:
@@ -411,7 +412,7 @@ def upsert_tickets(conn, tickets: list[dict]) -> None:
     logger.info(f"Upserted {len(tickets)} tickets")
 
 
-def upsert_prs(conn, prs: list[dict]) -> None:
+def upsert_prs(conn: db.duckdb.DuckDBPyConnection, prs: list[dict]) -> None:  # type: ignore[name-defined]
     """Upsert GitHub PRs into pr_def.
 
     Args:
@@ -495,7 +496,7 @@ def upsert_prs(conn, prs: list[dict]) -> None:
     logger.info(f"Upserted {len(prs)} PRs")
 
 
-def insert_pr_commits(conn, pr_number: int, pr_code: str, branch_name: str) -> None:
+def insert_pr_commits(conn: db.duckdb.DuckDBPyConnection, pr_number: int, pr_code: str, branch_name: str) -> None:  # type: ignore[name-defined]
     """Insert PR commits into agent_instance_pr_activity.
 
     Args:
@@ -549,7 +550,7 @@ def insert_pr_commits(conn, pr_number: int, pr_code: str, branch_name: str) -> N
         logger.warning(f"Failed to fetch commits for PR {pr_number}: {e}")
 
 
-def ensure_backfill_agent_instance(conn) -> None:
+def ensure_backfill_agent_instance(conn: db.duckdb.DuckDBPyConnection) -> None:  # type: ignore[name-defined]
     """Ensure backfill-000 agent instance exists.
 
     Args:
@@ -615,6 +616,8 @@ def main() -> None:
         logger.info("Fetching commit history for all PRs...")
         for pr in prs:
             pr_number = pr.get("number")
+            if pr_number is None:
+                continue
             pr_code = f"PR-{pr_number}"
             branch_name = pr.get("headRefName", "")
 
