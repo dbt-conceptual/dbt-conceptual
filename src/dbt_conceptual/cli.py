@@ -1358,6 +1358,216 @@ def serve(project_dir: Optional[Path], host: str, port: int, demo: bool) -> None
 
 
 @main.command()
+@project_options
+@click.option(
+    "--select",
+    "-s",
+    "selector",
+    required=True,
+    help=(
+        "Concept selector expression: concept name, 'concept+', '+concept', "
+        "'domain:name', 'status:draft', 'all'"
+    ),
+)
+@click.option(
+    "--format",
+    "-f",
+    "output_format",
+    type=click.Choice(["llm", "json", "markdown"], case_sensitive=False),
+    default="llm",
+    help="Output format: llm (default), json, markdown",
+)
+@click.option(
+    "--depth",
+    type=click.IntRange(1, 3),
+    default=1,
+    help="Relationship traversal depth (1-3, default: 1)",
+)
+def context(
+    project_dir: Optional[Path],
+    gold_paths: tuple[str, ...],
+    selector: str,
+    output_format: str,
+    depth: int,
+) -> None:
+    """Get full context for concepts matching a selector.
+
+    Resolves concepts using selector syntax and outputs enriched context
+    including definitions, relationships, models, and guidance. Produces
+    identical output to the MCP dbc_get_context tool.
+
+    \b
+    Selector Syntax:
+      customer          Single concept
+      customer+         Concept + downstream
+      +customer         Concept + upstream
+      +customer+        Concept + both directions
+      customer+2        Downstream with depth limit
+      domain:party      All concepts in domain
+      domain:party+     Domain concepts + downstream
+      status:draft      All draft concepts
+      all               All concepts
+
+    \b
+    Examples:
+        dbc context --select customer
+        dbc context --select customer+ --format json
+        dbc context --select "domain:party" --format markdown
+        dbc context --select all --depth 2
+    """
+    from dbt_conceptual.mcp.handlers import handle_get_context
+    from dbt_conceptual.selector import SelectorError, select_concepts
+
+    # Load project state
+    try:
+        state, config = load_project_state(
+            project_dir=project_dir,
+            gold_paths=list(gold_paths) if gold_paths else None,
+        )
+    except ConceptualFileNotFound as e:
+        console.print(f"[red]Error: conceptual.yml not found at {e.path}[/red]")
+        console.print("\nRun 'dbt-conceptual init' to create it.")
+        raise click.Abort() from None
+
+    # For llm and json formats, delegate to the MCP handler to guarantee
+    # identical output between CLI and MCP server.
+    if output_format in ("llm", "json"):
+        result = handle_get_context(
+            selector=selector,
+            format=output_format,
+            depth=depth,
+            project_state=state,
+            config=config,
+        )
+        # The MCP handler returns error strings prefixed with "Error:" on failure.
+        # Surface these as CLI errors with proper exit handling.
+        if result.startswith("Error:"):
+            console.print(f"[red]{result}[/red]")
+            raise click.Abort() from None
+        click.echo(result)
+        return
+
+    # Markdown format: resolve concepts and format as markdown
+    try:
+        concept_names = select_concepts(state, selector)
+    except SelectorError as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise click.Abort() from None
+
+    if not concept_names:
+        console.print(
+            f"[yellow]No concepts found matching selector: {selector}[/yellow]"
+        )
+        return
+
+    output = _format_context_markdown(concept_names, depth, state)
+    click.echo(output)
+
+
+def _format_context_markdown(
+    concept_names: set[str],
+    depth: int,
+    state: ProjectState,
+) -> str:
+    """Format concept context as markdown for human reading.
+
+    Builds a structured markdown document with metadata tables,
+    definitions, models, guidance, and relationships.
+
+    Args:
+        concept_names: Set of concept names to include
+        depth: Relationship traversal depth
+        state: Project state
+
+    Returns:
+        Markdown-formatted context string
+    """
+    from dbt_conceptual.mcp.handlers import _get_relationships_for_concept
+
+    lines: list[str] = []
+
+    for concept_name in sorted(concept_names):
+        concept = state.concepts.get(concept_name)
+        if not concept:
+            continue
+
+        lines.append(f"# {concept.name}")
+        lines.append("")
+
+        # Metadata table
+        lines.append("| Property | Value |")
+        lines.append("|----------|-------|")
+        lines.append(f"| Status | {concept.status} |")
+        lines.append(f"| Domain | {concept.domain or '*Not assigned*'} |")
+        lines.append(f"| Owner | {concept.owner or '*Not assigned*'} |")
+        lines.append(f"| Models | {len(concept.models)} |")
+        if concept.is_ghost:
+            lines.append("| Ghost | Yes (referenced but not defined) |")
+        lines.append("")
+
+        # Definition
+        lines.append("## Definition")
+        lines.append("")
+        if concept.definition:
+            lines.append(concept.definition)
+        else:
+            lines.append("*No definition provided.*")
+        lines.append("")
+
+        # Models
+        if concept.models:
+            lines.append("## Models")
+            lines.append("")
+            for model_name in concept.models:
+                lines.append(f"- `{model_name}`")
+            lines.append("")
+
+        # Guidance
+        if concept.guidance:
+            lines.append("## Guidance")
+            lines.append("")
+            if concept.guidance.context:
+                lines.append("**Context:**")
+                lines.append("")
+                lines.append(concept.guidance.context)
+                lines.append("")
+            if concept.guidance.rules:
+                lines.append("**Rules:**")
+                lines.append("")
+                for rule in concept.guidance.rules:
+                    lines.append(f"- **{rule.name}:** {rule.description}")
+                lines.append("")
+
+        # Relationships
+        relationships = _get_relationships_for_concept(concept_name, depth, state)
+        if relationships:
+            lines.append("## Relationships")
+            lines.append("")
+            lines.append("| Direction | Verb | Related Concept | Cardinality |")
+            lines.append("|-----------|------|-----------------|-------------|")
+            for rel in relationships:
+                if rel["from_concept"] == concept_name:
+                    direction = ARROW
+                    related = rel["to_concept"]
+                elif rel["to_concept"] == concept_name:
+                    direction = f"{ARROW} (incoming)"
+                    related = rel["from_concept"]
+                else:
+                    direction = f"{ARROW} (indirect)"
+                    related = f"{rel['from_concept']} {ARROW} {rel['to_concept']}"
+                lines.append(
+                    f"| {direction} | {rel['verb']} "
+                    f"| {related} | {rel['cardinality']} |"
+                )
+            lines.append("")
+
+        lines.append("---")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+@main.command()
 @click.option(
     "--sse",
     is_flag=True,
