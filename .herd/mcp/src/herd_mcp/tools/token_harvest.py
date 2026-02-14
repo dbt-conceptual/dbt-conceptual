@@ -15,7 +15,6 @@ from herd_mcp.db import connection
 
 if TYPE_CHECKING:
     from herd_mcp.adapters import AdapterRegistry
-    from herd_core.adapters.store import StoreAdapter
 
 
 def _find_project_session_dir(project_path: str) -> Path | None:
@@ -243,6 +242,8 @@ async def execute(
     Returns:
         Dict with harvest results including records written and total cost.
     """
+    # NOTE: Token harvest tool will be wired by Grunt B in DBC-149.
+    # This registry parameter is added for future wiring.
     # Find session directory
     session_dir = _find_project_session_dir(project_path)
     if not session_dir:

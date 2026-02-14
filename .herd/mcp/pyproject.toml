@@ -19,6 +19,9 @@ adapters = [
     "herd-core @ git+https://github.com/dbt-conceptual/herd-core.git",
     "herd-notify-slack @ git+https://github.com/dbt-conceptual/herd-notify-slack.git",
     "herd-ticket-linear @ git+https://github.com/dbt-conceptual/herd-ticket-linear.git",
+    "herd-store-duckdb @ git+https://github.com/dbt-conceptual/herd-store-duckdb.git",
+    "herd-repo-github @ git+https://github.com/dbt-conceptual/herd-repo-github.git",
+    "herd-agent-claude @ git+https://github.com/dbt-conceptual/herd-agent-claude.git",
 ]
 
 [tool.hatch.metadata]

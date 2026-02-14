@@ -37,17 +37,36 @@ async def execute(
     Returns:
         Dict with transition_id and elapsed time in previous status.
     """
+    # Adapter path for ticket lookup
+    ticket = None
+    if registry and registry.store:
+        try:
+            from herd_core.entities import TicketRecord
+
+            ticket_record = registry.store.get(TicketRecord, ticket_id)
+            if ticket_record:
+                ticket = (
+                    ticket_record.ticket_code,
+                    ticket_record.title,
+                    ticket_record.current_status,
+                )
+        except Exception:
+            pass
+
+    # Use single connection context for all SQL operations
     with connection() as conn:
-        # Get current ticket status
-        ticket = conn.execute(
-            """
-            SELECT ticket_code, ticket_title, ticket_current_status
-            FROM herd.ticket_def
-            WHERE ticket_code = ?
-              AND deleted_at IS NULL
-            """,
-            [ticket_id],
-        ).fetchone()
+        # Fallback to raw SQL for ticket lookup if adapter didn't work
+        if ticket is None:
+            # Get current ticket status
+            ticket = conn.execute(
+                """
+                SELECT ticket_code, ticket_title, ticket_current_status
+                FROM herd.ticket_def
+                WHERE ticket_code = ?
+                  AND deleted_at IS NULL
+                """,
+                [ticket_id],
+            ).fetchone()
 
         if not ticket:
             return {
@@ -58,7 +77,6 @@ async def execute(
             }
 
         current_status = ticket[2]
-
         # Get agent's current instance
         agent_instance_code = None
         if agent_name:

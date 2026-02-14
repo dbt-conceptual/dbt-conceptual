@@ -155,32 +155,59 @@ async def execute(
 
     # Resolve agent identity and get current instance
     agent_instance_code = None
-    with connection() as conn:
-        # Look up current agent instance
-        result = conn.execute(
-            """
-            SELECT ai.agent_instance_code
-            FROM herd.agent_instance ai
-            WHERE ai.agent_code = ?
-              AND ai.agent_instance_ended_at IS NULL
-            ORDER BY ai.agent_instance_started_at DESC
-            LIMIT 1
-            """,
-            [agent_name],
-        ).fetchone()
 
-        if result:
-            agent_instance_code = result[0]
+    # Adapter path (for simple CRUD operations)
+    if registry and registry.store:
+        try:
+            from herd_core.entities import AgentRecord, LifecycleEvent
 
-            # Record to lifecycle activity
-            conn.execute(
-                """
-                INSERT INTO herd.agent_instance_lifecycle_activity
-                  (agent_instance_code, lifecycle_event_type, lifecycle_detail, created_at)
-                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-                """,
-                [agent_instance_code, event_type, message],
+            # List active instances for this agent
+            instances = registry.store.list(
+                AgentRecord, agent_code=agent_name, ended_at=None
             )
+
+            if instances:
+                agent_instance_code = instances[0].instance_code
+
+                # Append lifecycle event
+                lifecycle_event = LifecycleEvent(
+                    agent_instance_code=agent_instance_code,
+                    event_type=event_type,
+                    detail=message,
+                )
+                registry.store.append(lifecycle_event)
+        except Exception:
+            # Fall through to SQL fallback
+            pass
+
+    # Fallback to raw SQL if adapter not available or failed
+    if agent_instance_code is None:
+        with connection() as conn:
+            # Look up current agent instance
+            result = conn.execute(
+                """
+                SELECT ai.agent_instance_code
+                FROM herd.agent_instance ai
+                WHERE ai.agent_code = ?
+                  AND ai.agent_instance_ended_at IS NULL
+                ORDER BY ai.agent_instance_started_at DESC
+                LIMIT 1
+                """,
+                [agent_name],
+            ).fetchone()
+
+            if result:
+                agent_instance_code = result[0]
+
+                # Record to lifecycle activity
+                conn.execute(
+                    """
+                    INSERT INTO herd.agent_instance_lifecycle_activity
+                      (agent_instance_code, lifecycle_event_type, lifecycle_detail, created_at)
+                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                    """,
+                    [agent_instance_code, event_type, message],
+                )
 
     # Post to Slack - use adapter if available, otherwise fall back to inline
     if registry and registry.notify:

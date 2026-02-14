@@ -39,17 +39,39 @@ async def execute(
             "priority": priority,
         }
 
+    # Adapter path for ticket lookup
+    ticket = None
+    if registry and registry.store:
+        try:
+            from herd_core.entities import TicketRecord
+
+            ticket_record = registry.store.get(TicketRecord, ticket_id)
+            if ticket_record:
+                ticket = (
+                    ticket_record.ticket_code,
+                    ticket_record.title,
+                    ticket_record.description,
+                    ticket_record.current_status,
+                )
+        except Exception:
+            pass
+
+    # Fallback to raw SQL
+    if ticket is None:
+        with connection() as conn:
+            # Verify ticket exists
+            ticket = conn.execute(
+                """
+                SELECT ticket_code, ticket_title, ticket_description, ticket_current_status
+                FROM herd.ticket_def
+                WHERE ticket_code = ?
+                  AND deleted_at IS NULL
+                """,
+                [ticket_id],
+            ).fetchone()
+
+    # Continue with existing logic
     with connection() as conn:
-        # Verify ticket exists
-        ticket = conn.execute(
-            """
-            SELECT ticket_code, ticket_title, ticket_description, ticket_current_status
-            FROM herd.ticket_def
-            WHERE ticket_code = ?
-              AND deleted_at IS NULL
-            """,
-            [ticket_id],
-        ).fetchone()
 
         # Auto-register from Linear if not found and looks like Linear ID
         if not ticket and linear_client.is_linear_identifier(ticket_id):
