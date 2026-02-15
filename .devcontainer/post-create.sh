@@ -14,6 +14,21 @@ echo "=== Post-create setup starting ==="
 echo "Installing dbt-conceptual with all dependencies..."
 pip install --no-cache-dir -e ".[all]"
 
+# Install MesloLGM Nerd Font Mono (for Starship glyphs in terminal)
+echo "Installing MesloLGM Nerd Font Mono..."
+FONT_DIR="/usr/share/fonts/truetype/meslo"
+if [ ! -d "$FONT_DIR" ]; then
+    mkdir -p "$FONT_DIR"
+    curl -fsSL -o /tmp/MesloLGM.zip \
+        "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Meslo.zip"
+    unzip -qo /tmp/MesloLGM.zip -d "$FONT_DIR"
+    rm -f /tmp/MesloLGM.zip
+    fc-cache -f "$FONT_DIR" 2>/dev/null || true
+    echo "  Font installed to $FONT_DIR"
+else
+    echo "  Font already installed"
+fi
+
 # Configure Starship
 echo "Configuring Starship prompt..."
 mkdir -p ~/.config

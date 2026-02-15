@@ -154,8 +154,9 @@ logs/
 .prompt
 PUBLISHING.md
 .claude/
+.mcp.json
 
-# The Herd (local minion configs — but track infrastructure code)
+# The Herd (local agent configs — but track infrastructure code)
 .herd/
 !.herd/dbt/
 !.herd/mcp/
