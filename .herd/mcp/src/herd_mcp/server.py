@@ -388,9 +388,8 @@ async def herd_record_decision(
     )
 
 
-# Register prompts
-@mcp.prompt()
-async def assume(agent_name: str) -> str:
-    """Assume a herd agent identity with full context."""
+@mcp.tool()
+async def herd_assume(agent_name: str) -> str:
+    """Assume a herd agent identity with full context. Returns the full identity prompt for the specified agent."""
     registry = get_adapter_registry()
     return await assume_role.execute(agent_name, registry)
