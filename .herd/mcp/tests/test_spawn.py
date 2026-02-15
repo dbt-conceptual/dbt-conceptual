@@ -289,7 +289,7 @@ async def test_spawn_with_ticket_creates_worktree(seeded_db):
                         mock_repo_root / ".herd" / "roles" / "grunt.md": "# Grunt role",
                         mock_repo_root
                         / ".herd"
-                        / "craft.md": "## All Agents\n\n## Grunt — Backend Craft Standards\nGrunt craft",
+                        / "craft.md": "## All Agents\n\n## Mason \u2014 Backend Craft Standards\nMason craft",
                         mock_repo_root / "CLAUDE.md": "# CLAUDE.md content",
                     }.get(p, None)
 
@@ -311,7 +311,7 @@ async def test_spawn_with_ticket_creates_worktree(seeded_db):
     assert result["branch_name"] == "herd/grunt/dbc-126-herd-spawn"
     assert "context_payload" in result
     assert "# Grunt role" in result["context_payload"]
-    assert "Grunt craft" in result["context_payload"]
+    assert "Mason craft" in result["context_payload"]
     assert "CLAUDE.md content" in result["context_payload"]
     assert "xoxb-test-token" in result["context_payload"]
 
@@ -492,38 +492,41 @@ async def test_spawn_with_ticket_handles_worktree_creation_failure(seeded_db):
 
 @pytest.mark.asyncio
 async def test_extract_craft_section():
-    """Test craft section extraction for different agents."""
-    craft_content = """# The Herd — Craft Standards
+    """Test craft section extraction for different agents (HDR-0024 names)."""
+    craft_content = """# The Herd \u2014 Craft Standards
 
-## All Agents — Shared Standards
+## All Agents \u2014 Shared Standards
 Shared content here.
 
-## Grunt — Backend Craft Standards
-Grunt specific content.
-More grunt content.
+## Mason \u2014 Backend Craft Standards
+Mason specific content.
+More mason content.
 
-## Pikasso — Frontend Craft Standards
-Pikasso content.
+## Fresco \u2014 Frontend Craft Standards
+Fresco content.
 
-## Wardenstein — QA Craft Standards
+## Wardenstein \u2014 QA Craft Standards
 Wardenstein content.
 """
 
-    # Test Grunt extraction
-    grunt_section = spawn._extract_craft_section(craft_content, "grunt")
-    assert "## Grunt — Backend Craft Standards" in grunt_section
-    assert "Grunt specific content" in grunt_section
-    assert "More grunt content" in grunt_section
-    assert "Pikasso" not in grunt_section
+    # Test Mason extraction (current name)
+    mason_section = spawn._extract_craft_section(craft_content, "mason")
+    assert "## Mason \u2014 Backend Craft Standards" in mason_section
+    assert "Mason specific content" in mason_section
+    assert "More mason content" in mason_section
+    assert "Fresco" not in mason_section
 
-    # Test Pikasso extraction
+    # Test legacy grunt alias maps to Mason section
+    grunt_section = spawn._extract_craft_section(craft_content, "grunt")
+    assert "## Mason \u2014 Backend Craft Standards" in grunt_section
+    assert "Mason specific content" in grunt_section
+
+    # Test legacy pikasso alias maps to Fresco section
     pikasso_section = spawn._extract_craft_section(craft_content, "pikasso")
-    assert "## Pikasso — Frontend Craft Standards" in pikasso_section
-    assert "Pikasso content" in pikasso_section
+    assert "## Fresco \u2014 Frontend Craft Standards" in pikasso_section
+    assert "Fresco content" in pikasso_section
     assert "Wardenstein" not in pikasso_section
 
     # Test unknown agent
     unknown_section = spawn._extract_craft_section(craft_content, "unknown")
     assert unknown_section == ""
-
-
