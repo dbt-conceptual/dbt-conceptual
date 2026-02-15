@@ -69,3 +69,31 @@ src/dbt_conceptual/
 - Use `tempfile.TemporaryDirectory()` for tests that need file system
 - Test configuration loading with and without `dbt_project.yml`
 - Validator tests should cover both default and configured severities
+
+## Herd MCP Server
+
+The Herd MCP server is provided by the `herd-core` package — NOT a local copy. The local `.herd/mcp/` directory was removed in the v0.2.0 migration.
+
+### Installation
+
+- **Dev** (active herd-core development): `pip install -e "/path/to/herd-core[adapters,env]"`
+- **Stable pin**: `pip install "herd-core[adapters] @ git+https://github.com/herd-ag/herd-core@v0.2.0"`
+
+### Secrets
+
+Secrets (`HERD_SLACK_TOKEN`, `LINEAR_API_KEY`) go in `.env` at project root (gitignored). Non-secret config (`HERD_AGENT_NAME`, `HERD_DB_PATH`) stays in `.mcp.json`.
+
+### Content Path Resolution
+
+Role files, craft standards, and HDRs resolve in order:
+1. Project root `.herd/` (local overrides)
+2. herd-core package `.herd/` (canonical defaults)
+
+To override a role file, place your version in this project's `.herd/roles/`. Otherwise the package default is used.
+
+### Updating herd-core
+
+To update to a new version:
+```bash
+pip install "herd-core[adapters] @ git+https://github.com/herd-ag/herd-core@<new-tag>"
+```
